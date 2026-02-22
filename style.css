@@ -129,13 +129,14 @@ textarea {
 
 /* --- SECCIÓN TABLA DINÁMICA --- */
 .table-responsive {
-    overflow-x: auto;
+    overflow-x: visible; /* Cambiado de auto a visible para que la 'x' no se corte */
     margin-top: 10px;
+    margin-right: 40px;  /* Espacio extra a la derecha para la X */
     position: relative;
 }
 
 table { 
-    width: 95.5%; 
+    width: 90%; /* Reducido de 95.5% a 90% para dar espacio al botón */
     border-collapse: collapse; 
 }
 
@@ -250,3 +251,28 @@ tr { position: relative; }
 /* --- UTILIDADES --- */
 .oculto { display: none !important; }
 .deshabilitado { opacity: 0.5; cursor: not-allowed; }
+
+/* --- BOTÓN DE LIMPIEZA DINÁMICO --- */
+#main-container {
+    position: relative; /* Para que el botón absoluto se ubique respecto a este cuadro */
+}
+
+.btn-clear-data {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: bold;
+    z-index: 100;
+    transition: background 0.2s;
+}
+
+.btn-clear-data:hover {
+    background-color: #a71d2a;
+}

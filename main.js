@@ -1,14 +1,86 @@
 /**
- * ARCHIVO: main.js (Raíz) - Versión Final Unificada
- * Incluye: Cálculo de edad automático, Límite de materias, Récord y Resumen.
+ * FUNCIONES DEL PASO 1 (Ámbito global)
+ */
+function initIdentificacion() {
+    const fNacInput = document.getElementById('f_nac');
+    const edadInput = document.getElementById('edad');
+
+    if (fNacInput && edadInput) {
+        const actualizar = () => {
+            const edadCalculada = calcularEdad(fNacInput.value);
+            edadInput.value = edadCalculada;
+            if(window.formDataStorage) window.formDataStorage['edad'] = edadCalculada;
+        };
+
+        fNacInput.addEventListener('input', actualizar);
+        fNacInput.addEventListener('change', actualizar);
+
+        if (fNacInput.value) actualizar();
+    }
+}
+
+function calcularEdad(fecha) {
+    if (!fecha) return "00";
+    const hoy = new Date();
+    const cumpleanos = new Date(fecha);
+    let edad = hoy.getFullYear() - cumpleanos.getFullYear();
+    const mes = hoy.getMonth() - cumpleanos.getMonth();
+    
+    if (mes < 0 || (mes === 0 && hoy.getDate() < cumpleanos.getDate())) {
+        edad--;
+    }
+    return edad >= 0 ? edad.toString().padStart(2, '0') : "00";
+}
+
+function validarPaso1() {
+    const checkActivo = document.getElementById('check_activo');
+    const edadCampo = document.getElementById('edad');
+    const edad = parseInt(edadCampo.value, 10) || 0;
+
+    if (!checkActivo || !checkActivo.checked) {
+        alert("⚠️ No puedes continuar: Debes confirmar que te encuentras activo en tus estudios.");
+        return false;
+    }
+
+    if (edad < 17 || edad > 39) {
+        alert(`⚠️ Edad no permitida (${edad} años): Debes tener entre 17 y 39 años para solicitar la beca.`);
+        return false;
+    }
+
+    return true; 
+}
+
+/**
+ * ARCHIVO: main.js (Raíz) - Lógica Principal Integrada
  */
 document.addEventListener('DOMContentLoaded', () => {
     let currentStep = 1; 
     const totalSteps = 10;
     const viewPort = document.getElementById('dynamic-content');
     const progressBar = document.getElementById('progressBar');
-    
+    const mainContainer = document.getElementById('main-container');
     window.formDataStorage = {}; 
+
+    // --- INTEGRACIÓN DEL BOTÓN DE LIMPIEZA ---
+    const btnLimpiar = document.createElement('button');
+    btnLimpiar.className = 'btn-clear-data'; // Usa el estilo de tu CSS
+    btnLimpiar.innerHTML = 'Borrar Campos';
+    mainContainer.appendChild(btnLimpiar);
+
+    btnLimpiar.onclick = () => {
+        if (confirm("¿Estás seguro de que deseas borrar los datos de esta página?")) {
+            const inputs = viewPort.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') input.checked = false;
+                else input.value = '';
+                if (input.name) delete window.formDataStorage[input.name];
+            });
+            // Reset manual para campos calculados
+            if (currentStep === 1 && document.getElementById('edad')) {
+                document.getElementById('edad').value = '00';
+            }
+        }
+    };
 
     const folderMap = {
         1: "1. Pagina Identificación",
@@ -23,332 +95,101 @@ document.addEventListener('DOMContentLoaded', () => {
         10: "10. Pantalla final"
     };
 
-    // --- LÓGICA PASO 1: IDENTIFICACIÓN (Cálculo de Edad) ---
-    function calcularEdad() {
-        const fechaNacInput = document.getElementById('f_nac');
-        const edadInput = document.getElementById('edad');
-        
-        if (!fechaNacInput || !fechaNacInput.value) return;
-
-        const hoy = new Date();
-        const cumpleanos = new Date(fechaNacInput.value);
-        
-        let edad = hoy.getFullYear() - cumpleanos.getFullYear();
-        const mes = hoy.getMonth() - cumpleanos.getMonth();
-
-        if (mes < 0 || (mes === 0 && hoy.getDate() < cumpleanos.getDate())) {
-            edad--;
-        }
-
-        const edadFinal = edad >= 0 ? edad : 0;
-        if (edadInput) edadInput.value = edadFinal;
-        window.formDataStorage['edad'] = edadFinal;
-    }
-
-    // --- LÓGICA PASO 5: MATERIAS (Límite y conteo) ---
-    function initMaterias() {
-        const container = document.getElementById('materias-container');
-        if (!container) return;
-
-        const checkboxes = container.querySelectorAll('.materia-cb');
-        const MAX_MATERIAS = 8;
-
-        checkboxes.forEach(cb => {
-            cb.addEventListener('change', () => {
-                const seleccionadas = container.querySelectorAll('.materia-cb:checked').length;
-                if (seleccionadas > MAX_MATERIAS) {
-                    cb.checked = false;
-                    alert("⚠️ Solo puedes inscribir un máximo de " + MAX_MATERIAS + " materias.");
-                } else {
-                    saveCurrentData();
-                }
-            });
-        });
-    }
-
-    // --- LÓGICA PASO 6: RÉCORD ---
-    function initRecord() {
-        const totalInscritas = window.formDataStorage['m_ins'] || 0;
-        const inputIns = document.getElementById('m_ins');
-        if (inputIns) inputIns.value = totalInscritas;
-    }
-
-   /**
-     * Renderiza el resumen final con todos los datos del formulario.
-     */
-    function renderResumen() {
-        const container = document.getElementById('resumen');
-        if (!container) return;
-
-        const data = window.formDataStorage;
-        
-        // Utilidad para mostrar "Sí/No" en checkboxes o valores vacíos en rojo
-        const getVal = (key) => {
-            if (data[key] === true) return '<span style="color:green; font-weight:bold;">Sí</span>';
-            if (data[key] === false) return '<span style="color:gray;">No</span>';
-            return data[key] || '<span style="color:red">No indicado</span>';
-        };
-
-        let html = "";
-
-        // 1. Identificación del Estudiante
-        html += `
-            <div class="resumen-seccion">
-                <h3>I. Identificación del Estudiante</h3>
-                <p><strong>Nombres y Apellidos:</strong> ${getVal('nombres')} ${getVal('apellidos')}</p>
-                <p><strong>Cédula:</strong> ${getVal('cedula')}</p>
-                <p><strong>Contacto:</strong> ${getVal('tel_estudiante')} | ${getVal('correo')}</p>
-                <p><strong>Nacimiento:</strong> ${getVal('f_nac')} (Edad: ${getVal('edad')} años)</p>
-                <p><strong>Estado Civil:</strong> ${getVal('edo_civil')}</p>
-                <p><strong>Carnet de la Patria:</strong> ${getVal('C_Patria')}</p>
-                <p><strong>Condiciones:</strong> ¿Trabaja?: ${getVal('trabaja')} | ¿Viaja?: ${getVal('viaja')} | ¿Activo?: ${getVal('activo')}</p>
-            </div>
-        `;
-
-        // 2. Residencia / Vivienda
-        html += `
-            <div class="resumen-seccion">
-                <h3>II. Residencia y Vivienda</h3>
-                <p><strong>Tipo:</strong> ${getVal('t_residencia')} (${getVal('t_vivienda')})</p>
-                <p><strong>Localidad:</strong> ${getVal('t_localidad')} | <strong>Propiedad:</strong> ${getVal('r_propiedad')}</p>
-                <p><strong>Dirección Local:</strong> ${getVal('dir_local')} (${getVal('tel_local')})</p>
-                <p><strong>Dirección Procedencia:</strong> ${getVal('dir_proc')} (${getVal('tel_proc')})</p>
-                <p><strong>¿Paga Vivienda?:</strong> ${getVal('paga_vivienda')}</p>
-            </div>
-        `;
-
-        // 3. Información Laboral (Solo si trabaja)
-        if (data['trabaja']) {
-            html += `
-                <div class="resumen-seccion" style="border-left: 4px solid #FF6600; padding-left: 10px;">
-                    <h3>III. Información Laboral</h3>
-                    <p><strong>Cargo/Oficio:</strong> ${getVal('cargo_trabajo')} en ${getVal('lugar_trabajo')}</p>
-                    <p><strong>Ingresos Mensuales:</strong> ${getVal('ingresos_trabajo')} Bs.</p>
-                    <p><strong>Aportes Externos:</strong> Recibe de ${getVal('quien_aporta')} la suma de ${getVal('monto_aporta')} Bs.</p>
-                </div>
-            `;
-        }
-
-        // 4. Información Académica (PNF)
-        html += `
-            <div class="resumen-seccion">
-                <h3>IV. Datos del PNF</h3>
-                <p><strong>Carrera:</strong> ${getVal('pnf')}</p>
-                <p><strong>Código Estudiante:</strong> ${getVal('cod_estudiante')} | <strong>Ingreso:</strong> ${getVal('f_ingreso')}</p>
-                <p><strong>Ubicación Actual:</strong> Trayecto ${getVal('trayecto')} - Trimestre ${getVal('trimestre')}</p>
-            </div>
-        `;
-
-        // 5. Materias Inscritas (Filtramos las que están marcadas como true)
-        const materiasSeleccionadas = Object.keys(data)
-            .filter(key => key.startsWith('mat_') && data[key] === true)
-            .map(key => key.replace('mat_', '').replace(/_/g, ' ').toUpperCase());
-
-        html += `
-            <div class="resumen-seccion">
-                <h3>V. Materias Inscritas</h3>
-                <p>${materiasSeleccionadas.length > 0 ? materiasSeleccionadas.join(', ') : '<span style="color:red">Ninguna materia seleccionada</span>'}</p>
-            </div>
-        `;
-
-        // 6. Récord Académico
-        html += `
-            <div class="resumen-seccion">
-                <h3>VI. Récord Académico (Trimestre Anterior)</h3>
-                <p><strong>Materias:</strong> Inscritas (${getVal('m_ins')}) | Aprobadas (${getVal('m_apr')}) | Inasistentes (${getVal('m_ina')})</p>
-                <p><strong>Índice Académico:</strong> ${getVal('record_indice')} pts</p>
-            </div>
-        `;
-
-        // 7. Carga Familiar (Dinámica)
-        const idsFamiliares = [...new Set(
-            Object.keys(data)
-                .filter(key => key.startsWith('f_nom_'))
-                .map(key => key.split('_')[2])
-        )];
-
-        html += `
-            <div class="resumen-seccion">
-                <h3>VII. Carga Familiar</h3>
-                <div style="overflow-x: auto;">
-                    <table style="width:100%; border-collapse: collapse; font-size: 0.75rem; min-width: 600px;">
-                        <thead>
-                            <tr style="background: #f4f4f4; text-align: left;">
-                                <th style="border: 1px solid #ddd; padding: 5px;">Nombre</th>
-                                <th style="border: 1px solid #ddd; padding: 5px;">Parentesco</th>
-                                <th style="border: 1px solid #ddd; padding: 5px;">Edad</th>
-                                <th style="border: 1px solid #ddd; padding: 5px;">Instrucción</th>
-                                <th style="border: 1px solid #ddd; padding: 5px;">Ocupación</th>
-                                <th style="border: 1px solid #ddd; padding: 5px;">Ingreso ($)</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-        if (idsFamiliares.length > 0) {
-            idsFamiliares.forEach(id => {
-                html += `
-                    <tr>
-                        <td style="border: 1px solid #ddd; padding: 5px;">${getVal('f_nom_' + id)}</td>
-                        <td style="border: 1px solid #ddd; padding: 5px;">${getVal('f_par_' + id)}</td>
-                        <td style="border: 1px solid #ddd; padding: 5px;">${getVal('f_eda_' + id)}</td>
-                        <td style="border: 1px solid #ddd; padding: 5px;">${getVal('f_ins_' + id)}</td>
-                        <td style="border: 1px solid #ddd; padding: 5px;">${getVal('f_ocu_' + id)}</td>
-                        <td style="border: 1px solid #ddd; padding: 5px;">${data['f_ing_' + id] || 0} $</td>
-                    </tr>`;
-            });
-        } else {
-            html += `<tr><td colspan="6" style="text-align:center; padding:10px;">No se agregaron familiares.</td></tr>`;
-        }
-        html += `</tbody></table></div></div>`;
-
-        // 8. Datos Adicionales
-        html += `
-            <div class="resumen-seccion">
-                <h3>VIII. Observaciones Finales</h3>
-                <p style="white-space: pre-wrap;">${getVal('observaciones')}</p>
-            </div>
-        `;
-
-        container.innerHTML = html;
-    }
-
-    function resetFormulario() {
-        if (confirm("⚠️ ¿Deseas empezar de nuevo? Se borrarán todos los datos ingresados.")) {
-            window.formDataStorage = {};
-            currentStep = 1;
-            loadStep(1);
-        }
-    }
-
-    // --- CARGA DINÁMICA ---
-    async function loadStep(stepNumber) {
-        const folderName = folderMap[stepNumber];
-        const htmlPath = `Paginas/${encodeURIComponent(folderName)}/view.html`;
-
-        try {
-            const response = await fetch(htmlPath);
-            if (!response.ok) throw new Error("Error al cargar");
-            const html = await response.text();
-            viewPort.innerHTML = html; 
-
-            window.restoreDataGlobal(); 
-            
-            // Inicialización por página
-            if (stepNumber === 1) {
-                const fNac = document.getElementById('f_nac');
-                if (fNac) {
-                    if (fNac.value) calcularEdad(); // Calcular si ya hay dato restaurado
-                    fNac.addEventListener('change', calcularEdad);
-                }
-            }
-            if (stepNumber === 5) initMaterias();
-            if (stepNumber === 6) initRecord();
-            if (stepNumber === 7 && typeof initFamiliares === 'function') initFamiliares();
-            if (stepNumber === 9) renderResumen();
-
-            actualizarInterfaz(stepNumber);
-            window.scrollTo(0, 0);
-        } catch (error) { console.error(error); }
-    }
-
-    function saveCurrentData() {
+    window.saveCurrentData = () => {
         const inputs = viewPort.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
             if (input.name) {
-                window.formDataStorage[input.name] = (input.type === 'checkbox' || input.type === 'radio') 
-                    ? input.checked : input.value;
+                window.formDataStorage[input.name] = (input.type === 'checkbox') ? input.checked : input.value;
             }
         });
-
-        // Conteo materias
-        const totalMat = Object.keys(window.formDataStorage)
-            .filter(key => key.startsWith('mat_') && window.formDataStorage[key] === true)
-            .length;
-        window.formDataStorage['m_ins'] = totalMat;
-    }
+    };
 
     window.restoreDataGlobal = () => {
         const inputs = viewPort.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
             if (window.formDataStorage[input.name] !== undefined) {
-                if (input.type === 'checkbox' || input.type === 'radio') {
-                    input.checked = window.formDataStorage[input.name];
-                } else { 
-                    input.value = window.formDataStorage[input.name]; 
-                }
+                if (input.type === 'checkbox') input.checked = window.formDataStorage[input.name];
+                else input.value = window.formDataStorage[input.name];
             }
         });
     };
 
+    async function loadStep(stepNumber) {
+        const folder = folderMap[stepNumber];
+        const htmlPath = `Paginas/${encodeURIComponent(folder)}/view.html`;
+        const scriptPath = `Paginas/${encodeURIComponent(folder)}/script.js`;
+
+        try {
+            const response = await fetch(htmlPath);
+            viewPort.innerHTML = await response.text();
+            window.restoreDataGlobal();
+
+            const oldScript = document.getElementById('step-script');
+            if (oldScript) oldScript.remove();
+
+            const script = document.createElement('script');
+            script.src = scriptPath;
+            script.id = 'step-script';
+            script.onload = () => {
+                if (stepNumber === 1 && typeof initIdentificacion === 'function') initIdentificacion();
+                if (stepNumber === 5 && typeof initMaterias === 'function') initMaterias();
+                if (stepNumber === 6 && typeof initRecord === 'function') initRecord();
+                if (stepNumber === 7 && typeof initFamiliares === 'function') initFamiliares();
+                if (stepNumber === 9 && typeof renderResumen === 'function') renderResumen();
+            };
+            document.body.appendChild(script);
+
+            actualizarInterfaz(stepNumber);
+        } catch (e) { console.error("Error al cargar el paso:", e); }
+    }
+
     function actualizarInterfaz(step) {
-        const progress = (step / totalSteps) * 100;
-        if (progressBar) progressBar.style.width = `${progress}%`;
+        if (progressBar) progressBar.style.width = `${(step / totalSteps) * 100}%`;
+        
+        // Navegación
+        document.getElementById('prevBtn').style.display = (step <= 1 || step >= 10) ? 'none' : 'inline-block';
+        document.getElementById('nextBtn').textContent = (step === 9) ? "Confirmar" : "Siguiente";
 
-        const navContainer = document.querySelector('.nav-buttons');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-
-        let resetBtn = document.getElementById('resetBtn');
-        if (step === 9) {
-            if (!resetBtn) {
-                resetBtn = document.createElement('button');
-                resetBtn.id = 'resetBtn';
-                resetBtn.className = 'btn-reset';
-                resetBtn.textContent = 'Empezar de nuevo';
-                resetBtn.onclick = resetFormulario;
-                navContainer.insertBefore(resetBtn, nextBtn);
-            }
-            resetBtn.style.display = 'inline-block';
-            nextBtn.textContent = "Confirmar y Enviar";
-            nextBtn.className = "btn-submit";
-        } else if (resetBtn) {
-            resetBtn.style.display = 'none';
-            nextBtn.textContent = "Siguiente";
-            nextBtn.className = "btn-next";
-        }
-
-        prevBtn.style.display = (step === 1 || step === 10) ? 'none' : 'inline-block';
-        if (step === 10) {
-            nextBtn.style.display = 'none';
-            const pw = document.querySelector('.progress-wrapper');
-            if (pw) pw.style.display = 'none';
-        }
+        // Visibilidad del botón Limpiar (Solo hasta paso 8)
+        btnLimpiar.style.display = (step > 0 && step <= 8) ? 'block' : 'none';
     }
 
     document.getElementById('nextBtn').onclick = () => {
-        if (!validarPasoActual()) return;
-        saveCurrentData(); 
-        let nextStep = currentStep + 1;
-        if (nextStep === 3 && !window.formDataStorage['trabaja']) nextStep = 4;
-        if (nextStep <= totalSteps) { currentStep = nextStep; loadStep(currentStep); }
+        if (currentStep === 1 && typeof validarPaso1 === 'function') {
+            if (!validarPaso1()) return;
+        }
+
+        if (currentStep === 3) {
+            alert("⚠️ No podrás solicitar la beca, puesto que al poseer un trabajo no cumples con los requisitos.");
+            return;
+        }
+
+        if (currentStep === 6 && typeof validarRecord === 'function') {
+            if (!validarRecord()) return;
+        }
+
+        window.saveCurrentData();
+
+        if (currentStep === 2 && !window.formDataStorage['trabaja']) {
+            currentStep = 4;
+        } else {
+            currentStep++;
+        }
+        
+        loadStep(currentStep);
     };
 
     document.getElementById('prevBtn').onclick = () => {
-        saveCurrentData();
-        let prevStep = currentStep - 1;
-        if (prevStep === 3 && !window.formDataStorage['trabaja']) prevStep = 2;
-        if (prevStep >= 1) { currentStep = prevStep; loadStep(currentStep); }
-    };
+        window.saveCurrentData();
 
-    function validarPasoActual() {
-        if (currentStep === 1) {
-            const fNac = document.getElementById('f_nac')?.value;
-            const edad = parseInt(document.getElementById('edad')?.value || 0);
-            if (!fNac) { alert("⚠️ Seleccione su fecha de nacimiento."); return false; }
-            if (edad < 15 || edad > 100) { alert("⚠️ Verifique su fecha de nacimiento. La edad debe ser mayor a 15 años."); return false; }
-            if (!document.getElementById('check_activo')?.checked) { alert("⚠️ Debes ser estudiante activo."); return false; }
+        if (currentStep === 4 && !window.formDataStorage['trabaja']) {
+            currentStep = 2;
+        } else {
+            currentStep--;
         }
-        if (currentStep === 5 && viewPort.querySelectorAll('.materia-cb:checked').length === 0) {
-            alert("⚠️ Selecciona al menos una materia."); return false;
-        }
-        if (currentStep === 6) {
-            const ins = parseInt(document.getElementById('m_ins').value) || 0;
-            const apr = parseInt(document.getElementById('m_apr').value) || 0;
-            const ina = parseInt(document.getElementById('m_ina').value) || 0;
-            if ((apr + ina) > ins) { alert("⚠️ Error: Aprobadas + Inasistentes superan las inscritas."); return false; }
-        }
-        return true;
-    }
+
+        loadStep(currentStep);
+    };
 
     loadStep(currentStep);
 });

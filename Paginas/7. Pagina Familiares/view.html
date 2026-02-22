@@ -1,21 +1,29 @@
-<h3>7. Familiares del Estudiante</h3>
-<div class="table-responsive">
-    <table>
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Parentesco</th>
-                <th style="width: 50px;">Edad</th>
-                <th>Instrucción</th>
-                <th>Ocupación</th>
-                <th>Ingreso</th>
-            </tr>
-        </thead>
-        <tbody id="cuerpo-tabla"></tbody>
-    </table>
-</div>
+<div class="step-content">
+    <h2>7. Familiares del Estudiante</h2>
+    <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">Indique las personas que conviven con usted.</p>
+    
+    <div class="table-responsive">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f4f4f4;">
+                    <th>Nombre</th>
+                    <th>Parentesco</th>
+                    <th style="width: 60px;">Edad</th>
+                    <th>Instrucción</th>
+                    <th>Ocupación</th>
+                    <th>Ingreso (Bs)</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo-tabla">
+                </tbody>
+        </table>
+    </div>
 
-<div class="controles-tabla">
-    <button type="button" id="btn-agregar" class="btn-add">+ Añadir Familiar</button>
-    <span id="aviso-limite" class="oculto">Límite de 5 familiares alcanzado.</span>
+    <div class="controles-tabla" style="margin-top: 15px; display: flex; align-items: center; gap: 15px;">
+        <button type="button" id="btn-agregar" class="btn-add" 
+                style="background: #00dc0b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+            + Añadir Familiar
+        </button>
+        <span id="aviso-limite" style="color: #d9534f; font-size: 0.85rem; display: none;">Límite de 5 familiares alcanzado.</span>
+    </div>
 </div>
