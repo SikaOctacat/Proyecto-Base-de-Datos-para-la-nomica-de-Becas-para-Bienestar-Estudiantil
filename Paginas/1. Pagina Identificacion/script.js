@@ -17,7 +17,7 @@ function initIdentificacion() {
     // Verifica que ambos elementos existan en el DOM antes de asignar eventos
     if (fNacInput && edadInput) {
         /**
-         * Función interna para actualizar el campo de edad y el almacenamiento global
+         * Función interna para actualizar el campo de edad y el almacenamiento global.
          */
         const actualizar = () => {
             // Obtiene el cálculo basado en el valor actual del input tipo date
