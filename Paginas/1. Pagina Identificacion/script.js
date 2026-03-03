@@ -10,33 +10,69 @@
  * Se ejecuta automáticamente cuando loadStep(1) carga este script.
  */
 function initIdentificacion() {
-    // Referencias a los campos de fecha de nacimiento y el input (probablemente readonly) de edad
     const fNacInput = document.getElementById('f_nac');
     const edadInput = document.getElementById('edad');
 
-    // Verifica que ambos elementos existan en el DOM antes de asignar eventos
+    // 1. Configurar límites de fecha (lo que ya tenías)
+    if (fNacInput) {
+        const hoy = new Date();
+        fNacInput.max = new Date(hoy.getFullYear() - 5, hoy.getMonth(), hoy.getDate()).toISOString().split('T')[0];
+        fNacInput.min = (hoy.getFullYear() - 100) + "-01-01";
+    }
+
+    // 2. Función para guardar Radio Buttons en el storage global
+    const guardarRadios = (name) => {
+        const seleccionado = document.querySelector(`input[name="${name}"]:checked`);
+        if (window.formDataStorage) {
+            window.formDataStorage[name] = seleccionado ? seleccionado.value : null;
+        }
+    };
+
+    // 3. Cargar datos previos si existen (Persistencia)
+    if (window.formDataStorage) {
+        ['trabaja', 'viaja', 'activo'].forEach(name => {
+            const valorPrevio = window.formDataStorage[name];
+            if (valorPrevio) {
+                const radio = document.querySelector(`input[name="${name}"][value="${valorPrevio}"]`);
+                if (radio) radio.checked = true;
+            }
+        });
+    }
+
+    // 4. Listeners para cambios
     if (fNacInput && edadInput) {
-        /**
-         * Función interna para actualizar el campo de edad y el almacenamiento global.
-         */
-        const actualizar = () => {
-            // Obtiene el cálculo basado en el valor actual del input tipo date
+        const actualizarEdad = () => {
             const edadCalculada = calcularEdad(fNacInput.value);
-            
-            // Refleja el resultado en la interfaz de usuario
             edadInput.value = edadCalculada;
-            
-            // Sincroniza el dato con el objeto de persistencia global definido en main.js
             if(window.formDataStorage) window.formDataStorage['edad'] = edadCalculada;
         };
-
-        // Escucha cambios tanto al escribir como al seleccionar en el calendario del navegador
-        fNacInput.addEventListener('input', actualizar);
-        fNacInput.addEventListener('change', actualizar);
-
-        // Si el usuario regresa a esta página (Atrás), dispara el cálculo si ya había una fecha
-        if (fNacInput.value) actualizar();
+        fNacInput.addEventListener('change', actualizarEdad);
+        if (fNacInput.value) actualizarEdad();
     }
+
+    // Asignar guardado a los radios
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', () => guardarRadios(radio.name));
+    });
+}
+
+// Validación corregida para Radio Buttons
+function validarPaso1() {
+    const activoSi = document.getElementById('radio_activo_si');
+    const edadCampo = document.getElementById('edad');
+    const edad = parseInt(edadCampo.value, 10) || 0;
+
+    if (!activoSi || !activoSi.checked) {
+        alert("⚠️ No puedes continuar: Debes confirmar que te encuentras activo en tus estudios (Selecciona 'Sí').");
+        return false;
+    }
+
+    if (edad < 17 || edad > 39) {
+        alert(`⚠️ Edad no permitida (${edad} años): Debes tener entre 17 y 39 años.`);
+        return false;
+    }
+
+    return true; 
 }
 
 /**
@@ -71,24 +107,19 @@ function calcularEdad(fecha) {
  * @returns {boolean} True si permite avanzar, False si bloquea el flujo.
  */
 function validarPaso1() {
-    const checkActivo = document.getElementById('check_activo');
+    const activoSi = document.getElementById('radio_activo_si');
     const edadCampo = document.getElementById('edad');
-    
-    // Convierte el valor del campo edad a número entero para la comparación
     const edad = parseInt(edadCampo.value, 10) || 0;
 
-    // Validación 1: El usuario debe marcar obligatoriamente el checkbox de "activo"
-    if (!checkActivo || !checkActivo.checked) {
-        alert("⚠️ No puedes continuar: Debes confirmar que te encuentras activo en tus estudios.");
+    if (!activoSi || !activoSi.checked) {
+        alert("⚠️ No puedes continuar: Debes confirmar que te encuentras activo en tus estudios (Selecciona 'Sí').");
         return false;
     }
 
-    // Validación 2: Rango de edad permitido (17 a 39 años inclusive)
     if (edad < 17 || edad > 39) {
-        alert(`⚠️ Edad no permitida (${edad} años): Debes tener entre 17 y 39 años para solicitar la beca.`);
+        alert(`⚠️ Edad no permitida (${edad} años): Debes tener entre 17 y 39 años.`);
         return false;
     }
 
-    // Si pasa todas las pruebas, retorna true para permitir el cambio de paso
     return true; 
 }

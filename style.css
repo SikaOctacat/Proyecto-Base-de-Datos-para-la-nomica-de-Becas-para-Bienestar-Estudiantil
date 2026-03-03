@@ -26,7 +26,7 @@ body {
 
 h2 { 
     color: #FF6600; 
-    font-size: 1.1rem; 
+    font-size: 1.5rem; 
     margin-top: 0; 
     border-bottom: 1px solid #eee; 
     padding-bottom: 8px; 
@@ -61,6 +61,32 @@ input, select, textarea {
     border-radius: 4px;
     font-size: 0.9rem;
     box-sizing: border-box; /* Asegura que el padding no desborde el ancho */
+}
+
+/* Contenedor de la fila de pregunta */
+.radio-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 5px 0;
+}
+
+.radio-row span {
+    flex: 1; /* Hace que la pregunta ocupe el espacio disponible */
+}
+
+/* Grupo de opciones Sí/No */
+.radio-options {
+    display: flex;
+    gap: 10px;
+}
+
+.radio-options label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-weight: normal !important; /* Para que no herede el negrita de los labels de arriba */
 }
 
 /* ==========================================================================
