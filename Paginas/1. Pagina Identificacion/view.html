@@ -14,49 +14,56 @@
         -->
 
         <div>
-            <label> Primer nombre </label>
-            <input type="text" name="nombre1" placeholder="Ej: Juan" required>
+            <label> Primer nombre 
+                <input type="text" name="nombre1" placeholder="Ej: Juan" required>
+            </label>
         </div>
 
         <div>
-            <label> Segundo nombre</label>
-            <input type="text" name="nombre2" placeholder="Ej: Alberto" required>
+            <label> Segundo nombre
+                <input type="text" name="nombre2" placeholder="Ej: Alberto" required>
+            </label>
         </div>
 
         <div>
-            <label> Apellido paterno </label>
-            <input type="text" name="apellido_paterno" placeholder="Ej: Pérez" required>
+            <label> Apellido paterno 
+                <input type="text" name="apellido_paterno" placeholder="Ej: Pérez" required>
+            </label>
         </div>
 
         <div>
-            <label> Apellido materno</label>
-            <input type="text" name="apellido_materno" placeholder="Ej: García" required>
+            <label> Apellido materno
+                <input type="text" name="apellido_materno" placeholder="Ej: García" required>
+            </label>
         </div>
 
         <div>
-            <label>C.I.</label>
-            <input type="text" 
-                   name="cedula" 
-                   placeholder="Ej: 28123456" 
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                   maxlength="9"
-                   required>
+            <label>C.I.
+                <input type="text" 
+                    name="cedula" 
+                    placeholder="Ej: 28123456" 
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    maxlength="9"
+                    required>
+            </label>
         </div>
 
         <div>
-            <label>Teléfono</label>
-            <input type="tel" 
-                   name="tel_estudiante" 
-                   placeholder="Ej: 04121234567"
-                   maxlength="11"
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                   pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$"
-                   title="Debe ser un formato válido (04XX o 02XX seguido de 7 números)">
+            <label>Teléfono
+                <input type="tel" 
+                    name="tel_estudiante" 
+                    placeholder="Ej: 04121234567"
+                    maxlength="11"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$"
+                    title="Debe ser un formato válido (04XX o 02XX seguido de 7 números)">
+            </label>
         </div>
 
         <div>
-            <label>Fecha de Nacimiento</label>
-            <input type="date" name="f_nac" id="f_nac" required>
+            <label>Fecha de Nacimiento
+                <input type="date" name="f_nac" id="f_nac" required>
+            </label>
         </div>
 
         <div>
@@ -81,31 +88,45 @@
         </div>
 
         <div>
-            <label>Email</label>
-            <input type="email" name="correo" placeholder="ejemplo@gmail.com">
+            <label>Email
+                <input type="email" name="correo" placeholder="ejemplo@gmail.com">
+            </label>
         </div>
 
         <div>
-            <label>Código de estudiante</label>
-            <input type="text" name="cod_est" placeholder="Ej: INT00..." required>
+            <label>Código de estudiante
+                <input type="text" name="cod_est" placeholder="Ej: INT00..." required>
+            </label>
         </div>
 
         <div>
             <!-- class= 'full-width'-->
-            <label>Código del Carnet de la Patria</label>
-            <input type="text" 
-                   name="C_Patria" 
-                   placeholder="Ej: 0012345678 (10 dígitos)" 
-                   maxlength="10"
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <label>Código del Carnet de la Patria
+                <input type="text" 
+                        name="C_Patria" 
+                        placeholder="Ej: 0012345678 (10 dígitos)" 
+                        maxlength="10"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </label>
         </div>
+
+        <div>
+            <label>Beneficio al cual aspira</label>
+            <select name="edo_civil">
+                <option value="" disabled selected>Seleccione su beneficio a obtener...</option>
+                <option value="Beca estudiantil">Beca estudiantil</option>
+                <option value="Ayudantía">Ayudantía</option>
+                <option value="Preparaduría">Preparaduría</option>
+            </select>
+        </div>
+
     </div>
 
     <div class="checkbox-group" style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
             ¿Posees un trabajo?
             <input type="checkbox" name="trabaja" id="check_trabaja" style="width: auto;"> 
-        </label>
+        </label> 
         <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
             ¿Viajas frecuentemente?
             <input type="checkbox" name="viaja" style="width: auto;"> 
@@ -114,5 +135,24 @@
             ¿Te encuentras activo en tus estudios?
             <input type="checkbox" name="activo" id="check_activo" style="width: auto;"> 
         </label>
+
+        <!--
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            ¿Posees un trabajo?
+            Sí <input type="radio" name="trabaja" id="check_trabaja" style="width: auto;"> 
+            No <input type="radio" name="trabaja" id="check_trabaja" style="width: auto;">
+        </label> 
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            ¿Viajas frecuentemente?
+            Sí <input type="radio" name="viaja" style="width: auto;"> 
+            No <input type="radio" name="viaja" style="width: auto;"> 
+        </label>
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            ¿Te encuentras activo en tus estudios?
+            Sí <input type="radio" name="activo" id="check_activo" style="width: auto;"> 
+            No <input type="radio" name="activo" id="check_activo" style="width: auto;">
+        </label>
+-->
     </div>
+    
 </div>
