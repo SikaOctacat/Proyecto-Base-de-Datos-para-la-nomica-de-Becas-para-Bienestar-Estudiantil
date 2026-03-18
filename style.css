@@ -186,7 +186,7 @@ input, select, textarea {
     border: 1px solid #ccc; 
     border-radius: 6px;
     font-size: 0.95rem;
-    box-sizing: border-box; /* Asegura que el padding no desborde el ancho */
+    box-sizing: border-box; /* Asegura que el padding no desborde el ancho*/
     background-color: #fdfdfd;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
