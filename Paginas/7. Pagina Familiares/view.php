@@ -1,3 +1,9 @@
+<?php if(session_status()==PHP_SESSION_NONE) session_start(); ?>
+<footer class="site-footer">
+    <div style="max-width:900px;margin:0 auto;padding:12px;color:#666;text-align:center;">
+        <small>UPTAG - Sistema de Solicitudes · &copy; <?php echo date('Y'); ?></small>
+    </div>
+</footer>
 <div class="step-content">
     <h2>7. Familiares del Estudiante</h2>
     <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">Indique las personas que conviven con usted.</p>
@@ -7,6 +13,7 @@
             <thead>
                 <tr style="background-color: #f4f4f4;">
                     <th>Nombre</th>
+                    <th>Apellidos</th>
                     <th>Parentesco</th>
                     <th style="width: 60px;">Edad</th>
                     <th>Instrucción</th>

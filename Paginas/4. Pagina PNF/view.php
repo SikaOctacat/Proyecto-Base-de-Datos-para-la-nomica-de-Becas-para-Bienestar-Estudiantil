@@ -1,8 +1,13 @@
+<?php if(session_status()==PHP_SESSION_NONE) session_start(); ?>
+<footer class="site-footer">
+    <div style="max-width:900px;margin:0 auto;padding:12px;color:#666;text-align:center;">
+        <small>UPTAG - Sistema de Solicitudes · &copy; <?php echo date('Y'); ?></small>
+    </div>
+</footer>
 <div class="step-content">
     <h2>4. Información del PNF</h2>
     <div class="grid-container">
-        <!-- class="full-width" -->
-        <div>
+        <div class="full-width">
             <label>Carrera (PNF)</label>
             <select name="carrera" required>
                 <option value="" disabled selected>Seleccione su PNF...</option>
@@ -24,10 +29,10 @@
             <label>Fecha Ingreso</label>
             <input type="date" name="f_ingreso" required>
         </div>
-        <!-- <div>
+        <div>
             <label>Código de estudiante</label>
             <input type="text" name="cod_est" placeholder="Ej: INT00..." required>
-        </div> -->
+        </div>
 
         <div>
             <label>Trayecto actual</label>
