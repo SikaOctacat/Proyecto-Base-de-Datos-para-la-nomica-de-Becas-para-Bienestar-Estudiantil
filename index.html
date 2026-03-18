@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Becas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    ICONO BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+    -->
+
+    <label for="btn-menu" class="btn-abrir-menu"> ☰ </label>
+
+    <div id="sidebar-placeholder"></div>
+
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    ICONO BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+    -->
+
+    <div id="main-container">
+        <h2>SISTEMA DE SOLICITUD DE BECAS</h2>
+        
+        <div class="progress-wrapper">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <form id="becaForm">
+            <div id="dynamic-content"></div>
+
+            <div class="nav-buttons">
+                <button type="button" id="prevBtn" class="btn-prev">Anterior</button>
+                <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    CARGA BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+    -->
+
+    <script>
+        // Esta función carga la barra lateral de forma independiente
+        fetch('./sidebar.html')
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById('sidebar-placeholder').innerHTML = data;
+            })
+            .catch(err => console.error("Error al cargar la barra lateral:", err));
+    </script>
+
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    CARGA BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+    -->
+
+    <script src="main.js"></script>
+    <script src="Paginas/7. Pagina Familiares/script.js"></script>
+    <script src="script.js"></script
+</body>
+</html>
