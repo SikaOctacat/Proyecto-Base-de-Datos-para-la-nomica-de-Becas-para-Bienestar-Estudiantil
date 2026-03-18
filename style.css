@@ -1,37 +1,163 @@
 /* ==========================================================================
+   TIPOGRAFÍA MODERNA
+   ========================================================================== */
+/* importar fuente desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+/* ==========================================================================
    ESTILOS BASE Y CONTENEDOR PRINCIPAL
    ========================================================================== */
 body {
-    background-color: #eee;
-    font-family: Arial, sans-serif;
-    /* Centrado absoluto del formulario en la pantalla */
+    background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.6)), url('img/fondo.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    font-family: 'Montserrat', Arial, sans-serif;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
     min-height: 100vh;
     margin: 0;
+    align-items: center;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', Arial, sans-serif;
+}
+
+/* ajustar pesos para textos */
+p, label, input, select, textarea, button, a {
+    font-weight: 400;
+}
+
+body.page-visible { opacity: 1; }
+
 #main-container {
-    background: white;
+    background: rgba(250, 250, 250, 0.75); /* Glassmorphism background */
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
     width: 95%;
     max-width: 850px;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    /* Identidad visual: línea superior naranja */
+    padding: 0 24px 24px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.125);
     border-top: 6px solid #FF6600;
-    position: relative; /* Necesario para el posicionamiento del botón 'Borrar' */
+    position: relative;
+    margin: 40px auto;
+    flex: 1 0 auto;
+    animation: slideIn 0.5s ease-out;
 }
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Encabezado dentro del contenedor principal */
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 0 12px 0;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+}
+.page-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #FF6600, #FF9D00);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+/* header-links unused after relocation of actions */
+/* (se mantiene vacío por si se añade contenido en el futuro) */
+.page-header .header-links {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+}
+.page-header .header-links a { color: #FF6600; font-weight:600; text-decoration:none; }
+.page-header .header-links a:hover { text-decoration:underline; }
+
+/* estilo para enlace de admin dentro del menú deslizable */
+.slide-menu .admin-link {
+    font-weight: 700;
+    color: #FF6600;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+}
+.slide-menu .admin-link:hover { background: #fff3e0; }
+
+/* estilo para item de cerrar sesión dentro de la lista */
+.slide-menu .logout-item a {
+    color: #e74040;
+    padding: 8px 10px;
+    font-weight: 600;
+    display: block;
+}
+.slide-menu .logout-item a:hover {
+    background: #fdecea;
+}
+
+/* botón de borrado situado en el encabezado, separado por espacio del resto */
+.btn-clear-data {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    margin-left: auto; /* empuja el botón al extremo derecho */
+}
+.btn-clear-data:hover {
+    background-color: #c82333;
+}
+
+/* modern progress bar */
+.progress-wrapper {
+    background: #f0f0f0;
+    height: 8px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    background: linear-gradient(90deg, #FF6600 0%, #FFA500 100%);
+    width: 0%;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+
+/* animation for step transitions */
+#dynamic-content { transition: opacity 0.3s ease-in-out; }
+#dynamic-content.loading { opacity: 0.3; }
+
+/* también aplicar al contenedor principal para index */
+#main-container, .hero { transition: opacity 0.3s ease-in-out; }
 
 h2 { 
     color: #FF6600; 
-    font-size: 1.5rem; 
+    font-size: 1.1rem; 
     margin-top: 0; 
     border-bottom: 1px solid #eee; 
     padding-bottom: 8px; 
     margin-bottom: 15px; 
 }
+
+/* enlaces globales en naranja suave */
+a {
+    color: #FFA500; /* naranja suave */
+    text-decoration: none;
+}
+
+a:hover { color: #e69500; }
 
 /* ==========================================================================
    FORMULARIOS Y SISTEMA DE GRID (Usado en pasos 1, 2, 3, 4, 8)
@@ -56,7 +182,7 @@ label {
 
 input, select, textarea { 
     width: 100%; 
-    padding: 8px; 
+    padding: 10px 12px; 
     border: 1px solid #ccc; 
     border-radius: 6px;
     font-size: 0.95rem;
@@ -65,31 +191,151 @@ input, select, textarea {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Contenedor de la fila de pregunta */
-.radio-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 5px 0;
+/* Campos de formulario en estado focus o activo */
+input:focus, 
+select:focus, 
+textarea:focus {
+    outline: none;
+    border-color: #FF6600;
+    box-shadow: 0 0 0 4px rgba(255,102,0,0.1);
+    background-color: #fff;
 }
 
-.radio-row span {
-    flex: 1; /* Hace que la pregunta ocupe el espacio disponible */
+/* Placeholder moderno */
+input::placeholder,
+textarea::placeholder {
+    color: #999;
+    opacity: 1; /* consistencia entre navegadores */
 }
 
-/* Grupo de opciones Sí/No */
-.radio-options {
-    display: flex;
-    gap: 10px;
+/* Inputs disabled/readonly */
+input:disabled,
+textarea:disabled,
+input[readonly],
+textarea[readonly] {
+    background-color: #ececec;
+    cursor: not-allowed;
 }
 
-.radio-options label {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+
+/* ==========================================================================
+   ESTILOS DEL FORMULARIO DE REGISTRO
+   ========================================================================== */
+.form-wrap {
+    max-width: 420px;
+    margin: 50px auto;
+    padding: 20px 24px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.form-wrap h2 {
+    margin-top: 0;
+    color: #FF6600;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.form-message {
+    margin: 15px 0;
+    padding: 10px 12px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+.form-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+.form-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* ==========================================================================
+   BOTONES MODERNOS
+   ========================================================================== */
+/* base button styles, applies to <button> and input types as well as any
+   element using the .btn class */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: #FF6600;
+    border: none;
+    border-radius: 5px;
     cursor: pointer;
-    font-weight: normal !important; /* Para que no herede el negrita de los labels de arriba */
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.25s ease, transform 0.1s ease,
+        box-shadow 0.2s ease;
 }
+
+button:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover,
+.btn:hover {
+    background-color: #e65500;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255,102,0,0.3);
+}
+
+button:active,
+input[type="button"]:active,
+input[type="submit"]:active,
+input[type="reset"]:active,
+.btn:active {
+    transform: scale(0.98);
+}
+
+button:focus,
+input[type="button"]:focus,
+input[type="submit"]:focus,
+input[type="reset"]:focus,
+.btn:focus {
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(255,102,0,0.5);
+}
+
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled,
+.btn.disabled,
+.btn:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* variants for contextual usage */
+.btn-primary { background-color: #FF6600; }
+.btn-secondary { background-color: #6c757d; }
+.btn-danger { background-color: #dc3545; }
+.btn-success { background-color: #28a745; }
+.btn-warning { background-color: #ffc107; color: #212529; }
+
+.btn-primary:hover { background-color: #e65500; }
+.btn-secondary:hover { background-color: #5a6268; }
+.btn-danger:hover { background-color: #c82333; }
+.btn-success:hover { background-color: #218838; }
+.btn-warning:hover { background-color: #e0a800; }
+
+/* utility to make links look like buttons */
+a.btn { display: inline-block; }
+
 
 /* ==========================================================================
    PÁGINA 5: LISTADO DE MATERIAS (Selección múltiple)
@@ -234,6 +480,39 @@ textarea {
     gap: 10px; 
 }
 
+/* global loading overlay */
+#loadingOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+#loadingOverlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+#loadingOverlay .spinner {
+    border: 4px solid rgba(0,0,0,0.1);
+    border-top-color: #FF6600;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* fade-out utility used when navigating away */
+.fade-out {
+    opacity: 0 !important;
+    transition: opacity 0.4s ease;
+}
+
 .nav-buttons button { 
     flex: 1; /* Hace que todos los botones de la navegación tengan el mismo ancho */
     padding: 12px 20px; 
@@ -288,231 +567,175 @@ textarea {
 .oculto { display: none !important; }
 .deshabilitado { opacity: 0.5; cursor: not-allowed; }
 
-
-
-
-/* 
-    
-    ----------------------------------------------------------------------
-    
-    ESTILOS BARRA LATERAL
-
-    ----------------------------------------------------------------------
-     
-*/
-
-.menu-title {
-    color: #ff6200;
-    text-align: center;
-    padding: 15px;
-    font-family: Arial, sans-serif;
-    font-size: 1.2rem;
-    /* Línea gris más gruesa para separar el cabezal */
-    border-bottom: 2px solid #444; 
-}
-
-.header {
-    width: 100%;
-    height: 70px;
-    position: fixed;
-    top: 0; left: 0;
-}
-
-.container {
-    width: 90%;
-    max-width: 1200px;
-    margin: auto;
-}
-
-.container .btn-menu, .logo{
-    float: left;
-    line-height: 70px;
-}
-
-.container .btn-menu label{
-    color: #fff;
-    font-size: 25px;
+/* ==========================================================================
+    MENÚ DESPLEGABLE (para las páginas internas)
+    ========================================================================== */
+.dropdown { position: relative; display: inline-block; }
+.dropbtn {
+    background: #0056b3;
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
     cursor: pointer;
-    }
-
-.logo h1{
-    color: #fff;
-    font-weight: 400;
-    font-size: 22px;
-    margin-left: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
-
-.container .menu {
-    float: right;
-    line-height: 70px;
+.dropbtn:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,86,179,0.12); }
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 200px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    z-index: 1000;
+    right: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: opacity 0.15s ease;
 }
-
-.container .menu a{
-    display: inline-block;
-    padding: 15px 10px;
-    line-height: normal;
+.dropdown-content a {
+    color: #333;
+    padding: 10px 14px;
     text-decoration: none;
+    display: block;
+    font-size: 0.95rem;
+}
+.dropdown-content a:hover { background: #f4f6fb; }
+.dropdown:hover .dropdown-content { display: block; }
+.page-nav { margin-bottom: 12px; display:flex; justify-content:flex-end; }
+
+/* ==========================================================================
+    FOOTER GLOBAL
+    ========================================================================== */
+footer.site-footer {
+    margin-top: auto; /* empuja el footer al final de la página */
+    padding: 18px 12px;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    width: 100%;
+    background: transparent;
+}
+footer.site-footer a { color: #0056b3; text-decoration: none; font-weight:600; }
+
+/* Ajustes responsivos: permitir que el layout sea usable en móvil */
+@media (max-width: 700px) {
+     #main-container { width: 96%; padding: 14px; }
+     .page-nav { justify-content: center; }
+     .dropdown-content { right: 10px; left: 10px; min-width: unset; }
+}
+
+/* ==========================================================================
+    MODAL DE LOGIN
+    ========================================================================== */
+.modal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); z-index: 2000; }
+.modal-content { 
+    background: rgba(255, 255, 255, 0.82); 
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    padding: 30px; 
+    border-radius: 24px; 
+    width: 100%; 
+    max-width: 420px; 
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3); 
+    position: relative; 
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.modal h3, .modal-content h3 { margin-top: 0; color:#0056b3 }
+.modal .modal-close { position: absolute; right: 10px; top: 10px; background: transparent; border: none; font-size: 20px; cursor: pointer; color:#666 }
+.modal input[type="text"], .modal input[type="password"] { margin-top:6px; margin-bottom:10px; }
+.oculto { display: none !important; }
+
+/* ==========================================================================
+   SLIDE MENU (top-left)
+   ========================================================================== */
+.menu-icon {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(255, 165, 0, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: #fff;
-    transition: all 0.3s ease;
-    border-bottom: 2px solid transparent;
-    font-size: 15px;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 22px;
+    z-index: 2200;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s;
 }
+.menu-icon:hover { transform: scale(1.1); background: #FF6600; }
 
-.container .menu a:hover{
-    border-bottom: 2px solid #c7c7c7;
-    padding: 5px 10px;
-}
-
-/* Asegúrate de que esto exista */
-#btn-menu {
-    display: none; /* Oculta el checkbox real, solo usamos su funcionalidad */
-}
-
-/* Corrección en style.css */
-
-
-/* 2. El fondo oscuro que cubre el formulario al abrir */
-.container-menu {
+.slide-menu {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 280px;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7); /* Oscurece el fondo */
-    z-index: 1200;      /* Mayor que el botón para cubrirlo si es necesario */
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.5s ease;
-}
-
-#btn-menu:checked ~ .container-menu {
-    opacity: 1;
-    visibility: visible;
-}
-
-.cont-menu {
-    width: 260px;
-    background: #1c1c1c;
-    height: 100vh;
-    position: fixed;
-    transition: all 500ms ease;
-    transform: translateX(-100%);
-    box-shadow: 2px 0px 10px rgba(0,0,0,0.5);
-    
-}
-
-#btn-menu:checked ~ .container-menu .cont-menu{
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0%);
-}
-
-.cont-menu nav{
-    /*transform: translateY(15%);*/
-    /*padding-top: 50px;*/
-    /*flex: 1;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    transform: translateX(-300px);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2100;
+    padding: 80px 16px 24px;
     display: flex;
-    flex-direction: column;*/
-    padding-top: 0px; /* Eliminamos el espacio sobrante arriba */
-    margin-top: 10px; /* Pequeño margen para no pegar al borde del título */
-    
+    flex-direction: column;
+    justify-content: space-between;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.cont-menu nav a {
-    display: block;
+.slide-menu.open { transform: translateX(0); }
+.slide-menu ul { list-style: none; padding: 0; margin: 0; }
+.slide-menu li { margin-bottom: 8px; }
+.slide-menu a {
+    color: #333;
     text-decoration: none;
-    padding: 11px 20px;
-    font-size: 14px;
-    color: #c7c7c7;
-    border-bottom: 1px solid #333; /* Línea fina normal */
-    transition: all 400ms ease;
+    display:block;
+    padding:8px 10px;
+    border-radius:6px;
+    transition: background 0.2s ease, transform 0.15s ease;
 }
 
-/* 3. QUITAR la línea debajo de 'Verificación de datos' */
-/* Usamos :last-child para que el último enlace no tenga borde */
-.cont-menu nav a:last-child {
-    border-bottom: none !important;
+.slide-menu a:hover {
+    background:#fff3e0; /* light orange hover */
+    transform: translateX(4px);
 }
 
-.cont-menu nav a:hover{
-    border-left: 5px solid #ff6200;
-    background: #252525;
-    color: #fff;
+.slide-menu a:focus {
+    outline: none;
+    background: #ffe9cc;
 }
 
-.cont-menu label {
-    position: absolute;
-    right: 5px;
-    top: 10px;
-    color: #fff;
-    cursor: pointer;
-    font-size: 18px;
+.slide-menu a.active {
+    font-weight:700;
+    color:#FFA500;
 }
+ .slide-menu a.disabled { color:#999; pointer-events:none; }
 
-.icon-equis{
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    color: #ff6200; 
-    cursor: pointer;
-    font-size: 20px;
-    font-weight: bold;
-    width: 30px;
-    line-height: 30px;
-}
-
-.btn-salir {
-    color: #ff4444 !important;
-    font-family: 'Arial Black', sans-serif; 
-    text-decoration: none;
-    font-size: 15px;
-    display: inline-block; 
-    align-items: center;
-    margin-top: 10px;
-    transition: 0.3s;
-    text-align: center;
-}
-
-.btn-salir:hover {
-    color: white !important;
-    transform: scale(1.1);
-}
-
-
-/* 4. Línea arriba de 'Cerrar sesión' (Igual a la del título) */
-.footer-menu {
-    position: absolute;
+/* footer always visible */
+.slide-menu .menu-footer {
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+    position: sticky;
     bottom: 0;
-    width: 100%;
-    padding: 25px 0;
-    text-align: center;
-    background: #1c1c1c;
-    /* Misma apariencia que la del título: 2px y color #444 */
-    border-top: 2px solid #444; 
-    border-bottom: none;
+    background: #fff;
 }
 
-.menu-divider {
-    width: 80%; /* Para que no toque los bordes y se vea centrada */
-    margin: 0 auto 15px auto;
+.slide-menu .logout-link { color: #e74040; font-weight:700; }
+
+@media (max-width: 700px) {
+    .slide-menu { width: 80vw; }
 }
 
-/* 1. El botón de activación (El ícono de las 3 barras) */
-.btn-abrir-menu {
-    position: fixed;   /* Flota sobre todo el diseño */
-    top: 20px;
-    left: 20px;
-    z-index: 1100;     /* Valor alto para estar sobre el formulario */
-    background: #1c1c1c;
-    color: #ff6200;
-    padding: 12px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 24px;   /* Tamaño del ícono ☰ */
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: background 0.3s;
-}
-
-.btn-abrir-menu:hover {
-    background: #333;
+/* Animations */
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }

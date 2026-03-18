@@ -24,6 +24,7 @@ function initFamiliares() {
         // Inyectamos las celdas con inputs. El atributo 'name' incluye el ID para evitar colisiones en el storage.
         nuevaFila.innerHTML = `
             <td><input type="text" name="f_nom_${id}" placeholder="Nombre" required style="width:90%"></td>
+            <td><input type="text" name="f_ape_${id}" placeholder="Apellidos" required style="width:90%"></td>
             <td><input type="text" name="f_par_${id}" placeholder="Parentesco" required style="width:90%"></td>
             <td><input type="number" name="f_eda_${id}" min="0" max="120" placeholder="0" style="width:50px"></td>
             <td><input type="text" name="f_ins_${id}" placeholder="Nivel" style="width:90%"></td>
