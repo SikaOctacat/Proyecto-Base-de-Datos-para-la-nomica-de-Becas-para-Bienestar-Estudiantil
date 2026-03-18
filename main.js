@@ -1,182 +1,109 @@
 /**
  * ARCHIVO: main.js (Raíz) - Lógica de Navegación e Integración
- * Este script coordina la carga dinámica de formularios (SPA), la persistencia de datos 
- * en memoria y el control del flujo de pasos del usuario.
+ * Versión simplificada: 8 pasos (Se eliminó Laboral y Materias)
  */
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO INICIAL ---
-    let currentStep = 1; // Rastrea el paso actual del formulario
-    let maxStepReached = 1; // Rastrea el paso más lejano alcanzado por el usuario
-    window.formSubmitted = false; // Flag para validar si los datos fueron realmente enviados
-    const totalSteps = 10; // Límite total de pantallas definidas
+    let currentStep = 1; 
+    let maxStepReached = 1; 
+    window.formSubmitted = false; 
+    const totalSteps = 8; // Nuevo límite total
     
-    // Referencias a elementos clave del DOM
-    const viewPort = document.getElementById('dynamic-content'); // Contenedor donde se inyecta el HTML de cada paso
-    const progressBar = document.getElementById('progressBar'); // Elemento visual de progreso
-    const mainContainer = document.getElementById('main-container'); // Contenedor principal del layout
+    const viewPort = document.getElementById('dynamic-content'); 
+    const progressBar = document.getElementById('progressBar'); 
+    const mainContainer = document.getElementById('main-container'); 
     
     // --- PRIORIDAD: PERFIL DE ESTUDIANTE ---
-    // Si el usuario es estudiante, mostramos sus datos directamente y quitamos el formulario
     const userRole = document.body.getAttribute('data-rol');
     if (userRole === 'estudiante') {
         showRegistrationSummary();
         return;
     }
     
-    // Objeto global para almacenar los datos del formulario entre cambios de página
     window.formDataStorage = {}; 
 
-    // --- INTEGRACIÓN DEL BOTÓN DE LIMPIEZA ---
-    // Se crea dinámicamente el botón para resetear los campos de la vista actual
-    const btnLimpiar = document.createElement('button');
-    btnLimpiar.className = 'btn-clear-data';
-    btnLimpiar.innerHTML = 'Borrar Campos';
-    // agregarlo al área de enlaces del encabezado (Admin, Logout)
-    const headerLinks = document.querySelector('.page-header .header-links');
-    if (headerLinks) {
-        // insert before logout link to ensure margin-left:auto works
-        const logout = headerLinks.querySelector('a.btn-danger');
-        if (logout) headerLinks.insertBefore(btnLimpiar, logout);
-        else headerLinks.appendChild(btnLimpiar);
-    } else if (mainContainer) {
-        // fallback: en caso de no existir, añadir al mainContainer
-        mainContainer.appendChild(btnLimpiar);
-    }
-
-    // Lógica al hacer clic en "Borrar Campos"
-    btnLimpiar.onclick = () => {
-        if (confirm("¿Estás seguro de que deseas borrar los datos de esta página?")) {
-            // Selecciona todos los elementos de entrada en la vista actual
-            const inputs = viewPort.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                // Resetea el valor según el tipo de input
-                if (input.type === 'checkbox') input.checked = false;
-                else input.value = '';
-                
-                // Elimina la entrada correspondiente del almacenamiento global si tiene un nombre (name)
-                if (input.name) delete window.formDataStorage[input.name];
-            });
-            
-            // Caso especial: Reset manual para el campo 'edad' si está en el Paso 1
-            if (currentStep === 1 && document.getElementById('edad')) {
-                document.getElementById('edad').value = '00';
-            }
-        }
-    };
-
-    // Mapeo de los números de paso con sus respectivas carpetas físicas en el servidor
+    // Mapeo reestructurado (8 pasos seguidos)
     const folderMap = {
         1: "1. Pagina Identificacion",
         2: "2. Pagina Residencia",
-        3: "3. Pagina Laboral",
-        4: "4. Pagina PNF",
-        5: "5. Pagina Materias",
-        6: "6. Pagina Record academico",
-        7: "7. Pagina Familiares",
-        8: "8. Pagina Datos extra",
-        9: "9. Verificacion",
-        10: "10. Pantalla final"
+        3: "3. Pagina PNF", // Antes era 4
+        4: "4. Pagina Record academico", // Antes era 6
+        5: "5. Pagina Familiares", // Antes era 7
+        6: "6. Pagina Datos extra", // Antes era 8
+        7: "7. Verificacion", // Antes era 9
+        8: "8. Pantalla final" // Antes era 10
     };
 
     /**
-     * Guarda los valores actuales de los inputs del DOM en el objeto global formDataStorage
+     * Guarda los valores actuales en memoria
      */
     window.saveCurrentData = () => {
+        const viewPort = document.getElementById('dynamic-content');
         const inputs = viewPort.querySelectorAll('input, select, textarea');
+        
         inputs.forEach(input => {
             if (input.name) {
-                // Almacena booleanos para checkboxes o el string value para el resto
-                window.formDataStorage[input.name] = (input.type === 'checkbox') ? input.checked : input.value;
+                if (input.type === 'checkbox') {
+                    window.formDataStorage[input.name] = input.checked;
+                } 
+                else if (input.type === 'radio') {
+                    if (input.checked) window.formDataStorage[input.name] = input.value;
+                } 
+                else {
+                    window.formDataStorage[input.name] = input.value;
+                }
             }
         });
     };
 
     /**
-     * Recupera los valores guardados en formDataStorage y los inyecta en los inputs del DOM
+     * Restaura datos guardados
      */
     window.restoreDataGlobal = () => {
+        const viewPort = document.getElementById('dynamic-content');
         const inputs = viewPort.querySelectorAll('input, select, textarea');
+        
         inputs.forEach(input => {
-            // Priority 1: Data already in storage (user typed something)
-            if (window.formDataStorage[input.name] !== undefined) {
-                if (input.type === 'checkbox') input.checked = window.formDataStorage[input.name];
-                else input.value = window.formDataStorage[input.name];
+            const savedValue = window.formDataStorage[input.name];
+            if (savedValue !== undefined) {
+                if (input.type === 'checkbox') input.checked = savedValue;
+                else if (input.type === 'radio') input.checked = (input.value === savedValue);
+                else input.value = savedValue;
             } 
-            // Priority 2: Pre-filled data from Admin (studentProfile) if input is empty
-            else if (window.studentProfile) {
-                if (input.name === 'cedula' && window.studentProfile.ci) input.value = window.studentProfile.ci;
-                if (input.name === 'nombres' && window.studentProfile.nombres) input.value = window.studentProfile.nombres;
-                if (input.name === 'apellidos' && window.studentProfile.apellidos) input.value = window.studentProfile.apellidos;
-            }
         });
     };
 
     /**
-     * Función principal de carga: Obtiene el HTML y JS de cada paso de forma asincrona
+     * Carga dinámica de pasos
      */
     async function loadStep(stepNumber) {
-        // asegurar un step válido
-        if (typeof stepNumber === 'undefined' || stepNumber === null) {
-            stepNumber = Number(currentStep) || 1;
-        }
         stepNumber = Number(stepNumber) || 1;
         currentStep = stepNumber; 
         
         const folder = folderMap[stepNumber];
-        if (!folder) {
-            console.error('loadStep: paso inválido', stepNumber);
-            return;
-        }
+        if (!folder) return;
 
-        console.log(`[Flow] Cargando paso ${stepNumber}: ${folder}`);
+        if (stepNumber > maxStepReached) maxStepReached = stepNumber;
 
-        // Actualizar el paso máximo alcanzado
-        if (stepNumber > maxStepReached) {
-            maxStepReached = stepNumber;
-        }
-
-        // Mostrar estado de carga
         if(viewPort) {
             viewPort.classList.add('loading');
-            // Proporcionar feedback visual inmediato si tarda
-            if (viewPort.innerHTML.trim() === "") {
-                viewPort.innerHTML = '<div style="text-align:center; padding:50px; color:#666;">Cargando paso...</div>';
-            }
+            viewPort.innerHTML = '<div style="text-align:center; padding:50px; color:#666;">Cargando paso...</div>';
         }
         
-        // Codificar el nombre de la carpeta para manejar espacios correctamente en el servidor
-        const folderEncoded = encodeURIComponent(folder).replace(/%20/g, ' '); // Mantener espacios como espacios o codificar? 
-        // Mejor usar encodeURI que es para URLs completas y maneja espacios como %20
-        // Usar encodeURIComponent para cada segmento de la ruta, pero permitiendo slashes si es necesario?
-        // En este caso, folder es el segmento variable.
         const htmlPath = `Paginas/${folder}/view.php`; 
         const scriptPath = `Paginas/${folder}/script.js`;
 
         try {
-            console.log(`[Fetch] Iniciando petición a: ${htmlPath}`);
-            // 1. Cargar HTML
             const response = await fetch(htmlPath);
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: No se pudo acceder a la carpeta "${folder}". Verifique la ruta.`);
-            }
+            if (!response.ok) throw new Error(`No se pudo acceder a ${folder}`);
             const html = await response.text();
             
-            // Verificar si el HTML está vacío
-            if (!html || html.trim().length === 0) {
-                throw new Error("El sistema devolvió una página vacía. Verifique los archivos PHP del paso.");
-            }
-
-            // Limpiar marcador de posición e inyectar
             viewPort.innerHTML = html;
-
-            // Limpiar footers internos
             viewPort.querySelectorAll('footer.site-footer').forEach(f => f.remove());
 
-            // 2. Restaurar datos y UI
             window.restoreDataGlobal();
             if(typeof updateMenuState === 'function') updateMenuState(stepNumber);
 
-            // 3. Cargar Script
             const oldScript = document.getElementById('step-script');
             if (oldScript) oldScript.remove();
 
@@ -185,19 +112,21 @@ document.addEventListener('DOMContentLoaded', () => {
             script.src = `${scriptPath}?v=${Date.now()}`;
             
             script.onload = () => {
-                console.log(`[Flow] Script cargado para paso ${stepNumber}`);
                 const initFuncs = {
                     1: 'initIdentificacion',
-                    5: 'initMaterias',
-                    6: 'initRecord',
-                    7: 'initFamiliares',
-                    9: 'renderResumen',
-                    10: 'renderFinalStatus'
+                    2: 'initResidencia',
+                    4: 'initRecord',
+                    5: 'initFamiliares',
+                    7: 'renderResumen',
+                    8: 'renderFinalStatus'
                 };
                 const funcName = initFuncs[stepNumber];
                 if (funcName && typeof window[funcName] === 'function') {
                     window[funcName]();
                 }
+                
+                // IMPORTANTE: Llamar a la validación aquí
+                validarFormularioActual(); 
             };
 
             script.onerror = () => {
@@ -452,25 +381,99 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Valida los campos 'required' del paso actual.
+     * Pone bordes rojos y deshabilita el botón 'Siguiente' si falta algo.
+     */
+    function validarFormularioActual() {
+        const viewPort = document.getElementById('dynamic-content');
+        const nextBtn = document.getElementById('nextBtn');
+        if (!viewPort || !nextBtn) return;
+
+        // Buscamos todos los campos que tengan el atributo 'required'
+        const inputs = viewPort.querySelectorAll('input[required], select[required], textarea[required]');
+        let todoValido = true;
+
+        inputs.forEach(input => {
+            // Función para marcar error
+            const checkValidity = () => {
+                let esValido = true;
+                
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    // Para radio/checkbox, verificamos que alguno del mismo nombre esté marcado
+                    const group = viewPort.querySelectorAll(`input[name="${input.name}"]`);
+                    esValido = Array.from(group).some(i => i.checked);
+                } else {
+                    esValido = input.value.trim() !== "";
+                }
+
+                if (!esValido) {
+                    input.style.borderColor = '#d9534f'; // Rojo
+                    input.style.backgroundColor = '#fff8f8';
+                    todoValido = false;
+                } else {
+                    input.style.borderColor = ''; // Restaurar
+                    input.style.backgroundColor = '';
+                }
+                
+                // Re-evaluar el estado del botón cada vez que se escribe
+                actualizarEstadoBoton();
+            };
+
+            // Escuchar eventos para validar mientras el usuario escribe o cambia
+            input.removeEventListener('input', checkValidity);
+            input.removeEventListener('change', checkValidity);
+            input.addEventListener('input', checkValidity);
+            input.addEventListener('change', checkValidity);
+            
+            // Validación inicial
+            if (input.type !== 'checkbox' && input.type !== 'radio' && input.value.trim() === "") {
+                todoValido = false;
+            }
+        });
+
+        function actualizarEstadoBoton() {
+            let actualValido = true;
+            inputs.forEach(i => {
+                if (i.type === 'checkbox' || i.type === 'radio') {
+                    const group = viewPort.querySelectorAll(`input[name="${i.name}"]`);
+                    if (!Array.from(group).some(radio => radio.checked)) actualValido = false;
+                } else {
+                    if (i.value.trim() === "") actualValido = false;
+                }
+            });
+            
+            nextBtn.disabled = !actualValido;
+            nextBtn.style.opacity = actualValido ? "1" : "0.5";
+            nextBtn.style.cursor = actualValido ? "pointer" : "not-allowed";
+        }
+
+        actualizarEstadoBoton();
+    }
+
+    /**
      * Gestiona la visibilidad y estados de los elementos de navegación
      */
     function actualizarInterfaz(step) {
-        // Actualiza el ancho de la barra de progreso proporcionalmente
         if (progressBar) progressBar.style.width = `${(step / totalSteps) * 100}%`;
         
-        // Oculta "Atrás" en la primera y última página
         const prevBtn = document.getElementById('prevBtn');
-        if (prevBtn) prevBtn.style.display = (step <= 1 || step >= 10) ? 'none' : 'inline-block';
-        
-        // Cambia el texto del botón principal en el paso de verificación y oculta en el final
-        const nextBtn = document.getElementById('nextBtn');
-        if (nextBtn) {
-            nextBtn.textContent = (step === 9) ? "Confirmar" : "Siguiente";
-            nextBtn.style.display = (step >= 10) ? 'none' : 'inline-block';
+        if (prevBtn) prevBtn.style.display = (step <= 1 || step >= 8) ? 'none' : 'inline-block';
+
+        // --- GESTIÓN DEL BOTÓN DE LIMPIEZA ---
+        const btnLimpiar = document.getElementById('btnLimpiarRegistro');
+        if (btnLimpiar) {
+            // Se oculta desde el paso 7 en adelante (Verificación y Final)
+            btnLimpiar.style.display = (step >= 7) ? 'none' : 'block';
         }
         
-        // El botón de limpiar solo es visible en los pasos de captura de datos (1 al 8)
-        btnLimpiar.style.display = (step > 0 && step <= 8) ? 'block' : 'none';
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) {
+            nextBtn.textContent = (step === 7) ? "Confirmar" : "Siguiente";
+            nextBtn.style.display = (step >= 8) ? 'none' : 'inline-block';
+            
+            // Ejecutar validación inicial al cargar el paso
+            validarFormularioActual(); 
+        }
     }
 
     /**
@@ -479,26 +482,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtnEl = document.getElementById('nextBtn');
     if (nextBtnEl) {
         nextBtnEl.onclick = async () => {
-            // Ejecución de validaciones externas si están presentes en los scripts de cada paso
-            if (currentStep === 1 && typeof validarPaso1 === 'function') {
-                if (!validarPaso1()) return; // Detiene el avance si falla la validación
-            }
+            if (currentStep === 1 && typeof validarPaso1 === 'function' && !validarPaso1()) return;
+            if (currentStep === 4 && typeof validarRecord === 'function' && !validarRecord()) return;
 
-            // Lógica de negocio: Bloqueo de beca si el usuario trabaja (Paso 3)
-            if (currentStep === 3) {
-                alert("⚠️ No podrás solicitar la beca, puesto que al poseer un trabajo no cumples con los requisitos.");
-                return;
-            }
-
-            if (currentStep === 6 && typeof validarRecord === 'function') {
-                if (!validarRecord()) return;
-            }
-
-            // Persiste los datos antes de cambiar de vista
             window.saveCurrentData();
 
-            // Si estamos en el paso 9 (verificación) se envían los datos al servidor
-            if (currentStep === 9) {
+            if (currentStep === 7) { // Paso de Verificación
                 try {
                     const res = await fetch('submit.php', {
                         method: 'POST',
@@ -506,65 +495,35 @@ document.addEventListener('DOMContentLoaded', () => {
                         body: JSON.stringify(window.formDataStorage)
                     });
                     const obj = await res.json();
-                    if (obj.status !== 'ok') {
-                        alert('Error enviando datos: ' + (obj.error||'')); 
-                        return;
-                    }
-                    window.formSubmitted = true; // El envío fue exitoso
-                } catch(e) {
-                    alert('Error de red al enviar los datos');
-                    console.error(e);
-                    return;
-                }
+                    if (obj.status !== 'ok') { alert('Error: ' + obj.error); return; }
+                    window.formSubmitted = true;
+                } catch(e) { alert('Error de red'); return; }
             }
 
-            // Lógica de "Salto" (Skipping): Si en el paso 2 indica que NO trabaja, se salta el paso 3 (Laboral)
-            if (currentStep === 2 && !window.formDataStorage['trabaja']) {
-                currentStep = 4;
-            } else {
-                currentStep++;
-            }
-            
+            currentStep++;
             loadStep(currentStep);
         };
     }
 
-    /**
-     * Manejador del botón "Atrás"
-     */
     const prevBtnEl = document.getElementById('prevBtn');
     if (prevBtnEl) {
         prevBtnEl.onclick = () => {
             window.saveCurrentData();
-
-            // Lógica inversa del salto: Si retrocede desde el paso 4 y no trabaja, vuelve al paso 2
-            if (currentStep === 4 && !window.formDataStorage['trabaja']) {
-                currentStep = 2;
-            } else {
-                currentStep--;
-            }
-
+            currentStep--;
             loadStep(currentStep);
         };
     }
 
-    // función auxiliar para ajustar menús según el paso actual
     function updateMenuState(step) {
         const links = document.querySelectorAll('#slideMenuSPA a[data-step]');
         links.forEach(a => {
             const s = parseInt(a.getAttribute('data-step'), 10);
             a.classList.remove('active','disabled');
-            if(s === step) {
-                a.classList.add('active');
-            }
-            if(s > maxStepReached) {
-                a.classList.add('disabled');
-            }
+            if(s === step) a.classList.add('active');
+            if(s > maxStepReached) a.classList.add('disabled');
         });
     }
 
-    // Ejecución inicial para mostrar el paso 1 al cargar el sitio
-    // Exponer la función para que el menú desplegable en las vistas pueda invocarla
     window.loadStep = loadStep;
     loadStep(currentStep);
 });

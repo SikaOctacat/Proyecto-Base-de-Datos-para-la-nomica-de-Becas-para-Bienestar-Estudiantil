@@ -71,24 +71,21 @@ function calcularEdad(fecha) {
  * @returns {boolean} True si permite avanzar, False si bloquea el flujo.
  */
 function validarPaso1() {
-    const checkActivo = document.getElementById('check_activo');
+    // Buscamos el radio button con nombre 'estatus_estudio' que esté marcado
+    const radioActivo = document.querySelector('input[name="estatus_estudio"]:checked');
     const edadCampo = document.getElementById('edad');
-    
-    // Convierte el valor del campo edad a número entero para la comparación
     const edad = parseInt(edadCampo.value, 10) || 0;
 
-    // Validación 1: El usuario debe marcar obligatoriamente el checkbox de "activo"
-    if (!checkActivo || !checkActivo.checked) {
+    // Validación: Debe haber uno seleccionado y debe ser "Sí" (o el valor que definas como activo)
+    if (!radioActivo || radioActivo.value !== 'activo') {
         alert("⚠️ No puedes continuar: Debes confirmar que te encuentras activo en tus estudios.");
         return false;
     }
 
-    // Validación 2: Rango de edad permitido (17 a 39 años inclusive)
     if (edad < 17 || edad > 39) {
-        alert(`⚠️ Edad no permitida (${edad} años): Debes tener entre 17 y 39 años para solicitar la beca.`);
+        alert(`⚠️ Edad no permitida (${edad} años): Debes tener entre 17 y 39 años.`);
         return false;
     }
 
-    // Si pasa todas las pruebas, retorna true para permitir el cambio de paso
     return true; 
 }

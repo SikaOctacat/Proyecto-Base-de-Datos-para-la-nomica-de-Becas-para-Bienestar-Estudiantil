@@ -1,22 +1,14 @@
+<?php if(session_status()==PHP_SESSION_NONE) session_start(); ?>
+<footer class="site-footer">
+    <div style="max-width:900px;margin:0 auto;padding:12px;color:#666;text-align:center;">
+        <small>UPTAG - Sistema de Solicitudes · &copy; <?php echo date('Y'); ?></small>
+    </div>
+</footer>
 <div class="step-content">
-    <h2>6. Récord Académico</h2>
+    <h2>4. Récord Académico</h2>
     <p>Complete la información sobre su desempeño en el trayecto anterior.</p>
 
     <div class="grid-container">
-        <div>
-            <label>Materias Inscritas:</label>
-            <input type="number" id="m_ins" name="m_ins" readonly>
-        </div>
-
-        <div>
-            <label>Materias Aprobadas:</label>
-            <input type="number" id="m_apr" name="m_apr" min="0" placeholder="0" required>
-        </div>
-
-        <div>
-            <label>Materias Inasistentes:</label>
-            <input type="number" id="m_ina" name="m_ina" min="0" placeholder="0" required>
-        </div>
 
         <div>
             <label>Índice del Trimestre:</label>

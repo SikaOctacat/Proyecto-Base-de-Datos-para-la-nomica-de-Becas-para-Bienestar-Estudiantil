@@ -5,6 +5,6 @@
     </div>
 </footer>
 <div class="step">
-        <h2>8. Datos Adicionales</h2>
+        <h2>6. Datos Adicionales</h2>
         <textarea name="comentarios" rows="4" placeholder="Observaciones máximas 500 caracteres..."></textarea>
 </div>

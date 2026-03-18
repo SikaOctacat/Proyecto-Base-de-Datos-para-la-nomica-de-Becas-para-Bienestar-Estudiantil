@@ -27,6 +27,11 @@ require 'db.php';
             <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
                 Complete todos los pasos para registrar su solicitud de beca.
             </div>
+            <button type="button" id="btnLimpiarRegistro" class="btn-clear-data" 
+                    style="position: absolute; top: 25px; right: 25px; background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                Borrar Formulario
+            </button>
+
             <div style="margin-top: 10px;">
                 <a href="index.php" style="color: #999; text-decoration: none; font-size: 0.85rem;">← Cancelar y volver al inicio</a>
             </div>

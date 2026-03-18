@@ -5,7 +5,7 @@
     </div>
 </footer>
 <div class="step-content">
-    <h2>4. Información del PNF</h2>
+    <h2>3. Información del PNF</h2>
     <div class="grid-container">
         <div class="full-width">
             <label>Carrera (PNF)</label>
