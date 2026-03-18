@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Función principal de carga: Obtiene el HTML y JS de cada paso de forma asíncrona
+     * Función principal de carga: Obtiene el HTML y JS de cada paso de forma asincrona
      */
     async function loadStep(stepNumber) {
         // asegurar un step válido
