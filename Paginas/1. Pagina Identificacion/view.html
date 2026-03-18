@@ -1,61 +1,78 @@
 <div class="step-content">
     <h2>1. Identificación del Estudiante</h2>
     <div class="grid-container">
+
         <div>
-            <label>
-                Nombres
-                <input type="text" name="nombres" placeholder="Ej: Juan Alberto" required>
+            <label> Primer nombre 
+                <input type="text" name="nombre1" placeholder="Ej: Juan" required>
             </label>
         </div>
         <div>
-            <label>
-                Apellidos
-                <input type="text" name="apellidos" placeholder="Ej: Pérez García" required>
+            <label> Segundo nombre
+                <input type="text" name="nombre2" placeholder="Ej: Alberto">
+            </label>
+        </div>
+        <div>
+            <label> Apellido paterno 
+                <input type="text" name="apellido_paterno" placeholder="Ej: Pérez" required>
+            </label>
+        </div>
+        <div>
+            <label> Apellido materno
+                <input type="text" name="apellido_materno" placeholder="Ej: García" required>
             </label>
         </div>
 
         <div>
-            <label>
-                C.I.
+            <label>C.I.
                 <input type="text" 
-                       name="cedula" 
-                       placeholder="Ej: 28123456" 
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                       maxlength="9"
-                       required>
+                    name="cedula" 
+                    placeholder="Ej: 28123456" 
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    maxlength="9"
+                    required>
             </label>
         </div>
 
         <div>
-            <label>
-                Lugar de Nacimiento
-                <input type="text" name="lugar_nac" placeholder="Ej: Coro, Falcón" required>
+            <label>Código de estudiante
+                <input type="text" name="cod_est" placeholder="Ej: INT00..." required>
             </label>
         </div>
 
         <div>
-            <label>
-                Fecha de Nacimiento
+            <label>Teléfono
+                <input type="tel" 
+                    name="tel_estudiante" 
+                    placeholder="Ej: 04121234567"
+                    maxlength="11"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$"
+                    title="Formato válido: 04XX o 02XX seguido de 7 números">
+            </label>
+        </div>
+
+        <div>
+            <label>Email
+                <input type="email" name="correo" placeholder="ejemplo@gmail.com">
+            </label>
+        </div>
+
+        <div>
+            <label>Fecha de Nacimiento
                 <input type="date" name="f_nac" id="f_nac" required>
             </label>
         </div>
 
         <div>
-            <label>
-                Edad
-                <input type="number" 
-                    id="edad" 
-                    name="edad" 
-                    placeholder="00" 
-                    readonly 
-                    tabindex="-1"
+            <label>Edad
+                <input type="number" id="edad" name="edad" placeholder="00" readonly tabindex="-1"
                     style="background-color: #f0f0f0; cursor: not-allowed; font-weight: bold;">
             </label>
         </div>
 
         <div>
-            <label>
-                Beneficio al cual aspira
+            <label>Beneficio al cual aspira
                 <select name="tipo_beneficio" required>
                     <option value="" disabled selected>Seleccione una opción...</option>
                     <option value="beca">Beca Estudiantil</option>
@@ -65,42 +82,8 @@
             </label>
         </div>
 
-        <div>
-            <label>
-                Estado Civil
-                <select name="edo_civil">
-                    <option value="" disabled selected>Seleccione su estado civil...</option>
-                    <option value="soltero">Soltero/a</option>
-                    <option value="casado">Casado/a</option>
-                    <option value="divorciado">Divorciado/a</option>
-                    <option value="viudo">Viudo/a</option>
-                </select>
-            </label>
-        </div>
-
-        <div>
-            <label>
-                Teléfono
-                <input type="tel" 
-                       name="tel_estudiante" 
-                       placeholder="Ej: 04121234567"
-                       maxlength="11"
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                       pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$"
-                       title="Formato: 04XX o 02XX seguido de 7 números">
-            </label>
-        </div>
-
-        <div>
-            <label>
-                Email
-                <input type="email" name="correo" placeholder="ejemplo@gmail.com">
-            </label>
-        </div>
-
         <div class="full-width">
-            <label>
-                Código del Carnet de la Patria
+            <label>Código del Carnet de la Patria
                 <input type="text" 
                        name="C_Patria" 
                        placeholder="Ej: 0012345678 (10 dígitos)" 
@@ -111,7 +94,6 @@
     </div>
 
     <div class="checkbox-group" style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
-    
         <div class="radio-row">
             <span>¿Posees un trabajo?</span>
             <div class="radio-options">

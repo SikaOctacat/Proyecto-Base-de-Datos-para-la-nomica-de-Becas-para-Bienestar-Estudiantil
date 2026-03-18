@@ -285,3 +285,232 @@ textarea {
 
 .oculto { display: none !important; }
 .deshabilitado { opacity: 0.5; cursor: not-allowed; }
+
+
+
+
+/* 
+    
+    ----------------------------------------------------------------------
+    
+    ESTILOS BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+*/
+
+.menu-title {
+    color: #ff6200;
+    text-align: center;
+    padding: 15px;
+    font-family: Arial, sans-serif;
+    font-size: 1.2rem;
+    /* Línea gris más gruesa para separar el cabezal */
+    border-bottom: 2px solid #444; 
+}
+
+.header {
+    width: 100%;
+    height: 70px;
+    position: fixed;
+    top: 0; left: 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+}
+
+.container .btn-menu, .logo{
+    float: left;
+    line-height: 70px;
+}
+
+.container .btn-menu label{
+    color: #fff;
+    font-size: 25px;
+    cursor: pointer;
+    }
+
+.logo h1{
+    color: #fff;
+    font-weight: 400;
+    font-size: 22px;
+    margin-left: 10px;
+}
+
+.container .menu {
+    float: right;
+    line-height: 70px;
+}
+
+.container .menu a{
+    display: inline-block;
+    padding: 15px 10px;
+    line-height: normal;
+    text-decoration: none;
+    color: #fff;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+    font-size: 15px;
+}
+
+.container .menu a:hover{
+    border-bottom: 2px solid #c7c7c7;
+    padding: 5px 10px;
+}
+
+/* Asegúrate de que esto exista */
+#btn-menu {
+    display: none; /* Oculta el checkbox real, solo usamos su funcionalidad */
+}
+
+/* Corrección en style.css */
+
+
+/* 2. El fondo oscuro que cubre el formulario al abrir */
+.container-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7); /* Oscurece el fondo */
+    z-index: 1200;      /* Mayor que el botón para cubrirlo si es necesario */
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.5s ease;
+}
+
+#btn-menu:checked ~ .container-menu {
+    opacity: 1;
+    visibility: visible;
+}
+
+.cont-menu {
+    width: 260px;
+    background: #1c1c1c;
+    height: 100vh;
+    position: fixed;
+    transition: all 500ms ease;
+    transform: translateX(-100%);
+    box-shadow: 2px 0px 10px rgba(0,0,0,0.5);
+    
+}
+
+#btn-menu:checked ~ .container-menu .cont-menu{
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0%);
+}
+
+.cont-menu nav{
+    /*transform: translateY(15%);*/
+    /*padding-top: 50px;*/
+    /*flex: 1;
+    display: flex;
+    flex-direction: column;*/
+    padding-top: 0px; /* Eliminamos el espacio sobrante arriba */
+    margin-top: 10px; /* Pequeño margen para no pegar al borde del título */
+    
+}
+
+.cont-menu nav a {
+    display: block;
+    text-decoration: none;
+    padding: 11px 20px;
+    font-size: 14px;
+    color: #c7c7c7;
+    border-bottom: 1px solid #333; /* Línea fina normal */
+    transition: all 400ms ease;
+}
+
+/* 3. QUITAR la línea debajo de 'Verificación de datos' */
+/* Usamos :last-child para que el último enlace no tenga borde */
+.cont-menu nav a:last-child {
+    border-bottom: none !important;
+}
+
+.cont-menu nav a:hover{
+    border-left: 5px solid #ff6200;
+    background: #252525;
+    color: #fff;
+}
+
+.cont-menu label {
+    position: absolute;
+    right: 5px;
+    top: 10px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.icon-equis{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: #ff6200; 
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    width: 30px;
+    line-height: 30px;
+}
+
+.btn-salir {
+    color: #ff4444 !important;
+    font-family: 'Arial Black', sans-serif; 
+    text-decoration: none;
+    font-size: 15px;
+    display: inline-block; 
+    align-items: center;
+    margin-top: 10px;
+    transition: 0.3s;
+    text-align: center;
+}
+
+.btn-salir:hover {
+    color: white !important;
+    transform: scale(1.1);
+}
+
+
+/* 4. Línea arriba de 'Cerrar sesión' (Igual a la del título) */
+.footer-menu {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 25px 0;
+    text-align: center;
+    background: #1c1c1c;
+    /* Misma apariencia que la del título: 2px y color #444 */
+    border-top: 2px solid #444; 
+    border-bottom: none;
+}
+
+.menu-divider {
+    width: 80%; /* Para que no toque los bordes y se vea centrada */
+    margin: 0 auto 15px auto;
+}
+
+/* 1. El botón de activación (El ícono de las 3 barras) */
+.btn-abrir-menu {
+    position: fixed;   /* Flota sobre todo el diseño */
+    top: 20px;
+    left: 20px;
+    z-index: 1100;     /* Valor alto para estar sobre el formulario */
+    background: #1c1c1c;
+    color: #ff6200;
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 24px;   /* Tamaño del ícono ☰ */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: background 0.3s;
+}
+
+.btn-abrir-menu:hover {
+    background: #333;
+}

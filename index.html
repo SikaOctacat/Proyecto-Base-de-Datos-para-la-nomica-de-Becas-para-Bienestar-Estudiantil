@@ -6,6 +6,31 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    ICONO BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+    -->
+
+    <label for="btn-menu" class="btn-abrir-menu"> ☰ </label>
+
+    <div id="sidebar-placeholder"></div>
+
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    ICONO BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+    -->
+
     <div id="main-container">
         <h2>SISTEMA DE SOLICITUD DE BECAS</h2>
         
@@ -23,8 +48,37 @@
         </form>
     </div>
 
-    <script src="main.js"></script>
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    CARGA BARRA LATERAL
 
+    ----------------------------------------------------------------------
+     
+    -->
+
+    <script>
+        // Esta función carga la barra lateral de forma independiente
+        fetch('./sidebar.html')
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById('sidebar-placeholder').innerHTML = data;
+            })
+            .catch(err => console.error("Error al cargar la barra lateral:", err));
+    </script>
+
+    <!-- 
+    
+    ----------------------------------------------------------------------
+    
+    CARGA BARRA LATERAL
+
+    ----------------------------------------------------------------------
+     
+    -->
+
+    <script src="main.js"></script>
     <script src="Paginas/7. Pagina Familiares/script.js"></script>
     <script src="script.js"></script
 </body>
