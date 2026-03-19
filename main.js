@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const viewPort = document.getElementById('dynamic-content'); 
     const progressBar = document.getElementById('progressBar'); 
-    const mainContainer = document.getElementById('main-container'); 
     
     // --- PRIORIDAD: PERFIL DE ESTUDIANTE ---
     const userRole = document.body.getAttribute('data-rol');
@@ -115,8 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const initFuncs = {
                     1: 'initIdentificacion',
                     2: 'initResidencia',
+                    3: 'initPNF',
                     4: 'initRecord',
                     5: 'initFamiliares',
+                    6: 'initDatosExtra',
                     7: 'renderResumen',
                     8: 'renderFinalStatus'
                 };
@@ -156,6 +157,44 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 150);
         }
     }
+
+    /**
+     * Lógica para el botón "Borrar formulario"
+     * Ahora solo limpia la vista actual y remueve esos datos específicos del storage
+     */
+    const btnLimpiar = document.getElementById('btnLimpiarRegistro');
+    if (btnLimpiar) {
+        btnLimpiar.onclick = (e) => {
+            // Evitamos que el botón recargue la página si está dentro de un form
+            e.preventDefault();
+
+            if (confirm("¿Deseas limpiar los campos de esta página actual?")) {
+                const viewPort = document.getElementById('dynamic-content');
+                const inputs = viewPort.querySelectorAll('input, select, textarea');
+
+                inputs.forEach(input => {
+                    if (input.name) {
+                        // 1. Limpiamos el valor visualmente
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            input.checked = false;
+                        } else {
+                            input.value = "";
+                        }
+
+                        // 2. Eliminamos la clave específica de la memoria global
+                        // para que no se restaure al navegar
+                        delete window.formDataStorage[input.name];
+                    }
+                });
+
+                // 3. Forzamos la re-validación para deshabilitar el botón "Siguiente"
+                validarFormularioActual();
+                
+                console.log("Campos de la página actual limpiados.");
+            }
+        };
+    }
+
 
     /**
      * Muestra el perfil completo y oculta toda la interfaz de formulario.
@@ -523,6 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(s > maxStepReached) a.classList.add('disabled');
         });
     }
+    
 
     window.loadStep = loadStep;
     loadStep(currentStep);

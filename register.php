@@ -15,6 +15,8 @@ require 'db.php';
     </style>
 </head>
 <body data-rol="publico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div></div>
     <script>
         window.studentProfile = null; // No hay perfil previo para nuevos postulantes
@@ -32,9 +34,6 @@ require 'db.php';
                 Borrar Formulario
             </button>
 
-            <div style="margin-top: 10px;">
-                <a href="index.php" style="color: #999; text-decoration: none; font-size: 0.85rem;">← Cancelar y volver al inicio</a>
-            </div>
         </div>
         
         <div class="progress-wrapper">
@@ -64,7 +63,7 @@ require 'db.php';
             if(overlay) overlay.classList.remove('active');
         });
     </script>
-
+    <?php include 'footer.php'; ?>
     <footer class="site-footer">
         <div style="max-width:900px;margin:0 auto;padding:18px 12px;color:#666;text-align:center;">
             <small>UPTAG - Sistema de Solicitudes · &copy; <?php echo date('Y'); ?></small>

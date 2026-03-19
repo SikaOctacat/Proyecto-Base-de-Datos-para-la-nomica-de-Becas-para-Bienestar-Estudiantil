@@ -7,6 +7,20 @@ $max_date = (clone $fecha_hoy)->modify('-5 years')->format('Y-m-d');
 $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 ?>
 
+<style>
+    .password-container { position: relative; }
+    .btn-view-pass {
+        position: absolute;
+        right: 10px;
+        top: 32px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 0;
+    }
+</style>
+
 <div class="step-content">
     <h2>1. Identificación del Estudiante</h2>
     <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Por favor, complete sus datos personales con precisión.</p>
@@ -30,21 +44,31 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
         </div>
 
         <div>
-            <label>C.I.</label>
-            <input type="text" name="cedula" placeholder="Ej: 28123456" oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="9" required>
-        </div>
-        <div>
-            <label>Código de Estudiante</label>
-            <input type="text" name="cod_est" placeholder="Ej: INT00..." required>
+            <label>C.I. (Máx. 8 dígitos)</label>
+            <input type="text" name="cedula" id="cedula" placeholder="Ej: 28123456" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" 
+                   maxlength="8" required>
         </div>
 
         <div>
             <label>Teléfono</label>
             <input type="tel" name="tel_estudiante" placeholder="Ej: 04121234567" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$">
         </div>
+
         <div>
             <label>Email</label>
             <input type="email" name="correo" placeholder="ejemplo@gmail.com">
+        </div>
+
+        <div>
+            <label>Estado Civil</label>
+            <select name="edo_civil">
+                <option value="" disabled selected>Seleccione...</option>
+                <option value="soltero">Soltero/a</option>
+                <option value="casado">Casado/a</option>
+                <option value="divorciado">Divorciado/a</option>
+                <option value="viudo">Viudo/a</option>
+            </select>
         </div>
 
         <div>
@@ -64,17 +88,6 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
         </div>
 
         <div>
-            <label>Estado Civil</label>
-            <select name="edo_civil">
-                <option value="" disabled selected>Seleccione...</option>
-                <option value="soltero">Soltero/a</option>
-                <option value="casado">Casado/a</option>
-                <option value="divorciado">Divorciado/a</option>
-                <option value="viudo">Viudo/a</option>
-            </select>
-        </div>
-
-        <div>
             <label>Beneficio al cual aspira</label>
             <select name="tipo_beneficio" required>
                 <option value="" disabled selected>Seleccione una opción...</option>
@@ -84,7 +97,14 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             </select>
         </div>
 
-        <div class="full-width">
+        <div style="grid-column: span 1;">
+            <label>Código de Estudiante (10 dígitos)</label>
+            <input type="text" name="cod_est" id="cod_est" placeholder="Ej: 1234567890" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" 
+                   maxlength="10" required>
+        </div>
+
+        <div style="grid-column: span 1;">
             <label>Código del Carnet de la Patria</label>
             <input type="text" name="C_Patria" placeholder="Ej: 0012345678" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         </div>
@@ -94,13 +114,19 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
     <div style="margin-top: 25px; padding: 20px; border: 1px dashed #ccc; border-radius: 8px; background-color: #f9f9f9;">
         <h3 style="color: #FF6600; font-size: 1rem; margin-bottom: 10px;">🔐 Seguridad de la Cuenta</h3>
         <div class="grid-container">
-            <div>
+            <div class="password-container">
                 <label>Contraseña</label>
                 <input type="password" name="password" id="reg_password" placeholder="Mínimo 4 caracteres" required minlength="4">
+                <button type="button" class="btn-view-pass" onclick="togglePassword('reg_password')">
+                    <i class="fas fa-eye"></i>
+                </button>
             </div>
-            <div>
+            <div class="password-container">
                 <label>Confirmar Contraseña</label>
                 <input type="password" id="reg_password_confirm" placeholder="Repita su contraseña" required minlength="4">
+                <button type="button" class="btn-view-pass" onclick="togglePassword('reg_password_confirm')">
+                    <i class="fas fa-eye"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -125,12 +151,17 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 </div>
 
 <script>
+// Función para mostrar/ocultar contraseña
+function togglePass(id) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+}
+
 document.getElementById('f_nac').addEventListener('change', function() {
     const input = this;
     const hoy = new Date();
     const fechaNac = new Date(input.value);
 
-    // Validación estricta por JS (por si el usuario escribe la fecha)
     if (input.value > input.max || (input.value < input.min && input.value !== "")) {
         alert("La fecha no es válida. Debes tener entre 5 y 50 años.");
         input.value = "";
@@ -138,7 +169,6 @@ document.getElementById('f_nac').addEventListener('change', function() {
         return;
     }
 
-    // Cálculo de edad
     if(!isNaN(fechaNac.getTime())){
         let edad = hoy.getFullYear() - fechaNac.getFullYear();
         const m = hoy.getMonth() - fechaNac.getMonth();
@@ -149,7 +179,6 @@ document.getElementById('f_nac').addEventListener('change', function() {
     }
 });
 
-// Validación de contraseñas
 const passConfirm = document.getElementById('reg_password_confirm');
 if(passConfirm){
     passConfirm.addEventListener('input', function() {

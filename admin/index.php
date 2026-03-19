@@ -592,5 +592,7 @@ if (isset($_GET['edit_user'])) {
             }
         });
     </script>
+
+    <?php include 'footer.php'; ?>
 </body>
 </html>

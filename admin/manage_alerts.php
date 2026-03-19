@@ -131,5 +131,7 @@ $alertas = $pdo->query("SELECT * FROM alertas ORDER BY created_at DESC")->fetchA
             </div>
         </section>
     </div>
+
+    <?php include 'footer.php'; ?>
 </body>
 </html>

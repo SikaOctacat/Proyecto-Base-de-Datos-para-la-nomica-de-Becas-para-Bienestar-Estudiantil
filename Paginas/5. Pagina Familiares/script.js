@@ -1,7 +1,7 @@
 function initFamiliares() {
     const cuerpoTabla = document.getElementById('cuerpo-tabla');
     const btnAgregar = document.getElementById('btn-agregar');
-    const avisoEstado = document.getElementById('aviso-estado');
+    const avisoEstado = document.getElementById('aviso-estado'); // ID unificado
     const checkNoFamiliares = document.getElementById('no-familiares');
     const contenedorTabla = document.querySelector('.table-responsive'); 
     const maxFamiliares = 5;
@@ -9,7 +9,7 @@ function initFamiliares() {
     if (!btnAgregar || !cuerpoTabla || !checkNoFamiliares) return;
 
     /**
-     * Crea una fila con todos los campos necesarios y listeners de validación
+     * Crea una fila con inputs y oculta el botón eliminar por defecto
      */
     const crearFilaHTML = (id) => {
         const nuevaFila = cuerpoTabla.insertRow();
@@ -17,7 +17,7 @@ function initFamiliares() {
         
         nuevaFila.innerHTML = `
             <td><input type="text" name="f_nom_${id}" placeholder="Nombre" style="width:95%"></td>
-            <td><input type="text" name="f_ape_${id}" placeholder="Apellidos" style="width:95%"></td>
+            <td><input type="text" name="f_ape_${id}" placeholder="Apellido" style="width:95%"></td>
             <td><input type="text" name="f_par_${id}" placeholder="Vínculo" style="width:95%"></td>
             <td><input type="number" name="f_eda_${id}" min="0" max="120" placeholder="0" style="width:65px"></td>
             <td><input type="text" name="f_ins_${id}" placeholder="Nivel" style="width:95%"></td>
@@ -26,7 +26,7 @@ function initFamiliares() {
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <input type="number" name="f_ing_${id}" step="0.01" placeholder="0.00" style="width:80px">
                     <button type="button" class="btn-remove" title="Eliminar" 
-                        style="background: #ff4444; color: white; border: none; border-radius: 50%; cursor: pointer; width: 28px; height: 28px;">&times;</button>
+                        style="background: #ff4444; color: white; border: none; border-radius: 50%; cursor: pointer; width: 28px; height: 28px; display: none;">&times;</button>
                 </div>
             </td>
         `;
@@ -37,91 +37,100 @@ function initFamiliares() {
     };
 
     /**
-     * Gestiona la visibilidad, validación y estados del botón de agregar
+     * Gestiona:
+     * 1. Visibilidad de la tabla vs Checkbox.
+     * 2. Visibilidad del botón eliminar (solo si hay > 1 fila).
+     * 3. Bloqueo del botón "Siguiente" del formulario principal.
      */
     function actualizarEstado() {
         const estaOmitido = checkNoFamiliares.checked;
         const filas = cuerpoTabla.querySelectorAll('tr');
         const numFilas = filas.length;
+        const nextBtn = document.getElementById('nextBtn');
 
-        // 1. Visibilidad de la sección completa
         if (estaOmitido) {
             contenedorTabla.style.display = 'none';
             btnAgregar.style.display = 'none';
-            avisoEstado.textContent = "Sección omitida (Desmarque para recuperar sus datos).";
-            avisoEstado.style.color = "#888";
+            if(avisoEstado) {
+                avisoEstado.textContent = "Sección omitida correctamente.";
+                avisoEstado.style.color = "#888";
+            }
+            
+            // Forzar habilitación del botón Siguiente
+            setTimeout(() => {
+                if(nextBtn) {
+                    nextBtn.disabled = false;
+                    nextBtn.style.opacity = "1";
+                    nextBtn.style.cursor = "pointer";
+                }
+            }, 50);
             return;
         } else {
             contenedorTabla.style.display = 'block';
             btnAgregar.style.display = 'inline-block';
         }
 
-        // 2. Ocultar botón borrar si solo hay una fila
+        // --- Lógica del Botón Eliminar ---
         const botonesEliminar = cuerpoTabla.querySelectorAll('.btn-remove');
         botonesEliminar.forEach(btn => {
-            btn.style.visibility = (numFilas <= 1) ? 'hidden' : 'visible';
+            btn.style.display = (numFilas <= 1) ? 'none' : 'block';
         });
 
-        // 3. Validación de campos y texto dinámico del botón
+        // --- Validación de campos vacíos ---
         let hayCamposVacios = false;
         const todosLosInputs = cuerpoTabla.querySelectorAll('input');
-        for (let input of todosLosInputs) {
+        todosLosInputs.forEach(input => {
             if (input.value.trim() === "") {
                 hayCamposVacios = true;
-                break;
-            }
-        }
-
-        const limiteAlcanzado = numFilas >= maxFamiliares;
-
-        if (limiteAlcanzado) {
-            btnAgregar.disabled = true;
-            btnAgregar.innerText = "Límite de 5 familiares alcanzado";
-            btnAgregar.style.background = "#888";
-            avisoEstado.textContent = "";
-        } else {
-            btnAgregar.innerText = "+ Añadir Familiar";
-            btnAgregar.style.background = "var(--success)";
-            
-            if (hayCamposVacios) {
-                btnAgregar.disabled = true;
-                avisoEstado.textContent = "Complete todos los campos para añadir otro.";
-                avisoEstado.style.color = "#ff6600";
+                input.style.border = "1px solid #ff6600";
             } else {
-                btnAgregar.disabled = false;
-                avisoEstado.textContent = "✓ Todos los campos listos.";
-                avisoEstado.style.color = "#28a745";
+                input.style.border = "1px solid #ccc";
             }
+        });
+
+        // --- Control de Navegación (Siguiente) ---
+        setTimeout(() => {
+            if (nextBtn) {
+                const esInvalido = hayCamposVacios;
+                nextBtn.disabled = esInvalido;
+                nextBtn.style.opacity = esInvalido ? "0.5" : "1";
+                nextBtn.style.cursor = esInvalido ? "not-allowed" : "pointer";
+                
+                if(avisoEstado) {
+                    avisoEstado.textContent = esInvalido ? "⚠️ Complete todos los datos para continuar." : "✓ Información completa.";
+                    avisoEstado.style.color = esInvalido ? "#d9534f" : "#28a745";
+                }
+            }
+        }, 50);
+
+        // Control del botón de agregar (Límite 5)
+        if (numFilas >= maxFamiliares) {
+            btnAgregar.disabled = true;
+            btnAgregar.innerText = "Límite alcanzado (5)";
+            btnAgregar.style.background = "#888";
+        } else {
+            btnAgregar.disabled = hayCamposVacios;
+            btnAgregar.innerText = "+ Añadir Familiar";
+            btnAgregar.style.background = hayCamposVacios ? "#ccc" : "#00dc0b";
         }
     }
 
-    /**
-     * Evento del Checkbox con advertencia detallada
-     */
     checkNoFamiliares.onchange = (e) => {
         if (e.target.checked) {
-            const mensaje = "¿Estás seguro?\n\nLa tabla de familiares se ocultará y no se incluirá en la solicitud. Los datos que ya ingresaste no se borrarán; puedes desmarcar esta opción en cualquier momento para recuperarlos.";
-            if (!confirm(mensaje)) {
+            if (!confirm("¿Estás seguro? La tabla se ocultará y no se incluirá en la solicitud.")) {
                 e.target.checked = false;
                 return;
             }
-        } else {
-            // Si al volver no hay nada (error raro), aseguramos una fila
-            if (cuerpoTabla.querySelectorAll('tr').length === 0) {
-                crearFilaHTML(Date.now());
-            }
         }
-        
         window.formDataStorage['no_familiares'] = e.target.checked;
         actualizarEstado();
     };
 
-    // --- RECONSTRUCCIÓN (Persistencia) ---
+    // Reconstrucción y Persistencia
     cuerpoTabla.innerHTML = "";
     const datosCargados = window.formDataStorage || {};
-    
-    // Cargar filas guardadas si existen
     const idsExistentes = [...new Set(Object.keys(datosCargados).filter(k => k.startsWith('f_nom_')).map(k => k.split('_')[2]))];
+    
     if (idsExistentes.length > 0) {
         idsExistentes.forEach(id => crearFilaHTML(id));
         if (typeof window.restoreDataGlobal === 'function') window.restoreDataGlobal();
@@ -129,12 +138,10 @@ function initFamiliares() {
         crearFilaHTML(Date.now());
     }
 
-    // Estado inicial del check
     if (datosCargados['no_familiares'] === true) {
         checkNoFamiliares.checked = true;
     }
 
-    // --- EVENTOS BOTONES ---
     btnAgregar.onclick = (e) => {
         e.preventDefault();
         if (cuerpoTabla.querySelectorAll('tr').length < maxFamiliares) {
@@ -147,10 +154,8 @@ function initFamiliares() {
         const btnRemove = e.target.closest('.btn-remove');
         if (btnRemove && cuerpoTabla.querySelectorAll('tr').length > 1) {
             const fila = btnRemove.closest('tr');
-            const idFila = fila.getAttribute('data-id');
-            const nombre = document.querySelector(`input[name="f_nom_${idFila}"]`).value.trim();
-            
-            if (confirm(`¿Eliminar a ${nombre || "este familiar"}?`)) {
+            if (confirm(`¿Eliminar este familiar?`)) {
+                const idFila = fila.getAttribute('data-id');
                 Object.keys(window.formDataStorage).forEach(key => {
                     if (key.endsWith(`_${idFila}`)) delete window.formDataStorage[key];
                 });

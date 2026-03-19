@@ -1,9 +1,16 @@
 <div class="step-content">
     <h2>7. Revisión y Corrección Final</h2>
-    <p style="margin-bottom: 20px;">Esta es una vista completa de tus datos. Puedes modificar cualquier campo directamente aquí si necesitas corregir algo antes de enviar.</p>
+    <p style="margin-bottom: 20px;">Esta es una vista completa de tus datos.</p>
     
     <div id="panel-edicion-global" class="edicion-container">
         </div>
+
+    <div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ccc; text-align:center;">
+        <button type="button" onclick="resetFormulario()" 
+            style="background: #ff2828; color: #ffffff; border: 1px solid #f5c6cb; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;">
+            🗑️ Borrar todo y empezar de nuevo
+        </button>
+    </div>
 </div>
 
 <style>

@@ -84,6 +84,8 @@ if (!$logged) {
                 if (event.target == modal) modal.classList.add('oculto');
             }
         </script>
+
+        <?php include 'footer.php'; ?>
     </body>
     </html>
     <?php

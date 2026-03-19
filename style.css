@@ -335,6 +335,28 @@ input:focus, select:focus, textarea:focus {
 .oculto { display: none !important; }
 .full-width { grid-column: 1 / -1; }
 
+/* Estilos para la iconografía de éxito */
+.success-icon {
+    width: 100px; /* Aumentado de 80px */
+    height: 100px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem; /* Icono mucho más grande */
+    margin: 0 auto 25px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
 @keyframes slideIn {
     from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }

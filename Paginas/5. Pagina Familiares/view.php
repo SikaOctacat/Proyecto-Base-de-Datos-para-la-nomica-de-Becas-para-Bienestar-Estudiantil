@@ -20,7 +20,7 @@
             <thead>
                 <tr style="background-color: #f4f4f4;">
                     <th>Nombre</th>
-                    <th>Apellidos</th>
+                    <th>Apellido</th>
                     <th>Parentesco</th>
                     <th style="width: 60px;">Edad</th>
                     <th>Instrucción</th>
@@ -38,6 +38,6 @@
                 style="background: #00dc0b; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
             + Añadir Familiar
         </button>
-        <span id="aviso-limite" style="color: #d9534f; font-size: 0.85rem; display: none;">Límite de 5 familiares alcanzado.</span>
+        <span id="aviso-estado" style="font-size: 0.85rem; font-weight: 600;"></span>
     </div>
 </div>

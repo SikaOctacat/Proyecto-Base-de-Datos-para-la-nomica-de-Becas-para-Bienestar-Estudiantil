@@ -166,9 +166,43 @@ function generarTablaEditableFamiliares(data) {
  * Función para reiniciar todo el proceso.
  * Limpia el objeto global de datos y recarga la página desde cero (Paso 1).
  */
+/**
+ * Función para reiniciar todo el proceso con doble advertencia.
+ * Limpia el objeto global de datos, el almacenamiento del navegador y recarga.
+ */
 function resetFormulario() {
-    if (confirm("¿Seguro que deseas borrar todo y empezar de nuevo?")) {
-        window.formDataStorage = {}; // Vacía el objeto en memoria
-        location.reload(); // Recarga la URL actual (vuelve al estado inicial de JS)
+    // PRIMERA ADVERTENCIA
+    const primeraConfirmacion = confirm(
+        "⚠️ ADVERTENCIA: Estás a punto de borrar TODOS los datos ingresados en los 7 pasos.\n\n" +
+        "¿Deseas continuar?"
+    );
+
+    if (primeraConfirmacion) {
+        // SEGUNDA ADVERTENCIA (Doble verificación)
+        const segundaConfirmacion = confirm(
+            "🛑 ¡ESTA ACCIÓN NO SE PUEDE DESHACER!\n\n" +
+            "Se eliminarán nombres, registros familiares, récords académicos y comentarios.\n" +
+            "¿Confirmas que quieres empezar desde cero?"
+        );
+
+        if (segundaConfirmacion) {
+            // 1. Vaciar el objeto en memoria
+            window.formDataStorage = {};
+
+            // 2. Limpiar persistencia (por si usas Storage para recargas accidentales)
+            if (window.localStorage) localStorage.clear();
+            if (window.sessionStorage) sessionStorage.clear();
+
+            // 3. Feedback visual antes de recargar
+            const container = document.getElementById('panel-edicion-global');
+            if (container) {
+                container.innerHTML = "<h3 style='color: #d9534f; text-align: center;'>Borrando datos...</h3>";
+            }
+
+            // 4. Recargar la página para volver al paso 1
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        }
     }
 }

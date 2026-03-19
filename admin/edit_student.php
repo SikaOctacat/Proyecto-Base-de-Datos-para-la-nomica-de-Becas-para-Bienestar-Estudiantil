@@ -391,5 +391,6 @@ if (!$std) {
         </form>
     </div>
     <div style="height: 50px;"></div>
+    <?php include 'footer.php'; ?>
 </body>
 </html>

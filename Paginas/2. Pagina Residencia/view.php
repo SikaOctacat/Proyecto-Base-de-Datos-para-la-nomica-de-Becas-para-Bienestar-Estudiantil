@@ -2,94 +2,83 @@
 
 <div class="step-content">
     <h2>2. Residencia / Vivienda</h2>
+    <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Indique la ubicación y condiciones de su vivienda actual.</p>
+    
     <div class="grid-container">
         
         <div>
-            <label>Tipo de residencia
-                <select name="t_res" id="t_res" required>
-                    <option value="" disabled selected>Seleccione el tipo...</option>
-                    <option value="familiar">Familiar</option>
-                    <option value="particular">Particular</option>
-                    <option value="universitaria">Universitaria</option>
-                    <option value="otro">Otro...</option>
-                </select>
-            </label>
+            <label>Tipo de residencia</label>
+            <select name="t_res" id="t_res" required>
+                <option value="" disabled selected>Seleccione el tipo...</option>
+                <option value="familiar">Familiar</option>
+                <option value="particular">Particular</option>
+                <option value="universitaria">Universitaria</option>
+                <option value="otro">Otro...</option>
+            </select>
         </div>
 
         <div>
-            <label>Tipo de vivienda
-                <select name="t_viv" id="t_viv" required>
-                    <option value="" disabled selected>Seleccione el tipo...</option>
-                    <option value="casa">Casa</option>
-                    <option value="apartamento">Apartamento</option>
-                    <option value="vivienda_social">Vivienda de interés social</option>
-                    <option value="habitacion">Habitación</option>
-                    <option value="otro">Otro</option>
-                </select>
-            </label>
+            <label>Tipo de vivienda</label>
+            <select name="t_viv" id="t_viv" required>
+                <option value="" disabled selected>Seleccione el tipo...</option>
+                <option value="casa">Casa</option>
+                <option value="apartamento">Apartamento</option>
+                <option value="vivienda_social">Vivienda de interés social</option>
+                <option value="habitacion">Habitación</option>
+                <option value="otro">Otro</option>
+            </select>
         </div>
 
         <div>
-            <label>Tipo de localidad
-                <select name="t_loc" id="t_loc" required>
-                    <option value="" disabled selected>Seleccione localidad...</option>
-                    <option value="urbano">Urbano</option>
-                    <option value="rural">Rural</option>
-                </select>
-            </label>
+            <label>Localidad</label> <select name="t_loc" id="t_loc" required>
+                <option value="" disabled selected>Seleccione localidad...</option>
+                <option value="urbano">Urbano</option>
+                <option value="rural">Rural</option>
+            </select>
         </div>
 
         <div>
-            <label>Régimen de propiedad
-                <select name="r_prop" id="r_prop" required>
-                    <option value="" disabled selected>Seleccione régimen...</option>
-                    <option value="propia">Propia</option>
-                    <option value="alquilada">Alquilada</option>
-                    <option value="cedida">Cedida</option>
-                    <option value="comodato">Comodato</option>
-                    <option value="pagando">Pagándola (Crédito)</option>
-                </select>
-            </label>
+            <label>Régimen de propiedad</label>
+            <select name="r_prop" id="r_prop" required>
+                <option value="" disabled selected>Seleccione régimen...</option>
+                <option value="propia">Propia</option>
+                <option value="alquilada">Alquilada</option>
+                <option value="cedida">Cedida</option>
+                <option value="comodato">Comodato</option>
+                <option value="pagandola">Pagándola (Crédito)</option> </select>
         </div>
 
         <div>
-            <label>Estado (Donde reside actualmente)
-                <input type="text" name="estado_res" placeholder="Ej: Falcón" required>
-            </label>
+            <label>Estado</label>
+            <select name="estado_res" id="estado_res" required>
+                <option value="" disabled selected>Cargando estados...</option>
+            </select>
         </div>
 
         <div>
-            <label>Municipio (Donde reside actualmente)
-                <input type="text" name="municipio_res" placeholder="Ej: Miranda" required>
-            </label>
+            <label>Municipio</label>
+            <select name="municipio_res" id="municipio_res" required disabled>
+                <option value="" disabled selected>Seleccione un estado primero</option>
+            </select>
         </div>
 
         <div class="full-width">
-            <label>Dirección Local Exacta
-                <input type="text" name="dir_local" placeholder="Ej: Avenida X, Calle X, Casa Nro X" required>
-            </label>
+            <label>Teléfono Local </label>
+            <input type="tel" 
+                   name="tel_local" 
+                   id="tel_local"
+                   placeholder="04121234567"
+                   maxlength="11"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                   pattern="^(02)[0-9]{9}$"
+                   style="width: 100%;"
+                   required>
         </div>
 
-        <div>
-            <label>Teléfono Local
-                <input type="tel" 
-                       name="tel_local" 
-                       placeholder="Ej: 02681234567"
-                       maxlength="11"
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                       pattern="^(02)[0-9]{9}$"
-                       title="Solo números. Debe empezar por 02. Ejemplo: 02681234567"
-                       required>
-            </label>
+        <div class="full-width">
+            <label>Dirección Local Exacta</label>
+            <input type="text" name="dir_local" placeholder="Ej: Avenida X, Calle X, Casa Nro X" required>
         </div>
 
     </div>
-
-    <div class="pregunta-row" style="border-top: 1px solid #f0f0f0; padding-top: 15px;">
-        <span>¿Paga usted la vivienda?</span>
-        <div style="display: flex; gap: 15px;">
-            <label class="radio-item"><input type="radio" name="estatus_estudio" value="activo" required> Sí</label>
-            <label class="radio-item"><input type="radio" name="estatus_estudio" value="inactivo"> No</label>
-        </div>
     </div>
-</div>
