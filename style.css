@@ -104,6 +104,17 @@ label {
     color: #444;
 }
 
+/* Busca el label que está justo antes de un input que NO es requerido */
+label:has(+ input:not([required])):after,
+label:has(+ select:not([required])):after,
+label:has(+ textarea:not([required])):after {
+    content: " (Opcional)";
+    font-weight: normal;
+    font-size: 0.75rem;
+    color: #888;
+    margin-left: 4px;
+}
+
 /* Solo afecta a inputs de texto/número/fecha */
 input:not([type="radio"]):not([type="checkbox"]), 
 select, 
@@ -122,6 +133,16 @@ input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 4px rgba(255,102,0,0.1);
+}
+
+select {
+    height: 41px; /* Ajuste aproximado basado en tu padding de 10px + font-size */
+    appearance: none; /* Elimina el estilo por defecto del sistema (flecha fea) */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px !important; /* Espacio para la nueva flecha */
 }
 
 /* --- ESTILO PERSONALIZADO DE RADIO BUTTONS --- */
@@ -236,6 +257,8 @@ input:focus, select:focus, textarea:focus {
     transform: none !important;
     box-shadow: none !important;
 }
+
+
 
 /* ==========================================================================
    5. BOTONES DE NAVEGACIÓN (Reparados)

@@ -1,6 +1,8 @@
 <?php
 require 'db.php';
+session_start(); // <--- CRÍTICO: Asegúrate de que esté aquí
 $error = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $_POST['usuario'] ?? '';
     $pass = $_POST['password'] ?? '';
@@ -9,7 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('SELECT id, usuario, password, rol FROM usuarios WHERE usuario = ?');
         $stmt->execute([$user]);
         $row = $stmt->fetch();
+        
+        // Verificamos la contraseña (usando tu hash sha256)
         if ($row && hash('sha256', $pass) === $row['password']) {
+            $_SESSION['user_id'] = $row['id']; // <--- ESTO ES LO QUE NECESITAMOS
             $_SESSION['user'] = $row['usuario'];
             $_SESSION['rol'] = $row['rol'];
             
@@ -22,8 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $error = 'Usuario o contraseña incorrectos';
         }
-    } else {
-        $error = 'Por favor, ingrese usuario y contraseña';
     }
 }
 ?>

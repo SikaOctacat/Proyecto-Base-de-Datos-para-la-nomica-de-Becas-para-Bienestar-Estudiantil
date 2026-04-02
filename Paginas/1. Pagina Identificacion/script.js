@@ -51,43 +51,66 @@ function togglePassword(idInput) {
 }
 
 /**
- * Función de validación (SIN ASYNC para evitar que el flujo continúe)
+ * Función de validación (Paso 1)
  */
 function validarPaso1() {
-    const radioActivo = document.querySelector('input[name="estatus_estudio"]:checked');
-    const edadCampo = document.getElementById('edad');
-    const cedulaCampo = document.getElementById('cedula');
-    const codEstCampo = document.getElementById('cod_est');
+    // --- 1. CAPTURA DE DATOS ---
+    const cedula = document.getElementById('cedula')?.value || "";
+    const codEst = document.getElementById('cod_est')?.value || "";
+    const telf = document.querySelector('input[name="tel_estudiante"]')?.value || "";
+    const pass = document.getElementById('reg_password')?.value || "";
+    const passConfirm = document.getElementById('reg_password_confirm')?.value || "";
+    
+    const trabaja = document.querySelector('input[name="trabaja"]:checked')?.value;
+    const estatus = document.querySelector('input[name="estatus_estudio"]:checked')?.value;
 
-    // Obtenemos valores
-    const edad = parseInt(edadCampo?.value, 10) || 0;
-    const cedula = cedulaCampo?.value || "";
-    const codEst = codEstCampo?.value || "";
-
-    // 1. Validaciones de longitud (Cédula: 7-8 dígitos)
-    if (cedula.length < 7 || cedula.length > 8) {
-        alert("⚠️ La cédula debe tener 7 u 8 dígitos.");
+    // --- 2. PRIORIDAD ALTA: CRITERIOS DE EXCLUSIÓN ---
+    // Si no cumple esto, no importa lo demás.
+    if (trabaja === "si") {
+        alert("⚠️ No puedes solicitar la beca si posees un empleo actualmente.");
         return false;
     }
 
-    // 2. Validación Código de Estudiante (Exactamente 10)
-    if (codEst.length !== 10) {
-        alert("⚠️ El código de estudiante debe tener exactamente 10 dígitos.");
+    if (estatus === "inactivo") {
+        alert("⚠️ Debes estar activo en tus estudios para solicitar el beneficio.");
         return false;
     }
 
-    // 3. Validación de Estatus de estudio
-    if (!radioActivo || radioActivo.value !== 'activo') {
-        alert("⚠️ No puedes continuar: Debes confirmar que te encuentras activo en tus estudios.");
+    // --- 3. PRIORIDAD MEDIA: IDENTIDAD Y OBLIGATORIOS ---
+    if (cedula.length < 6 || cedula.length > 8) {
+        alert("⚠️ La cédula debe tener entre 6 y 8 dígitos.");
         return false;
     }
 
-    // 4. Validación de Edad (17 a 39 años)
-    if (edad < 17 || edad > 39) {
-        alert(`⚠️ Edad no permitida (${edad} años): Debes tener entre 17 y 39 años.`);
+    if (pass.length < 4) {
+        alert("⚠️ La contraseña debe tener al menos 4 caracteres.");
         return false;
     }
 
-    // Si todo está bien, permitimos el avance
-    return true; 
+    if (pass !== passConfirm) {
+        alert("⚠️ Las contraseñas no coinciden.");
+        return false;
+    }
+
+    // --- 4. PRIORIDAD BAJA: CAMPOS OPCIONALES (Validación Condicional) ---
+    // Solo validamos si el usuario empezó a escribir algo.
+    
+    // Validación de Teléfono (si no está vacío)
+    if (telf.trim() !== "") {
+        const regexTel = /^(0414|0424|0412|0416|0426|0268)[0-9]{7}$/;
+        if (!regexTel.test(telf)) {
+            alert("⚠️ El formato del teléfono es inválido (Ej: 04121234567).");
+            return false;
+        }
+    }
+
+    // Validación de Código de Estudiante (si no está vacío)
+    if (codEst.trim() !== "") {
+        if (codEst.length !== 10) {
+            alert("⚠️ El código de estudiante debe tener exactamente 10 dígitos.");
+            return false;
+        }
+    }
+
+    return true; // Todo correcto
 }

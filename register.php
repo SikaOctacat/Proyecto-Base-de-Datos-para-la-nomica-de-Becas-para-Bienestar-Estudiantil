@@ -25,16 +25,23 @@ require 'db.php';
 
     <div id="main-container">
         <div class="page-header">
-            <h2>FORMULARIO DE POSTULACIÓN</h2>
-            <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
-                Complete todos los pasos para registrar su solicitud de beca.
-            </div>
+        <h2>FORMULARIO DE POSTULACIÓN</h2>
+        <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+            Complete todos los pasos para registrar su solicitud de beca.
+        </div>
+        
+        <div style="position: absolute; top: 25px; right: 25px; display: flex; gap: 10px;">
+            <a href="index.php" id="btnVolverInicio" 
+            style="background: #ececec; color: #333; border: 1px solid #ccc; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;">
+            <i class="fa fa-home" style="margin-right: 5px;"></i> Inicio
+            </a>
+
             <button type="button" id="btnLimpiarRegistro" class="btn-clear-data" 
-                    style="position: absolute; top: 25px; right: 25px; background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    style="background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 Borrar Formulario
             </button>
-
         </div>
+    </div>
         
         <div class="progress-wrapper">
             <div id="progressBar" class="progress-bar"></div>

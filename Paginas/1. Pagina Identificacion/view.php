@@ -83,8 +83,8 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
         
         <div>
             <label>Edad</label>
-            <input type="number" id="edad" name="edad" placeholder="00" readonly tabindex="-1"
-                   style="background-color: #f0f0f0; cursor: not-allowed; font-weight: bold;">
+            <input  type="number" id="edad" name="edad" placeholder="00" readonly tabindex="-1"
+                    style="background-color: #f0f0f0; cursor: not-allowed; font-weight: bold;">
         </div>
 
         <div>
@@ -97,15 +97,16 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             </select>
         </div>
 
-        <div style="grid-column: span 1;">
-            <label>Código de Estudiante (10 dígitos)</label>
-            <input type="text" name="cod_est" id="cod_est" placeholder="Ej: 1234567890" 
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" 
-                   maxlength="10" required>
+        <div>
+            <label>Código de Estudiante</label>
+            <input type="text" name="cod_est" id="cod_est" 
+                placeholder="Ej: INT1234567" 
+                maxlength="10" 
+                >
         </div>
 
         <div style="grid-column: span 1;">
-            <label>Código del Carnet de la Patria</label>
+            <label>Código del Carnet de la Patria (Opcional)</label>
             <input type="text" name="C_Patria" placeholder="Ej: 0012345678" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         </div>
     </div>
@@ -114,6 +115,7 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
     <div style="margin-top: 25px; padding: 20px; border: 1px dashed #ccc; border-radius: 8px; background-color: #f9f9f9;">
         <h3 style="color: #FF6600; font-size: 1rem; margin-bottom: 10px;">🔐 Seguridad de la Cuenta</h3>
         <div class="grid-container">
+            
             <div class="password-container">
                 <label>Contraseña</label>
                 <input type="password" name="password" id="reg_password" placeholder="Mínimo 4 caracteres" required minlength="4">
@@ -121,12 +123,29 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
                     <i class="fas fa-eye"></i>
                 </button>
             </div>
+            
             <div class="password-container">
                 <label>Confirmar Contraseña</label>
                 <input type="password" id="reg_password_confirm" placeholder="Repita su contraseña" required minlength="4">
                 <button type="button" class="btn-view-pass" onclick="togglePassword('reg_password_confirm')">
                     <i class="fas fa-eye"></i>
                 </button>
+            </div>
+
+            <div>
+                <label>Pregunta de Seguridad</label>
+                <select name="pregunta_seguridad" id="pregunta_seguridad" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
+                    <option value="" disabled selected>Seleccione una pregunta...</option>
+                    <option value="Nombre de tu primera mascota">¿Nombre de tu primera mascota?</option>
+                    <option value="Ciudad donde naciste">¿Ciudad donde naciste?</option>
+                    <option value="Nombre de tu escuela primaria">¿Nombre de tu escuela primaria?</option>
+                    <option value="Personaje de ficción favorito">¿Personaje de ficción favorito?</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>Respuesta de Seguridad</label>
+                <input type="text" name="respuesta_seguridad" id="respuesta_seguridad" placeholder="Tu respuesta secreta" required>
             </div>
         </div>
     </div>
@@ -140,7 +159,16 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
                 <label class="radio-item"><input type="radio" name="viaja" value="no"> No</label>
             </div>
         </div>
-        <div class="pregunta-row" style="border-top: 1px solid #f0f0f0; padding-top: 15px;">
+
+        <div class="pregunta-row" style="border-top: 1px solid #f0f0f0; padding-top: 15px; margin-top: 15px;">
+            <span>¿Posees empleo actualmente?</span>
+            <div style="display: flex; gap: 15px;">
+                <label class="radio-item"><input type="radio" name="trabaja" value="si" required> Sí</label>
+                <label class="radio-item"><input type="radio" name="trabaja" value="no"> No</label>
+            </div>
+        </div>
+
+        <div class="pregunta-row" style="border-top: 1px solid #f0f0f0; padding-top: 15px; margin-top: 15px;">
             <span style="font-weight: bold; color: #d32f2f;">¿Te encuentras activo en tus estudios?</span>
             <div style="display: flex; gap: 15px;">
                 <label class="radio-item"><input type="radio" name="estatus_estudio" value="activo" required> Sí</label>

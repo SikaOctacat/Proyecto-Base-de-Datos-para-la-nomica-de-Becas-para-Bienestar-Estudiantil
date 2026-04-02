@@ -2,27 +2,102 @@
 // index.php unificado
 require 'db.php';
 
-// SOLUCIÓN AL ERROR: Verificar si la sesión ya existe antes de iniciarla
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 $logged = isset($_SESSION['user']);
 
-// Obtener alertas para el inicio
+// --- LÓGICA DE BÚSQUEDA ---
+$studentInfo = null;
+
+// Agregamos verificación de que 'user_id' existe en la sesión
+if ($logged && $_SESSION['rol'] === 'estudiante' && isset($_SESSION['user_id'])) {
+    try {
+        // 1. Datos básicos del estudiante
+        $stmt = $pdo->prepare("SELECT * FROM estudiantes WHERE usuario_id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        $studentInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($studentInfo) {
+            $e_id = $studentInfo['id'];
+
+            // --- CORRECCIÓN DE NOMBRES PARA CABECERA ---
+            $studentInfo['nombre1'] = $studentInfo['nombre1'] ?? $studentInfo['nombres'] ?? 'Usuario';
+            $studentInfo['apellido_paterno'] = $studentInfo['apellido_paterno'] ?? $studentInfo['apellidos'] ?? '';
+            
+            // --- DATOS PERSONALES (Mapeo para etiquetas {{...}}) ---
+            $studentInfo['tel_estudiante'] = $studentInfo['telefono'] ?? $studentInfo['celular'] ?? 'N/A';
+            $studentInfo['C_Patria'] = $studentInfo['codigo_patria'] ?? 'N/A';
+            $studentInfo['edo_civil'] = $studentInfo['estado_civil'] ?? 'N/A';
+            $studentInfo['observaciones'] = $studentInfo['notas'] ?? 'Sin observaciones adicionales.';
+
+            // 2. Familiares (Carga Familiar)
+            $stmtFam = $pdo->prepare("SELECT * FROM familiares WHERE estudiante_id = ?");
+            $stmtFam->execute([$e_id]);
+            $studentInfo['familiares'] = $stmtFam->fetchAll(PDO::FETCH_ASSOC);
+
+            // 3. Residencia / Ubicación
+            $stmtRes = $pdo->prepare("SELECT * FROM residencias WHERE estudiante_id = ?");
+            $stmtRes->execute([$e_id]);
+            $res = $stmtRes->fetch(PDO::FETCH_ASSOC);
+            
+            if ($res) {
+                $studentInfo['t_viv'] = $res['tipo_vivienda'] ?? 'N/A';
+                $studentInfo['estado_res'] = $res['estado'] ?? 'Falcón';
+                $studentInfo['municipio_res'] = $res['municipio'] ?? 'N/A';
+                $studentInfo['localidad'] = $res['localidad'] ?? 'N/A';
+                $studentInfo['tel_local'] = $res['telefono_local'] ?? 'N/A';
+                $studentInfo['dir_local'] = $res['direccion_exacta'] ?? 'No especificada';
+            } else {
+                $studentInfo['t_viv'] = $studentInfo['localidad'] = $studentInfo['municipio_res'] = 'N/A';
+                $studentInfo['estado_res'] = 'Falcón';
+                $studentInfo['dir_local'] = 'No especificada';
+            }
+
+            // 4. Info Académica
+            $stmtAcad = $pdo->prepare("SELECT * FROM datos_academicos WHERE estudiante_id = ?");
+            $stmtAcad->execute([$e_id]);
+            $ac = $stmtAcad->fetch(PDO::FETCH_ASSOC);
+            
+            if ($ac) {
+                $studentInfo['cod_est'] = $ac['codigo_estudiante'] ?? 'N/A';
+                $studentInfo['f_ingreso'] = $ac['fecha_ingreso'] ?? 'N/A';
+                $studentInfo['record_indice'] = $ac['indice_academico'] ?? '0.0';
+                $studentInfo['m_ira'] = $ac['ira'] ?? '0.0';
+                $studentInfo['trayecto'] = $ac['trayecto'] ?? 'N/A';
+                $studentInfo['trimestre'] = $ac['trimestre'] ?? 'N/A';
+            } else {
+                $studentInfo['cod_est'] = $studentInfo['f_ingreso'] = 'N/A';
+                $studentInfo['record_indice'] = $studentInfo['m_ira'] = '0.0';
+            }
+
+            // 5. Cálculo de Edad
+            if (!empty($studentInfo['f_nac'])) {
+                $cumple = new DateTime($studentInfo['f_nac']);
+                $hoy = new DateTime();
+                $studentInfo['edad'] = $hoy->diff($cumple)->y;
+                $studentInfo['f_nac_format'] = $cumple->format('d/m/Y'); 
+            } else {
+                $studentInfo['edad'] = 'N/A';
+            }
+        }
+    } catch (PDOException $e) {
+        error_log($e->getMessage());
+    }
+}
+
+// Obtener alertas
 $alertas = [];
 try {
     $stmt = $pdo->query("SELECT * FROM alertas WHERE activo = 1 ORDER BY created_at DESC");
-    if ($stmt) {
-        $alertas = $stmt->fetchAll();
-    }
-} catch (PDOException $e) {
-    // Silencio si la tabla no existe aún
-}
+    if ($stmt) { $alertas = $stmt->fetchAll(); }
+} catch (PDOException $e) { }
 
-// --- CASO 1: USUARIO NO AUTENTICADO (Landing Page) ---
+// --- VISTA ---
 if (!$logged) {
-    ?>
+    // ... (Tu código de Hero/Login se mantiene igual) ...
+?>
     <!DOCTYPE html>
     <html lang="es">
     <head>
@@ -32,7 +107,6 @@ if (!$logged) {
         <link rel="icon" href="img/logo.png" type="image/png">
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>
-            /* Estilos de la Landing Page */
             .top-nav{ position:fixed; top:0;left:0;right:0; background:rgba(255,255,255,0.05); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.1); z-index:999; padding:15px 40px; display:flex; justify-content:space-between; align-items:center; }
             .hero{ display: flex; align-items: center; justify-content: center; min-height: 80vh; padding-top: 100px; text-align:center; color:#fff;}
             .hero-content { max-width: 700px; padding: 40px; border-radius: 24px; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
@@ -47,7 +121,6 @@ if (!$logged) {
             <img src="img/logo.png" alt="Logo" style="height:64px">
             <nav><a href="#" id="openLogin" style="color:#fff; text-decoration:none;">Iniciar sesión</a></nav>
         </header>
-
         <main class="hero">
             <div class="hero-content">
                 <h1>SISTEMA <span class="highlight">INTEGRADO</span> DE BECAS</h1>
@@ -58,7 +131,6 @@ if (!$logged) {
                 </div>
             </div>
         </main>
-
         <div id="loginModal" class="modal oculto" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; display:flex; align-items:center; justify-content:center;">
             <div style="background:#fff; padding:30px; border-radius:12px; position:relative; width:90%; max-width:400px;">
                 <button id="closeLogin" style="position:absolute; top:10px; right:15px; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
@@ -70,30 +142,18 @@ if (!$logged) {
                 </form>
             </div>
         </div>
-
         <script>
             const modal = document.getElementById('loginModal');
-            document.getElementById('openLogin').onclick = (e) => {
-                e.preventDefault();
-                modal.classList.remove('oculto');
-            };
+            document.getElementById('openLogin').onclick = (e) => { e.preventDefault(); modal.classList.remove('oculto'); };
             document.getElementById('closeLogin').onclick = () => modal.classList.add('oculto');
-            
-            // Cerrar al hacer clic fuera del blanco
-            window.onclick = (event) => {
-                if (event.target == modal) modal.classList.add('oculto');
-            }
+            window.onclick = (event) => { if (event.target == modal) modal.classList.add('oculto'); }
         </script>
-
         <?php include 'footer.php'; ?>
     </body>
     </html>
-    <?php
+<?php
     exit;
 }
-
-// --- CASO 2: USUARIO AUTENTICADO ---
-// Aquí puedes incluir tus consultas SQL para $studentInfo si el rol es 'estudiante'
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -105,7 +165,6 @@ if (!$logged) {
 </head>
 <body data-rol="<?php echo $_SESSION['rol'] ?? 'publico'; ?>">
 
-    <label for="btn-menu" class="btn-abrir-menu"> ☰ </label>
     <div id="sidebar-placeholder"></div>
 
     <div id="main-container">
@@ -116,14 +175,14 @@ if (!$logged) {
             </div>
         </div>
         
-        <div class="progress-wrapper">
+        <div class="progress-wrapper" id="progress-wrapper">
             <div id="progressBar" class="progress-bar"></div>
         </div>
 
         <form id="becaForm">
             <div id="dynamic-content"></div>
 
-            <div class="nav-buttons">
+            <div class="nav-buttons" id="nav-buttons">
                 <button type="button" id="prevBtn" class="btn-prev">Anterior</button>
                 <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
             </div>
@@ -132,15 +191,17 @@ if (!$logged) {
 
     <script>
         // Cargar Sidebar
-        fetch('./sidebar.html')
-            .then(res => res.text())
-            .then(data => {
-                document.getElementById('sidebar-placeholder').innerHTML = data;
-            })
-            .catch(err => console.error("Error al cargar la barra lateral:", err));
+        const sidebarBox = document.getElementById('sidebar-placeholder');
+        if(sidebarBox) {
+            fetch('./sidebar.html')
+                .then(res => res.ok ? res.text() : "")
+                .then(data => { sidebarBox.innerHTML = data; })
+                .catch(err => console.error("Error al cargar la barra lateral:", err));
+        }
 
-        // Pasar datos de PHP a JS de forma segura
-        window.studentProfile = <?php echo json_encode($studentInfo ?? []); ?>;
+        // Datos para main.js
+        window.studentProfile = <?php echo json_encode($studentInfo); ?>;
+        console.log("Datos enviados al JS:", window.studentProfile);
     </script>
 
     <script src="main.js"></script>

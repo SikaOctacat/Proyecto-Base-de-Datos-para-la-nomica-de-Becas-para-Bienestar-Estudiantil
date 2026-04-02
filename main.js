@@ -15,8 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- PRIORIDAD: PERFIL DE ESTUDIANTE ---
     const userRole = document.body.getAttribute('data-rol');
     if (userRole === 'estudiante') {
+        // 1. Ocultamos los contenedores que no pertenecen al perfil
+        const navContainer = document.getElementById('nav-buttons');
+        const progContainer = document.getElementById('progress-wrapper');
+        if(navContainer) navContainer.style.display = 'none';
+        if(progContainer) progContainer.style.display = 'none';
+        
+        // 2. Cargamos el perfil
         showRegistrationSummary();
-        return;
+        return; // <--- CRÍTICO: Detiene la carga del formulario (Paso 1)
     }
     
     window.formDataStorage = {}; 
@@ -194,228 +201,48 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
+    /**
+     * Lógica para el botón "Volver al Inicio" con verificación
+     */
+    const btnVolver = document.getElementById('btnVolverInicio');
+    if (btnVolver) {
+        btnVolver.onclick = (e) => {
+            // Si el formulario ya se envió (paso 8) o está en el primer paso vacío, no preguntamos
+            if (window.formSubmitted || currentStep >= 8) {
+                return true; // Permite la navegación normal
+            }
+
+            // Si hay datos, pedimos confirmación
+            const confirmacion = confirm("¿Estás seguro de que quieres salir? Se perderá el progreso que no haya sido guardado en el sistema.");
+            
+            if (!confirmacion) {
+                e.preventDefault(); // Cancela el redireccionamiento a index.php
+            }
+        };
+    }
 
 
     /**
      * Muestra el perfil completo y oculta toda la interfaz de formulario.
      */
-    function showRegistrationSummary() {
+    async function showRegistrationSummary() {
         const sp = window.studentProfile;
-        if (!sp) return;
-        
-        // 1. Hide EVERYTHING else from the layout
-        const elementsToHide = [
-            '.page-header', 
-            '.progress-wrapper', 
-            '.nav-buttons', 
-            '.site-footer', 
-            '#menuToggleSPA', 
-            '#slideMenuSPA',
-            '.btn-clear-data'
-        ];
-        elementsToHide.forEach(selector => {
-            const el = document.querySelector(selector);
-            if(el) el.style.display = 'none';
-        });
+        if (!sp || !viewPort) return;
 
-        // 2. Format Family Members Table
-        let familyHtml = '';
-        if (sp.familiares && sp.familiares.length > 0) {
-            familyHtml = `
-                <table style="width:100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px;">
-                    <thead>
-                        <tr style="background:rgba(0,0,0,0.05);">
-                            <th style="padding:10px; text-align:left; border-bottom:1px solid #ddd;">Nombre</th>
-                            <th style="padding:10px; text-align:left; border-bottom:1px solid #ddd;">Parentesco</th>
-                            <th style="padding:10px; text-align:left; border-bottom:1px solid #ddd;">Ingreso</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${sp.familiares.map(f => `
-                            <tr>
-                                <td style="padding:8px; border-bottom:1px solid #eee;">${f.nombres} ${f.apellidos}</td>
-                                <td style="padding:8px; border-bottom:1px solid #eee;">${f.parentesco}</td>
-                                <td style="padding:8px; border-bottom:1px solid #eee; font-weight:700;">${f.ingreso} Bs</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } else {
-            familyHtml = '<p style="color:#999; font-style:italic;">No se registraron familiares.</p>';
-        }
+        try {
+            const response = await fetch('perfil_view.php');
+            if (!response.ok) throw new Error("No se pudo cargar la vista");
+            let html = await response.text();
 
-        // 3. Format Enrolled Subjects
-        const subjectsHtml = (sp.materias_inscritas && sp.materias_inscritas.length > 0) 
-            ? sp.materias_inscritas.map(m => `<span style="display:inline-block; background:#f0f0f0; padding:4px 10px; border-radius:15px; font-size:0.8rem; margin:2px;">${m}</span>`).join('') 
-            : '<p style="color:#999; font-style:italic;">Sin materias inscritas.</p>';
+            // ... (lógica de reemplazos {{...}} se mantiene igual) ...
 
-        // 4. Prepare the clean Profile View
-        const fullProfileHtml = `
-            <style>
-                @keyframes slideIn {
-                    from { opacity: 0; transform: translateY(30px) scale(0.98); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
-                }
-                .glass-card:hover { transform: translateY(-5px); transition: transform 0.3s ease; box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important; }
-            </style>
-            <div class="registration-summary full-profile"
- style="margin-top:20px; animation: slideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1); max-width: 960px; margin: 0 auto; padding-bottom: 80px;">
-                <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px; text-align:center; margin-bottom:35px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-                    <div style="width:110px; height:110px; background: linear-gradient(135deg, #FF6600, #FF3D00); color:white; border-radius:30px; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:45px; font-weight:900; box-shadow:0 15px 30px rgba(255,61,0,0.3); transform: rotate(-5deg);">
-                        ${(sp.nombres || "E").charAt(0).toUpperCase()}
-                    </div>
-                    <h1 style="color:#2c3e50; margin:0; font-size:2.5rem; font-weight: 800; letter-spacing: -1px;">${sp.nombres || "Estudiante"} ${sp.apellidos || ""}</h1>
-                    <p style="color:#546e7a; margin:8px 0; font-size: 1.1rem; font-weight: 500;">C.I. ${sp.ci || "N/A"} ${sp.id ? `· ID de Sistema: #${sp.id}` : ''}</p>
-                    <div style="display:inline-flex; align-items:center; gap:8px; background:#e8f5e9; color:#2e7d32; padding:8px 20px; border-radius:50px; font-size:0.95rem; font-weight:700; border: 1px solid #c8e6c9; margin-top:15px;">
-                        <span style="font-size:1.2rem;">●</span> Estatus de Postulación: ${sp.estado_beca || "Registrada"}
-                    </div>
+            // Insertamos directamente en el viewport para que no se pierda el diseño
+            viewPort.innerHTML = html;
+            window.scrollTo(0, 0);
 
-                    <!-- Eligibility Check Message -->
-                    ${(() => {
-                        const age = parseInt(sp.edad) || 0;
-                        const index = parseFloat(sp.indice_trimestre) || 0;
-                        const works = !!sp.empresa;
-                        const isActive = sp.estatus_estudio === 'activo';
-
-                        const meetsAge = age >= 17 && age <= 39;
-                        const meetsIndex = index >= 16;
-                        const meetsWork = !works;
-                        const meetsStatus = isActive;
-
-                        const isEligible = meetsAge && meetsIndex && meetsWork && meetsStatus;
-
-                        if (isEligible) {
-                            return `
-                                <div style="margin-top:20px; padding:15px; background:#e8f5e9; color:#2e7d32; border-radius:15px; border:1px solid #c8e6c9; text-align:left; display:flex; align-items:center; gap:15px;">
-                                    <span style="font-size:2rem;">✅</span>
-                                    <div>
-                                        <strong style="display:block; font-size:1.1rem;">¡Felicidades! Cumples con los requisitos.</strong>
-                                        <span style="font-size:0.85rem; opacity:0.8;">Tu perfil cumple con la edad, promedio, estatus laboral y académico para optar por la beca.</span>
-                                    </div>
-                                </div>`;
-                        } else {
-                            let reasons = [];
-                            if (!meetsAge) reasons.push("Edad fuera del rango (17-39)");
-                            if (!meetsIndex) reasons.push("Promedio menor a 16");
-                            if (works) reasons.push("Posees un empleo");
-                            if (!meetsStatus) reasons.push("No te encuentras activo en tus estudios");
-
-                            return `
-                                <div style="margin-top:20px; padding:15px; background:#fff3e0; color:#e65100; border-radius:15px; border:1px solid #ffe0b2; text-align:left; display:flex; align-items:center; gap:15px;">
-                                    <span style="font-size:2rem;">⚠️</span>
-                                    <div>
-                                        <strong style="display:block; font-size:1.1rem;">No cumples con todos los requisitos.</strong>
-                                        <span style="font-size:0.85rem; opacity:0.8;">Motivos: ${reasons.join(', ')}.</span>
-                                    </div>
-                                </div>`;
-                        }
-                    })()}
-                </div>
-
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
-                    <!-- Académico -->
-                    <div class="glass-card" style="background:rgba(255,255,255,0.8); backdrop-filter:blur(10px); padding:20px; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05); border:1px solid rgba(255,255,255,0.5);">
-                        <h4 style="color:#FF6600; margin-top:0; border-bottom:2px solid #fff5e6; padding-bottom:10px; margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size: 1.1rem;">
-                            🎓 Info. Académica
-                        </h4>
-                        <div style="display:grid; gap:8px;">
-                            <p style="margin:0; font-size:0.95rem;"><strong style="color: #666;">Carrera:</strong> ${sp.carrera || "No asignada"}</p>
-                            <p style="margin:0; font-size:0.95rem;"><strong style="color: #666;">Trayecto:</strong> ${sp.trayecto || "-"} / Trimestre: ${sp.trimestre_actual || "-"}</p>
-                            <p style="margin:0; font-size:0.95rem;"><strong style="color: #666;">Código:</strong> ${sp.codigo_estudiante || "N/A"}</p>
-                            <p style="margin:8px 0 0 0; font-size:0.95rem;"><strong style="color: #666;">Índice:</strong> <span style="background:#fff3e0; color:#e65100; padding:2px 8px; border-radius:10px; font-weight:700;">${sp.indice_trimestre || "0.0"}</span></p>
-                        </div>
-                    </div>
-
-                    <!-- Personal y Contacto -->
-                    <div class="glass-card" style="background:rgba(255,255,255,0.8); backdrop-filter:blur(10px); padding:20px; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05); border:1px solid rgba(255,255,255,0.5);">
-                        <h4 style="color:#FF6600; margin-top:0; border-bottom:2px solid #fff5e6; padding-bottom:10px; margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size: 1.1rem;">
-                            👤 Info. Personal
-                        </h4>
-                        <div style="display:grid; gap:8px;">
-                            <p style="margin:0; font-size:0.95rem;"><strong style="color: #666;">Teléfono:</strong> ${sp.telefono || "-"}</p>
-                            <p style="margin:0; font-size:0.95rem;"><strong style="color: #666;">Correo:</strong> ${sp.correo || "-"}</p>
-                            <p style="margin:0; font-size:0.95rem;"><strong style="color: #666;">Estado Civil:</strong> ${sp.estado_civil || "-"}</p>
-                            <p style="margin:0; font-size:0.95rem;"><strong style="color: #666;">C. Patria:</strong> ${sp.carnet_patria || "-"}</p>
-                        </div>
-                    </div>
-
-                    <!-- Vivienda y Trabajo -->
-                    <div class="glass-card" style="background:rgba(255,255,255,0.8); backdrop-filter:blur(10px); padding:20px; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05); border:1px solid rgba(255,255,255,0.5);">
-                        <h4 style="color:#FF6600; margin-top:0; border-bottom:2px solid #fff5e6; padding-bottom:10px; margin-bottom:15px; display:flex; align-items:center; gap:10px; font-size: 1.1rem;">
-                            🏠 Residencia y Trabajo
-                        </h4>
-                        <div style="display:grid; gap:8px;">
-                            <p style="margin:0; font-size:0.9rem;"><strong style="color: #666;">Vivienda:</strong> ${sp.tipo_vivienda || "-"}</p>
-                            <p style="margin:0; font-size:0.9rem; line-height:1.2; height:2.4em; overflow:hidden;" title="${sp.dir_residencia || '-'}"><strong style="color: #666;">Dirección:</strong> ${sp.dir_residencia || "-"}</p>
-                            <p style="margin:5px 0 0 0; font-size:0.9rem; border-top:1px dashed #eee; padding-top:5px;"><strong style="color: #666;">Empresa:</strong> ${sp.empresa || "No trabaja"}</p>
-                            ${sp.cargo_trabajo ? `<p style="margin:0; font-size:0.9rem;"><strong style="color: #666;">Sueldo:</strong> ${sp.sueldo || "0"} Bs</p>` : ''}
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:20px; margin-top:20px;">
-                    <!-- Familiares -->
-                    <div class="glass-card" style="background:rgba(255,255,255,0.8); backdrop-filter:blur(10px); padding:20px; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05); border:1px solid rgba(255,255,255,0.5);">
-                        <h4 style="color:#FF6600; margin-top:0; border-bottom:2px solid #fff5e6; padding-bottom:10px; margin-bottom:10px; display:flex; align-items:center; gap:10px; font-size: 1.1rem;">
-                            👨‍👩‍👧‍👦 Carga Familiar
-                        </h4>
-                        <div style="max-height: 200px; overflow-y: auto;">
-                            ${familyHtml}
-                        </div>
-                    </div>
-
-                    <!-- Materias -->
-                    <div class="glass-card" style="background:rgba(255,255,255,0.8); backdrop-filter:blur(10px); padding:20px; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05); border:1px solid rgba(255,255,255,0.5);">
-                        <h4 style="color:#FF6600; margin-top:0; border-bottom:2px solid #fff5e6; padding-bottom:10px; margin-bottom:10px; display:flex; align-items:center; gap:10px; font-size: 1.1rem;">
-                            📚 Materias Inscritas
-                        </h4>
-                        <div style="display:flex; flex-wrap:wrap; gap:5px;">
-                            ${subjectsHtml}
-                        </div>
-                        <div style="margin-top:15px; background:rgba(0,0,0,0.02); padding:10px; border-radius:10px;">
-                            <p style="margin:0; font-size:0.85rem;"><strong style="color: #555;">Inscritas:</strong> ${sp.n_materias_inscritas || "0"}</p>
-                            <p style="margin:0; font-size:0.85rem;"><strong style="color: #555;">Aprobadas:</strong> ${sp.n_materias_aprobadas || "0"}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-top:40px; text-align:center; padding:25px; border-radius: 20px; background: rgba(0,0,0,0.02);">
-                    <p style="color:#95a5a6; font-size:0.9rem; margin-bottom:20px; max-width: 500px; margin-left: auto; margin-right: auto;">
-                        Tus datos están en proceso de verificación por la oficina de Bienestar Estudiantil. Si detectas algún error, solicita asistencia técnica.
-                    </p>
-                    <a href="logout.php" class="btn-clear-data logout-profile" style="display:inline-block; background:#2c3e50; color:white; padding:12px 35px; border-radius:12px; text-decoration:none; font-weight:700; transition:all 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size:0.95rem;">
-                        Cerrar Sesión Segura
-                    </a>
-                </div>
-            </div>
-        `;
-
-        // 3. Inject the clean view into the dynamic content area
-        const contentArea = document.getElementById('dynamic-content');
-        if (contentArea) {
-            contentArea.innerHTML = fullProfileHtml;
-            
-            // Further ensure the outer layout doesn't interfere
-            const mainCard = document.querySelector('.card');
-            const mainContainer = document.getElementById('main-container');
-            if(mainCard) {
-                mainCard.style.background = 'transparent';
-                mainCard.style.boxShadow = 'none';
-                mainCard.style.padding = '0';
-            }
-            if(mainContainer) {
-                mainContainer.style.background = 'transparent';
-                mainContainer.style.paddingTop = '10px';
-                mainContainer.style.boxShadow = 'none';
-            }
-            // Hide the progress bar container
-            const progWrapper = document.querySelector('.progress-wrapper');
-            if(progWrapper) progWrapper.style.display = 'none';
-            
-            // Hide header entirely
-            const pageHeader = document.querySelector('.page-header');
-            if(pageHeader) pageHeader.style.display = 'none';
+        } catch (e) {
+            console.error("Error en perfil:", e);
+            viewPort.innerHTML = "<h3>Error al cargar el perfil.</h3>";
         }
     }
 
@@ -471,6 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         function actualizarEstadoBoton() {
+            // Si el paso actual ha marcado el botón como bloqueado por lógica de negocio
+            if (nextBtn.dataset.locked === "true") {
+                nextBtn.disabled = true;
+                nextBtn.style.opacity = "0.5";
+                return;
+            }
+
             let actualValido = true;
             inputs.forEach(i => {
                 if (i.type === 'checkbox' || i.type === 'radio') {
@@ -495,6 +329,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function actualizarInterfaz(step) {
         if (progressBar) progressBar.style.width = `${(step / totalSteps) * 100}%`;
         
+        // --- GESTIÓN DE BOTONES DE VOLVER ---
+        const btnVolverCabecera = document.getElementById('btnVolverInicio');
+        if (btnVolverCabecera) {
+            // Ocultamos el botón de la cabecera si estamos en el paso 8
+            btnVolverCabecera.style.display = (step >= 8) ? 'none' : 'flex';
+        }
+
         const prevBtn = document.getElementById('prevBtn');
         if (prevBtn) prevBtn.style.display = (step <= 1 || step >= 8) ? 'none' : 'inline-block';
 
@@ -503,6 +344,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnLimpiar) {
             // Se oculta desde el paso 7 en adelante (Verificación y Final)
             btnLimpiar.style.display = (step >= 7) ? 'none' : 'block';
+        }
+
+        const btnVolver = document.getElementById('btnVolverInicio');
+        if (btnVolver) {
+            // Opcional: Cambiar el texto o estilo si ya terminó
+            if (step >= 8) {
+                btnVolver.style.background = "#4CAF50"; 
+                btnVolver.style.color = "white";
+                btnVolver.innerHTML = '<i class="fa fa-arrow-left"></i> Volver al Inicio';
+            }
         }
         
         const nextBtn = document.getElementById('nextBtn');

@@ -29,6 +29,7 @@
         <div>
             <label>Trayecto actual</label>
             <select name="trayecto" id="trayectoSelect" required>
+                <option value="" disabled selected>Seleccione su trayecto...</option>
                 <option value="inicial">Trayecto Inicial</option>
                 <option value="1">Trayecto I</option>
                 <option value="2">Trayecto II</option>
@@ -38,7 +39,8 @@
         </div>
         <div>
             <label>Trimestre actual</label>
-            <select name="trimestre" required>
+            <select name="trimestre" required id="trimestreSelect">
+                <option value="" disabled selected>Seleccione su trimestre...</option>
                 <option value="1">1er Trimestre</option>
                 <option value="2">2do Trimestre</option>
                 <option value="3">3er Trimestre</option>
