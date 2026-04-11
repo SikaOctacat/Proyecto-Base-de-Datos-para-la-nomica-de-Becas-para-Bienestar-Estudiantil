@@ -46,6 +46,19 @@
                 <option value="3">3er Trimestre</option>
             </select>
         </div>
+
+        <div class="full-width">
+            <label for="ira_anterior">Índice de Rendimiento Académico (IRA)</label>
+            <div class="input-group-ira">
+                <input type="number" 
+                    name="ira_anterior" 
+                    id="ira_anterior" 
+                    step="0.01" 
+                    placeholder="0.00" 
+                    required>
+                <span class="input-suffix">/20</span>
+            </div>
+        </div>
     </div>
 
     <div id="warningTrayecto" style="display:none; margin-top:15px; padding:15px; background:#fff3cd; color:#856404; border-radius:10px; border:1px solid #ffeeba; font-size:0.9rem;">

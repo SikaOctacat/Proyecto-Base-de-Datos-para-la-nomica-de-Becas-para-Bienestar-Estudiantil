@@ -16,7 +16,6 @@ $estudiante_id = null;
 $pnf_id = null;
 $is_admin = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin');
 
-// 1. Identificar por Sesión
 if (isset($_SESSION['user']) && !$is_admin) {
     $stmt = $pdo->prepare('SELECT e.id, e.pnf_id FROM estudiantes e JOIN usuarios u ON e.usuario_id = u.id WHERE u.usuario = ?');
     $stmt->execute([$_SESSION['user']]);
@@ -27,7 +26,6 @@ if (isset($_SESSION['user']) && !$is_admin) {
     }
 }
 
-// 2. Identificar por Cédula (Si no hay sesión o para validar existencia)
 if (!$estudiante_id && !empty($data['cedula'])) {
     $stmt = $pdo->prepare('SELECT id, pnf_id FROM estudiantes WHERE ci = ?');
     $stmt->execute([$data['cedula']]);
@@ -43,25 +41,22 @@ try {
 
     // --- REGISTRO DE USUARIO NUEVO (PASO 1) ---
     if (!$estudiante_id && !empty($data['cedula']) && !empty($data['password'])) {
-        // Verificar si el usuario ya existe
         $stmt = $pdo->prepare('SELECT id FROM usuarios WHERE usuario = ?');
         $stmt->execute([$data['cedula']]);
         if ($stmt->fetch()) {
             throw new Exception("La cédula ya está registrada. Por favor, inicie sesión.");
         }
 
-        // Crear Cuenta de Usuario
         $hash = hash('sha256', $data['password']);
-        $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, rol, pregunta_seguridad, respuesta_seguridad) VALUES (?, ?, "estudiante", ?, ?)');
+        
+        // CORRECCIÓN: Se eliminaron 'pregunta_seguridad' y 'respuesta_seguridad' de la consulta
+        $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, "estudiante")');
         $stmt->execute([
             $data['cedula'], 
-            $hash, 
-            $data['pregunta_seguridad'] ?? null, 
-            $data['respuesta_seguridad'] ?? null
+            $hash
         ]);
         $usuario_id = $pdo->lastInsertId();
 
-        // Crear Perfil de Estudiante inicial
         $nombres_full = trim(($data['nombre1'] ?? '') . ' ' . ($data['nombre2'] ?? ''));
         $apellidos_full = trim(($data['apellido_paterno'] ?? '') . ' ' . ($data['apellido_materno'] ?? ''));
         
@@ -118,13 +113,12 @@ try {
         $pdo->prepare("DELETE FROM $table WHERE estudiante_id = ?")->execute([$estudiante_id]);
     }
 
-    // --- BECA POR DEFECTO (CORREGIDO) ---
+    // --- BECA ---
     $tipo_beca_form = $data['tipo_beneficio'] ?? 'Beca Estudio'; 
     $stmtBeca = $pdo->prepare('SELECT id FROM becas WHERE tipo LIKE ? LIMIT 1');
     $stmtBeca->execute(["%$tipo_beca_form%"]);
     $beca_row = $stmtBeca->fetch();
-
-    $beca_id_final = ($beca_row) ? $beca_row['id'] : 1; // 1 es el ID por defecto
+    $beca_id_final = ($beca_row) ? $beca_row['id'] : 1; 
 
     $pdo->prepare('INSERT INTO estudiante_becas (estudiante_id, beca_id, fecha_solicitud, estado) VALUES (?, ?, NOW(), "Pendiente")')
         ->execute([$estudiante_id, $beca_id_final]);
@@ -136,7 +130,7 @@ try {
         $data['t_viv'] ?? null, 
         $data['dir_local'] ?? null, 
         $data['tel_local'] ?? null,
-        $data['localidad'] ?? null,
+        $data['t_loc'] ?? null, // Corregido el nombre de la clave para que coincida con main.js
         $data['municipio_res'] ?? null,
         $data['estado_res'] ?? null
     ]);
@@ -146,11 +140,11 @@ try {
     $stmt->execute([
         $estudiante_id, 
         $data['record_indice'] ?? 0, 
-        $data['m_ira'] ?? 0
+        $data['ira_anterior'] ?? 0 // CORRECCIÓN: Se cambió 'm_ira' por 'ira_anterior'
     ]);
 
     // --- FAMILIARES (PASO 5) ---
-    if (empty($data['no_familiares']) || $data['no_familiares'] !== 'on') {
+    if (empty($data['no_familiares']) || $data['no_familiares'] !== true) {
         $fam = [];
         foreach ($data as $k => $v) {
             if (preg_match('/^f_(nom|ape|par|eda|ins|ocu|ing)_(\d+)$/', $k, $m)) {

@@ -1,6 +1,6 @@
 <?php if(session_status()==PHP_SESSION_NONE) session_start(); ?>
 <div class="step-content">
-    <h2>6. Datos Adicionales</h2>
+    <h2>5. Datos Adicionales</h2>
     <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
         Use este espacio para añadir cualquier información relevante sobre su situación socioeconómica que no haya sido mencionada anteriormente.
     </p>

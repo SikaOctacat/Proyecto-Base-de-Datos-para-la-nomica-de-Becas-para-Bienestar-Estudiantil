@@ -5,7 +5,7 @@
     </div>
 </footer>
 <div class="step-content">
-    <h2>5. Familiares del Estudiante</h2>
+    <h2>4. Familiares del Estudiante</h2>
     <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">Indique las personas que conviven con usted (Solo puedes añadir hasta 5 familiares).</p>
     
     <div style="background: rgba(255,102,0,0.05); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed var(--primary);">

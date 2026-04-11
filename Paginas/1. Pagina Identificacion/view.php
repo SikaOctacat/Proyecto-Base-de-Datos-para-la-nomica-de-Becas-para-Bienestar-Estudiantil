@@ -52,17 +52,17 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 
         <div>
             <label>Teléfono</label>
-            <input type="tel" name="tel_estudiante" placeholder="Ej: 04121234567" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$">
+            <input type="tel" name="tel_estudiante" placeholder="Ej: 04121234567" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$" required>
         </div>
 
         <div>
             <label>Email</label>
-            <input type="email" name="correo" placeholder="ejemplo@gmail.com">
+            <input type="email" name="correo" placeholder="ejemplo@gmail.com" required>
         </div>
 
         <div>
             <label>Estado Civil</label>
-            <select name="edo_civil">
+            <select name="edo_civil" required>
                 <option value="" disabled selected>Seleccione...</option>
                 <option value="soltero">Soltero/a</option>
                 <option value="casado">Casado/a</option>
@@ -102,11 +102,11 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             <input type="text" name="cod_est" id="cod_est" 
                 placeholder="Ej: INT1234567" 
                 maxlength="10" 
-                >
+                required>
         </div>
 
         <div style="grid-column: span 1;">
-            <label>Código del Carnet de la Patria (Opcional)</label>
+            <label>Código del Carnet de la Patria</label>
             <input type="text" name="C_Patria" placeholder="Ej: 0012345678" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         </div>
     </div>

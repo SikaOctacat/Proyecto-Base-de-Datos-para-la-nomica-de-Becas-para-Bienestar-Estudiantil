@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStep = 1; 
     let maxStepReached = 1; 
     window.formSubmitted = false; 
-    const totalSteps = 8; // Nuevo límite total
+    const totalSteps = 7;
     
     const viewPort = document.getElementById('dynamic-content'); 
     const progressBar = document.getElementById('progressBar'); 
@@ -32,12 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const folderMap = {
         1: "1. Pagina Identificacion",
         2: "2. Pagina Residencia",
-        3: "3. Pagina PNF", // Antes era 4
-        4: "4. Pagina Record academico", // Antes era 6
-        5: "5. Pagina Familiares", // Antes era 7
-        6: "6. Pagina Datos extra", // Antes era 8
-        7: "7. Verificacion", // Antes era 9
-        8: "8. Pantalla final" // Antes era 10
+        3: "3. Pagina PNF",
+        4: "4. Pagina Familiares",
+        5: "5. Pagina Datos extra",
+        6: "6. Verificacion",
+        7: "7. Pantalla final"
     };
 
     /**
@@ -122,11 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     1: 'initIdentificacion',
                     2: 'initResidencia',
                     3: 'initPNF',
-                    4: 'initRecord',
-                    5: 'initFamiliares',
-                    6: 'initDatosExtra',
-                    7: 'renderResumen',
-                    8: 'renderFinalStatus'
+                    4: 'initFamiliares',
+                    5: 'initDatosExtra',
+                    6: 'renderResumen',
+                    7: 'renderFinalStatus'
                 };
                 const funcName = initFuncs[stepNumber];
                 if (funcName && typeof window[funcName] === 'function') {
@@ -207,8 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnVolver = document.getElementById('btnVolverInicio');
     if (btnVolver) {
         btnVolver.onclick = (e) => {
-            // Si el formulario ya se envió (paso 8) o está en el primer paso vacío, no preguntamos
-            if (window.formSubmitted || currentStep >= 8) {
+            // Si el formulario ya se envió (paso 7) o está en el primer paso vacío, no preguntamos
+            if (window.formSubmitted || currentStep >= 7) {
                 return true; // Permite la navegación normal
             }
 
@@ -327,39 +325,51 @@ document.addEventListener('DOMContentLoaded', () => {
      * Gestiona la visibilidad y estados de los elementos de navegación
      */
     function actualizarInterfaz(step) {
-        if (progressBar) progressBar.style.width = `${(step / totalSteps) * 100}%`;
-        
-        // --- GESTIÓN DE BOTONES DE VOLVER ---
-        const btnVolverCabecera = document.getElementById('btnVolverInicio');
-        if (btnVolverCabecera) {
-            // Ocultamos el botón de la cabecera si estamos en el paso 8
-            btnVolverCabecera.style.display = (step >= 8) ? 'none' : 'flex';
-        }
+    // 1. Barra de progreso (ahora se calcula sobre 7)
+    if (progressBar) {
+        progressBar.style.width = `${(step / totalSteps) * 100}%`;
+    }
 
-        const prevBtn = document.getElementById('prevBtn');
-        if (prevBtn) prevBtn.style.display = (step <= 1 || step >= 8) ? 'none' : 'inline-block';
+    // --- GESTIÓN DE BOTONES DE VOLVER ---
+    const btnVolverCabecera = document.getElementById('btnVolverInicio');
+    if (btnVolverCabecera) {
+        // Ocultamos el botón de la cabecera si estamos en el paso final (7)
+        btnVolverCabecera.style.display = (step >= 7) ? 'none' : 'flex';
+    }
+
+    const prevBtn = document.getElementById('prevBtn');
+        if (prevBtn) {
+            // No hay "Atrás" en el paso 1 ni en el paso final (7)
+            prevBtn.style.display = (step <= 1 || step >= 7) ? 'none' : 'inline-block';
+        }
 
         // --- GESTIÓN DEL BOTÓN DE LIMPIEZA ---
         const btnLimpiar = document.getElementById('btnLimpiarRegistro');
         if (btnLimpiar) {
-            // Se oculta desde el paso 7 en adelante (Verificación y Final)
-            btnLimpiar.style.display = (step >= 7) ? 'none' : 'block';
+            // Se oculta en Verificación (6) y Pantalla Final (7)
+            btnLimpiar.style.display = (step >= 6) ? 'none' : 'block';
         }
 
+        // --- ESTILO DEL BOTÓN VOLVER (PARA EL FINAL) ---
+        // Usamos el ID correspondiente al botón que quieras transformar al terminar
         const btnVolver = document.getElementById('btnVolverInicio');
         if (btnVolver) {
-            // Opcional: Cambiar el texto o estilo si ya terminó
-            if (step >= 8) {
+            if (step >= 7) {
                 btnVolver.style.background = "#4CAF50"; 
                 btnVolver.style.color = "white";
+                btnVolver.style.display = "flex"; // Nos aseguramos de que sea visible al final
                 btnVolver.innerHTML = '<i class="fa fa-arrow-left"></i> Volver al Inicio';
             }
         }
-        
+
+        // --- GESTIÓN DEL BOTÓN SIGUIENTE ---
         const nextBtn = document.getElementById('nextBtn');
         if (nextBtn) {
-            nextBtn.textContent = (step === 7) ? "Confirmar" : "Siguiente";
-            nextBtn.style.display = (step >= 8) ? 'none' : 'inline-block';
+            // En el paso 6 (Verificación), el texto cambia a Confirmar
+            nextBtn.textContent = (step === 6) ? "Confirmar" : "Siguiente";
+            
+            // Se oculta en la pantalla final (7)
+            nextBtn.style.display = (step >= 7) ? 'none' : 'inline-block';
             
             // Ejecutar validación inicial al cargar el paso
             validarFormularioActual(); 
@@ -373,11 +383,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nextBtnEl) {
         nextBtnEl.onclick = async () => {
             if (currentStep === 1 && typeof validarPaso1 === 'function' && !validarPaso1()) return;
-            if (currentStep === 4 && typeof validarRecord === 'function' && !validarRecord()) return;
 
             window.saveCurrentData();
 
-            if (currentStep === 7) { // Paso de Verificación
+            if (currentStep === 6) { // Paso de Verificación
                 try {
                     const res = await fetch('submit.php', {
                         method: 'POST',

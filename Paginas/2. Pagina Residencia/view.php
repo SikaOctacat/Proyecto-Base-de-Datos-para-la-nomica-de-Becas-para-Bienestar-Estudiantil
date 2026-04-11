@@ -71,8 +71,7 @@
                    maxlength="11"
                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                    pattern="^(02)[0-9]{9}$"
-                   style="width: 100%;"
-                   required>
+                   style="width: 100%;">
         </div>
 
         <div class="full-width">

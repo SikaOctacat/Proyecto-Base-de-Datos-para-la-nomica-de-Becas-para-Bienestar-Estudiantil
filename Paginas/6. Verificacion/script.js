@@ -57,26 +57,17 @@ function renderResumen() {
         <div class="dato-fila"><span class="dato-label">Carrera (PNF):</span> <span class="dato-valor" style="text-transform: capitalize;">${getV('carrera')}</span></div>
         <div class="dato-fila"><span class="dato-label">Fecha de Ingreso:</span> <span class="dato-valor">${getV('f_ingreso')}</span></div>
         <div class="dato-fila"><span class="dato-label">Ubicación Actual:</span> <span class="dato-valor">Trayecto ${getV('trayecto')} - Trimestre ${getV('trimestre')}</span></div>
-    </div>`;
-
-    // --- SECCIÓN 4: RÉCORD ACADÉMICO ---
-    html += `
-    <div class="resumen-seccion">
-        <h3>4. Récord Académico</h3>
-        <div class="dato-fila">
-            <span class="dato-label">Índice del Trimestre:</span> 
-            <span class="dato-valor">${getV('record_indice')} / 20.00</span>
-        </div>
         <div class="dato-fila">
             <span class="dato-label">Índice de Rendimiento (IRA):</span> 
-            <span class="dato-valor">${getV('m_ira')}%</span>
+            <span class="dato-valor">${getV('ira_anterior')} / 20</span>
         </div>
     </div>`;
 
-    // --- SECCIÓN 5: CARGA FAMILIAR ---
+
+    // --- SECCIÓN 4: CARGA FAMILIAR ---
     html += `
     <div class="resumen-seccion">
-        <h3>5. Grupo Familiar Conviviente</h3>`;
+        <h3>4. Grupo Familiar Conviviente</h3>`;
     
     if (data['no_familiares'] === true) {
         html += `
@@ -122,7 +113,7 @@ function renderResumen() {
     }
     html += `</div>`;
 
-    // --- SECCIÓN 6: DATOS ADICIONALES ---
+    // --- SECCIÓN 5: DATOS ADICIONALES ---
     html += `
     <div class="resumen-seccion" style="border-bottom: none;">
         <h3>6. Observaciones y Comentarios</h3>
@@ -173,7 +164,7 @@ function generarTablaEditableFamiliares(data) {
 function resetFormulario() {
     // PRIMERA ADVERTENCIA
     const primeraConfirmacion = confirm(
-        "⚠️ ADVERTENCIA: Estás a punto de borrar TODOS los datos ingresados en los 7 pasos.\n\n" +
+        "⚠️ ADVERTENCIA: Estás a punto de borrar TODOS los datos ingresados en los 6 pasos.\n\n" +
         "¿Deseas continuar?"
     );
 

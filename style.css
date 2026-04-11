@@ -319,7 +319,6 @@ select {
     padding: 30px;
     border-radius: 8px;
     border: 1px solid #ddd;
-    max-height: 70vh;
     overflow-y: auto;
     color: #333;
 }
@@ -372,6 +371,25 @@ select {
     margin: 0 auto 25px;
     box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
     animation: scaleIn 0.5s ease-out;
+}
+
+.input-group-ira {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-group-ira input {
+    width: 100%;
+    padding-right: 45px; /* Espacio para el /20 */
+}
+
+.input-suffix {
+    position: absolute;
+    right: 15px;
+    color: #666;
+    font-weight: bold;
+    pointer-events: none; /* Para que el click pase al input */
 }
 
 @keyframes scaleIn {

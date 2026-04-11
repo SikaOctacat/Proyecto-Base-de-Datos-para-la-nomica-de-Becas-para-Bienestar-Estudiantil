@@ -1,5 +1,5 @@
 <div class="step-content">
-    <h2>7. Revisión y Corrección Final</h2>
+    <h2>6. Revisión Final</h2>
     <p style="margin-bottom: 20px;">Esta es una vista completa de tus datos.</p>
     
     <div id="panel-edicion-global" class="edicion-container">
