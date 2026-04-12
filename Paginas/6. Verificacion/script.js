@@ -45,7 +45,7 @@ function renderResumen() {
         <div class="dato-fila"><span class="dato-label">Tipo de Residencia:</span> <span class="dato-valor">${getV('t_res')}</span></div>
         <div class="dato-fila"><span class="dato-label">Tipo de Vivienda:</span> <span class="dato-valor">${getV('t_viv')}</span></div>
         <div class="dato-fila"><span class="dato-label">Localidad / Propiedad:</span> <span class="dato-valor">${getV('t_loc')} / ${getV('r_prop')}</span></div>
-        <div class="dato-fila"><span class="dato-label">Ubicación:</span> <span class="dato-valor">${getV('estado_res')}, ${getV('municipio_res')}</span></div>
+        <div class="dato-fila"><span class="dato-label">Estado/Municipio:</span> <span class="dato-valor">${getV('estado_res')}, ${getV('municipio_res')}</span></div>
         <div class="dato-fila"><span class="dato-label">Dirección Local:</span> <span class="dato-valor">${getV('dir_local')}</span></div>
         <div class="dato-fila"><span class="dato-label">Teléfono Local:</span> <span class="dato-valor">${getV('tel_local')}</span></div>
     </div>`;
@@ -56,9 +56,9 @@ function renderResumen() {
         <h3>3. Información del PNF</h3>
         <div class="dato-fila"><span class="dato-label">Carrera (PNF):</span> <span class="dato-valor" style="text-transform: capitalize;">${getV('carrera')}</span></div>
         <div class="dato-fila"><span class="dato-label">Fecha de Ingreso:</span> <span class="dato-valor">${getV('f_ingreso')}</span></div>
-        <div class="dato-fila"><span class="dato-label">Ubicación Actual:</span> <span class="dato-valor">Trayecto ${getV('trayecto')} - Trimestre ${getV('trimestre')}</span></div>
+        <div class="dato-fila"><span class="dato-label">Período actual:</span> <span class="dato-valor">Trayecto ${getV('trayecto')} - Trimestre ${getV('trimestre')}</span></div>
         <div class="dato-fila">
-            <span class="dato-label">Índice de Rendimiento (IRA):</span> 
+            <span class="dato-label">Índice de Rendimiento Académico (IRA):</span> 
             <span class="dato-valor">${getV('ira_anterior')} / 20</span>
         </div>
     </div>`;
@@ -69,13 +69,13 @@ function renderResumen() {
     <div class="resumen-seccion">
         <h3>4. Grupo Familiar Conviviente</h3>`;
     
-    if (data['no_familiares'] === true) {
+    if (data['no_familiares'] === true || data['no_familiares'] === "on") {
         html += `
-        <div style="padding: 10px; background: #fff5e6; border: 1px solid #ffe0b3; border-radius: 6px; color: #666; font-style: italic;">
-            📢 Declaración: El estudiante no convive con familiares (Vive solo).
+        <div style="padding: 12px; background: #fff5e6; border: 1px solid #ffe0b3; border-radius: 6px; color: #856404; font-style: italic;">
+            📢 <strong>Declaración:</strong> El estudiante ha declarado que no convive con familiares (Vive solo).
         </div>`;
     } else {
-        // Extraer los IDs únicos de los familiares dinámicos
+        // Extraer los IDs únicos de los familiares filtrando por el prefijo del nombre
         const idsFam = [...new Set(
             Object.keys(data)
                 .filter(key => key.startsWith('f_nom_'))
@@ -84,31 +84,54 @@ function renderResumen() {
 
         if (idsFam.length > 0) {
             html += `
-            <div style="overflow-x: auto; margin-top: 10px;">
-                <table style="width:100%; font-size: 0.85rem; border-collapse: collapse; min-width: 400px;">
+            <div style="overflow-x: auto; margin-top: 10px; border: 1px solid #eee; border-radius: 8px;">
+                <table style="width:100%; font-size: 0.85rem; border-collapse: collapse; min-width: 600px;">
                     <thead>
-                        <tr style="background: #f8f9fa; border-bottom: 2px solid #eee; text-align: left;">
-                            <th style="padding: 8px;">Familiar</th>
-                            <th style="padding: 8px;">Parentesco</th>
-                            <th style="padding: 8px;">Ocupación</th>
-                            <th style="padding: 8px; text-align:right;">Ingreso</th>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                            <th style="padding: 10px;">Nombre y Apellido</th>
+                            <th style="padding: 10px;">Parentesco</th>
+                            <th style="padding: 10px; text-align: center;">Edad</th>
+                            <th style="padding: 10px;">Instrucción</th>
+                            <th style="padding: 10px;">Ocupación</th>
+                            <th style="padding: 10px; text-align:right;">Ingreso</th>
                         </tr>
                     </thead>
                     <tbody>`;
             
+            let totalIngresoFamiliar = 0;
+
             idsFam.forEach(id => {
+                const ingreso = parseFloat(data['f_ing_'+id]) || 0;
+                totalIngresoFamiliar += ingreso;
+
                 html += `
                     <tr style="border-bottom: 1px solid #f0f0f0;">
-                        <td style="padding: 8px;">${data['f_nom_'+id]} ${data['f_ape_'+id]}</td>
-                        <td style="padding: 8px;">${data['f_par_'+id] || '---'}</td>
-                        <td style="padding: 8px;">${data['f_ocu_'+id] || '---'}</td>
-                        <td style="padding: 8px; text-align:right;">${data['f_ing_'+id] || '0'} Bs</td>
+                        <td style="padding: 10px;">${data['f_nom_'+id]} ${data['f_ape_'+id]}</td>
+                        <td style="padding: 10px;">${data['f_par_'+id] || '---'}</td>
+                        <td style="padding: 10px; text-align: center;">${data['f_eda_'+id] || '--'}</td>
+                        <td style="padding: 10px;">${data['f_ins_'+id] || '---'}</td>
+                        <td style="padding: 10px;">${data['f_ocu_'+id] || '---'}</td>
+                        <td style="padding: 10px; text-align:right; font-weight: 600;">${ingreso.toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs</td>
                     </tr>`;
             });
             
-            html += `</tbody></table></div>`;
+            html += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #fdfdfd; border-top: 2px solid #eee;">
+                            <td colspan="5" style="padding: 10px; text-align: right; font-weight: bold;">Total Ingresos Mensuales:</td>
+                            <td style="padding: 10px; text-align: right; font-weight: bold; color: #28a745; border-left: 1px solid #eee;">
+                                ${totalIngresoFamiliar.toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>`;
         } else {
-            html += `<div style="color: #d9534f; font-weight: 500;">⚠️ No se han registrado familiares en la lista.</div>`;
+            html += `
+            <div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; color: #721c24;">
+                ⚠️ No se detectaron familiares registrados en el sistema.
+            </div>`;
         }
     }
     html += `</div>`;
@@ -116,7 +139,7 @@ function renderResumen() {
     // --- SECCIÓN 5: DATOS ADICIONALES ---
     html += `
     <div class="resumen-seccion" style="border-bottom: none;">
-        <h3>6. Observaciones y Comentarios</h3>
+        <h3>5. Observaciones y Comentarios</h3>
         <div style="background: #fafafa; padding: 15px; border-left: 4px solid var(--primary); border-radius: 4px; font-size: 0.9rem; color: #444; line-height: 1.5;">
             ${data['comentarios'] ? data['comentarios'] : '<i>Sin observaciones adicionales proporcionadas.</i>'}
         </div>
@@ -164,7 +187,7 @@ function generarTablaEditableFamiliares(data) {
 function resetFormulario() {
     // PRIMERA ADVERTENCIA
     const primeraConfirmacion = confirm(
-        "⚠️ ADVERTENCIA: Estás a punto de borrar TODOS los datos ingresados en los 6 pasos.\n\n" +
+        "⚠️ ADVERTENCIA: Estás a punto de borrar TODOS los datos ingresados en los 5 pasos.\n\n" +
         "¿Deseas continuar?"
     );
 

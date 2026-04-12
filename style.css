@@ -392,6 +392,18 @@ select {
     pointer-events: none; /* Para que el click pase al input */
 }
 
+/* Ocultar flechas en Chrome, Safari, Edge y Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Ocultar flechas en Firefox */
+input[type=number] {
+  -appearance: textfield;
+}
+
 @keyframes scaleIn {
     0% { transform: scale(0); }
     80% { transform: scale(1.1); }

@@ -4,7 +4,7 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO INICIAL ---
-    let currentStep = 1; 
+    let currentStep = 1;
     let maxStepReached = 1; 
     window.formSubmitted = false; 
     const totalSteps = 7;
@@ -168,34 +168,42 @@ document.addEventListener('DOMContentLoaded', () => {
      * Ahora solo limpia la vista actual y remueve esos datos específicos del storage
      */
     const btnLimpiar = document.getElementById('btnLimpiarRegistro');
-    if (btnLimpiar) {
+if (btnLimpiar) {
         btnLimpiar.onclick = (e) => {
-            // Evitamos que el botón recargue la página si está dentro de un form
             e.preventDefault();
 
             if (confirm("¿Deseas limpiar los campos de esta página actual?")) {
                 const viewPort = document.getElementById('dynamic-content');
+                // Seleccionamos todos los inputs, tengan 'name' o no
                 const inputs = viewPort.querySelectorAll('input, select, textarea');
+                const errorText = document.getElementById('error-pass'); // El texto de advertencia
 
                 inputs.forEach(input => {
-                    if (input.name) {
-                        // 1. Limpiamos el valor visualmente
-                        if (input.type === 'checkbox' || input.type === 'radio') {
-                            input.checked = false;
-                        } else {
-                            input.value = "";
-                        }
+                    // 1. Limpieza visual (aplica a TODOS los inputs del viewport)
+                    if (input.type === 'checkbox' || input.type === 'radio') {
+                        input.checked = false;
+                    } else {
+                        input.value = "";
+                    }
 
-                        // 2. Eliminamos la clave específica de la memoria global
-                        // para que no se restaure al navegar
+                    // 2. Limpieza de memoria (solo si tienen 'name')
+                    if (input.name) {
                         delete window.formDataStorage[input.name];
                     }
+                    
+                    // 3. Reset de estilos visuales de error (específico para contraseñas)
+                    input.style.borderColor = '#ddd';
                 });
 
-                // 3. Forzamos la re-validación para deshabilitar el botón "Siguiente"
+                // 4. Ocultamos el textico de error si existe
+                if (errorText) {
+                    errorText.style.display = 'none';
+                }
+
+                // 5. Forzamos re-validación
                 validarFormularioActual();
                 
-                console.log("Campos de la página actual limpiados.");
+                console.log("Campos de la página actual y confirmación de contraseña limpiados.");
             }
         };
     }
@@ -347,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnLimpiar = document.getElementById('btnLimpiarRegistro');
         if (btnLimpiar) {
             // Se oculta en Verificación (6) y Pantalla Final (7)
-            btnLimpiar.style.display = (step >= 6) ? 'none' : 'block';
+            btnLimpiar.style.display = (step >= 4) ? 'none' : 'block';
         }
 
         // --- ESTILO DEL BOTÓN VOLVER (PARA EL FINAL) ---

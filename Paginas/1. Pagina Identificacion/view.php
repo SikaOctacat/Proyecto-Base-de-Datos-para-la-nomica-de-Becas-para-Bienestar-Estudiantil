@@ -84,7 +84,7 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
         <div>
             <label>Edad</label>
             <input  type="number" id="edad" name="edad" placeholder="00" readonly tabindex="-1"
-                    style="background-color: #f0f0f0; cursor: not-allowed; font-weight: bold;">
+                    style="background-color: #f0f0f0; cursor: not-allowed; font-weight: bold;" required>
         </div>
 
         <div>
@@ -97,13 +97,25 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             </select>
         </div>
 
-        <div>
-            <label>Código de Estudiante</label>
-            <input type="text" name="cod_est" id="cod_est" 
-                placeholder="Ej: INT1234567" 
+        <div style="display: flex; flex-direction: column;">
+        <label>Código de Estudiante</label>
+        <div style="position: relative; width: 100%; background: #fff; border-radius: 8px; border: 1px solid #ddd; overflow: hidden;">
+            <input type="text" 
+                name="cod_est" 
+                id="cod_est" 
+                value="INT" 
                 maxlength="10" 
+                style="background: transparent; border: none; width: 100%; padding: 10px; position: relative; z-index: 2; outline: none; font-size: 1rem;"
+                onkeydown="prevenirBorradoPrefijo(event, this)"
+                oninput="validarSoloNumerosPostPrefijo(this)"
                 required>
+            
+            <span id="placeholder-guia" 
+                style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #999; z-index: 1; pointer-events: none; font-size: 1rem; letter-spacing: 0.5px;">
+                <span style="visibility: hidden;">INT</span>1234567
+            </span>
         </div>
+    </div>
 
         <div style="grid-column: span 1;">
             <label>Código del Carnet de la Patria</label>

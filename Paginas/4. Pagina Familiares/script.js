@@ -34,6 +34,8 @@ function initFamiliares() {
         nuevaFila.querySelectorAll('input').forEach(input => {
             input.addEventListener('input', () => actualizarEstado());
         });
+
+        
     };
 
     /**

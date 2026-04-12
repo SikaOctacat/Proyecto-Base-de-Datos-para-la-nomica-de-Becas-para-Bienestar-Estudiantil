@@ -1,6 +1,3 @@
-/**
- * ARCHIVO: Paginas/3. Pagina PNF/script.js
- */
 window.initPNF = () => {
     const trayectoSelect = document.getElementById('trayectoSelect');
     const trimestreSelect = document.getElementById('trimestreSelect');
@@ -8,78 +5,82 @@ window.initPNF = () => {
     const nextBtn = document.getElementById('nextBtn');
     const iraInput = document.getElementById('ira_anterior');
 
-    // --- Lógica de validación para el IRA ---
-    if (iraInput) {
+    if (iraInput && nextBtn) {
         iraInput.addEventListener('input', (e) => {
             let val = e.target.value;
-
-            // 1. Evitar múltiples ceros a la izquierda (ej: "0005" -> "5")
-            // Pero permitimos "0." para decimales
+            // Limpieza básica
             if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
                 val = val.replace(/^0+/, '');
                 e.target.value = val;
             }
-
             let numericValue = parseFloat(val);
+            if (numericValue > 20) e.target.value = 20;
+            if (numericValue < 0) e.target.value = 0;
 
-            // 2. Controlar el rango 0 - 20
-            if (numericValue > 20) {
-                e.target.value = 20;
-            } else if (numericValue < 0) {
-                e.target.value = 0;
-            }
-
-            // 3. Limitar longitud total para evitar que "rompan" el diseño con mil números
-            if (val.length > 5) { // Ejemplo: "19.99" son 5 caracteres
-                e.target.value = val.slice(0, 5);
-            }
-        });
-
-        // Bloqueo de teclas problemáticas
-        iraInput.addEventListener('keydown', (e) => {
-            const invalidChars = ["-", "+", "e"];
-            if (invalidChars.includes(e.key)) {
-                e.preventDefault();
+            // Feedback visual: Si es menor a 16 se ve "apagado" pero sigue activo para el alert
+            if (numericValue < 16 || isNaN(numericValue)) {
+                nextBtn.style.opacity = "0.5";
+            } else {
+                nextBtn.style.opacity = "1";
             }
         });
     }
     
+    // --- LA SOLUCIÓN AL BLOQUEO ---
+    if (nextBtn) {
+        // Usamos capture: true para interceptar el evento ANTES de que el script de navegación actúe
+        nextBtn.addEventListener('click', function(e) {
+            // 1. Si el trayecto es inicial, bloqueo total
+            if (nextBtn.dataset.locked === "true") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+
+            // 2. Ejecutamos la validación del IRA
+            if (!validarPaso3()) {
+                // Si el alert sale (porque es < 16), detenemos el avance
+                e.preventDefault(); 
+                e.stopImmediatePropagation(); 
+                return false;
+            }
+
+            // 3. SI LLEGA AQUÍ: No hacemos nada. 
+            // Al no llamar a preventDefault(), el navegador permite que 
+            // los otros scripts de "Siguiente" se ejecuten normalmente.
+        }, { capture: true }); 
+    }
 
     const gestionarBloqueoInicial = () => {
-        if (!trayectoSelect || !trimestreSelect || !nextBtn) return;
-
+        if (!trayectoSelect || !nextBtn) return;
         if (trayectoSelect.value === 'inicial') {
-            // 1. Mostrar advertencia
             if (warning) warning.style.display = 'block';
-
-            // 2. Forzar Trimestre 1 y bloquear el campo
-            trimestreSelect.value = "1";
-            trimestreSelect.disabled = true;
-            trimestreSelect.classList.add('input-disabled');
-
-            // 3. Bloqueo absoluto del botón Siguiente
-            nextBtn.disabled = true;
             nextBtn.style.opacity = "0.5";
-            nextBtn.style.cursor = "not-allowed";
-            
-            // Evitamos que cualquier otra validación lo active
             nextBtn.dataset.locked = "true";
+            nextBtn.disabled = true; // Bloqueo físico en inicial
         } else {
-            // Restaurar estado normal
             if (warning) warning.style.display = 'none';
-            trimestreSelect.disabled = false;
-            trimestreSelect.classList.remove('input-disabled');
             nextBtn.dataset.locked = "false";
-
-            // Llamar a la validación general para ver si otros campos están listos
-            if (typeof window.validarFormularioActual === 'function') {
-                window.validarFormularioActual();
-            }
+            nextBtn.disabled = false;
+            if (iraInput) iraInput.dispatchEvent(new Event('input'));
         }
     };
 
     if (trayectoSelect) {
         trayectoSelect.addEventListener('change', gestionarBloqueoInicial);
-        gestionarBloqueoInicial(); // Ejecución al cargar
+        gestionarBloqueoInicial();
     }
 };
+
+function validarPaso3() {
+    const iraInput = document.getElementById('ira_anterior');
+    if (!iraInput) return true;
+    const valor = parseFloat(iraInput.value);
+
+    if (isNaN(valor) || valor < 16) {
+        alert("⚠️ El IRA mínimo es de 16.00 puntos.");
+        iraInput.focus();
+        return false; 
+    }
+    return true; 
+}
