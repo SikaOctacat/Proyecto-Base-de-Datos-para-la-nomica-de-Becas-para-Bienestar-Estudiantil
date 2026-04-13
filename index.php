@@ -6,80 +6,62 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$logged = isset($_SESSION['user']);
+// Lógica para cerrar sesión manualmente
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header('Location: index.php');
+    exit;
+}
 
-// --- LÓGICA DE BÚSQUEDA ---
+$logged = isset($_SESSION['user']);
 $studentInfo = null;
 
-// Agregamos verificación de que 'user_id' existe en la sesión
+// --- LÓGICA DE BÚSQUEDA ---
 if ($logged && $_SESSION['rol'] === 'estudiante' && isset($_SESSION['user_id'])) {
     try {
-        // 1. Datos básicos del estudiante
-        $stmt = $pdo->prepare("SELECT * FROM estudiantes WHERE usuario_id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM estudiante WHERE usuario_id = ?");
         $stmt->execute([$_SESSION['user_id']]);
         $studentInfo = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($studentInfo) {
-            $e_id = $studentInfo['id'];
+            $ci = $studentInfo['ci'];
 
-            // --- CORRECCIÓN DE NOMBRES PARA CABECERA ---
-            $studentInfo['nombre1'] = $studentInfo['nombre1'] ?? $studentInfo['nombres'] ?? 'Usuario';
-            $studentInfo['apellido_paterno'] = $studentInfo['apellido_paterno'] ?? $studentInfo['apellidos'] ?? '';
-            
-            // --- DATOS PERSONALES (Mapeo para etiquetas {{...}}) ---
-            $studentInfo['tel_estudiante'] = $studentInfo['telefono'] ?? $studentInfo['celular'] ?? 'N/A';
-            $studentInfo['C_Patria'] = $studentInfo['codigo_patria'] ?? 'N/A';
-            $studentInfo['edo_civil'] = $studentInfo['estado_civil'] ?? 'N/A';
-            $studentInfo['observaciones'] = $studentInfo['notas'] ?? 'Sin observaciones adicionales.';
-
-            // 2. Familiares (Carga Familiar)
-            $stmtFam = $pdo->prepare("SELECT * FROM familiares WHERE estudiante_id = ?");
-            $stmtFam->execute([$e_id]);
+            // Familiares
+            $stmtFam = $pdo->prepare("SELECT * FROM familiar WHERE ci_estudiante = ?");
+            $stmtFam->execute([$ci]);
             $studentInfo['familiares'] = $stmtFam->fetchAll(PDO::FETCH_ASSOC);
 
-            // 3. Residencia / Ubicación
-            $stmtRes = $pdo->prepare("SELECT * FROM residencias WHERE estudiante_id = ?");
-            $stmtRes->execute([$e_id]);
+            // Residencia
+            $stmtRes = $pdo->prepare("SELECT * FROM residencia WHERE ci_estudiante = ?"); // Corregido ci_student por ci_estudiante
+            $stmtRes->execute([$ci]);
             $res = $stmtRes->fetch(PDO::FETCH_ASSOC);
             
             if ($res) {
-                $studentInfo['t_viv'] = $res['tipo_vivienda'] ?? 'N/A';
-                $studentInfo['estado_res'] = $res['estado'] ?? 'Falcón';
-                $studentInfo['municipio_res'] = $res['municipio'] ?? 'N/A';
-                $studentInfo['localidad'] = $res['localidad'] ?? 'N/A';
-                $studentInfo['tel_local'] = $res['telefono_local'] ?? 'N/A';
-                $studentInfo['dir_local'] = $res['direccion_exacta'] ?? 'No especificada';
-            } else {
-                $studentInfo['t_viv'] = $studentInfo['localidad'] = $studentInfo['municipio_res'] = 'N/A';
-                $studentInfo['estado_res'] = 'Falcón';
-                $studentInfo['dir_local'] = 'No especificada';
+                $studentInfo['t_viv'] = $res['t_viv'];
+                $studentInfo['estado_res'] = $res['estado_res'];
+                $studentInfo['municipio_res'] = $res['municipio_res'];
+                $studentInfo['t_loc'] = $res['t_loc'];
+                $studentInfo['tel_local'] = $res['tel_local'];
+                $studentInfo['dir_local'] = $res['dir_local'];
             }
 
-            // 4. Info Académica
-            $stmtAcad = $pdo->prepare("SELECT * FROM datos_academicos WHERE estudiante_id = ?");
-            $stmtAcad->execute([$e_id]);
+            // Info Académica
+            $stmtAcad = $pdo->prepare("SELECT * FROM record_academico WHERE ci_estudiante = ?");
+            $stmtAcad->execute([$ci]);
             $ac = $stmtAcad->fetch(PDO::FETCH_ASSOC);
             
             if ($ac) {
-                $studentInfo['cod_est'] = $ac['codigo_estudiante'] ?? 'N/A';
-                $studentInfo['f_ingreso'] = $ac['fecha_ingreso'] ?? 'N/A';
-                $studentInfo['record_indice'] = $ac['indice_academico'] ?? '0.0';
-                $studentInfo['m_ira'] = $ac['ira'] ?? '0.0';
+                $studentInfo['cod_est'] = $ac['cod_est'] ?? 'N/A';
                 $studentInfo['trayecto'] = $ac['trayecto'] ?? 'N/A';
                 $studentInfo['trimestre'] = $ac['trimestre'] ?? 'N/A';
-            } else {
-                $studentInfo['cod_est'] = $studentInfo['f_ingreso'] = 'N/A';
-                $studentInfo['record_indice'] = $studentInfo['m_ira'] = '0.0';
+                $studentInfo['record_indice'] = $ac['indice_trimestre'] ?? '0.0';
+                $studentInfo['m_ira'] = $ac['ira_anterior'] ?? '0.0';
             }
 
-            // 5. Cálculo de Edad
             if (!empty($studentInfo['f_nac'])) {
                 $cumple = new DateTime($studentInfo['f_nac']);
                 $hoy = new DateTime();
                 $studentInfo['edad'] = $hoy->diff($cumple)->y;
-                $studentInfo['f_nac_format'] = $cumple->format('d/m/Y'); 
-            } else {
-                $studentInfo['edad'] = 'N/A';
             }
         }
     } catch (PDOException $e) {
@@ -87,16 +69,8 @@ if ($logged && $_SESSION['rol'] === 'estudiante' && isset($_SESSION['user_id']))
     }
 }
 
-// Obtener alertas
-$alertas = [];
-try {
-    $stmt = $pdo->query("SELECT * FROM alertas WHERE activo = 1 ORDER BY created_at DESC");
-    if ($stmt) { $alertas = $stmt->fetchAll(); }
-} catch (PDOException $e) { }
-
-// --- VISTA ---
+// --- VISTA PARA NO LOGUEADOS ---
 if (!$logged) {
-    // ... (Tu código de Hero/Login se mantiene igual) ...
 ?>
     <!DOCTYPE html>
     <html lang="es">
@@ -148,7 +122,6 @@ if (!$logged) {
             document.getElementById('closeLogin').onclick = () => modal.classList.add('oculto');
             window.onclick = (event) => { if (event.target == modal) modal.classList.add('oculto'); }
         </script>
-        <?php include 'footer.php'; ?>
     </body>
     </html>
 <?php
@@ -165,24 +138,35 @@ if (!$logged) {
 </head>
 <body data-rol="<?php echo $_SESSION['rol'] ?? 'publico'; ?>">
 
-    <div id="sidebar-placeholder"></div>
-
     <div id="main-container">
-        <div class="page-header">
-            <h2>SISTEMA DE SOLICITUD DE BECAS</h2>
-            <div style="color: #666; font-size: 0.9rem;">
-                Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['user']); ?></strong> 
+        <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h2>SISTEMA DE SOLICITUD DE BECAS</h2>
+                <div style="color: #666; font-size: 0.9rem;">
+                    Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['user']); ?></strong> 
+                </div>
             </div>
+            <a href="?logout=1" 
+               onclick="return confirm('¿Estás seguro de que deseas cerrar tu sesión actual?');"
+               style="background:#e74040; color:#fff; padding:8px 15px; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.8rem;">
+               Cerrar Sesión
+            </a>
         </div>
         
-        <div class="progress-wrapper" id="progress-wrapper">
+        <div class="progress-wrapper" id="progress-wrapper" <?php echo $studentInfo ? 'style="display:none;"' : ''; ?>>
             <div id="progressBar" class="progress-bar"></div>
         </div>
 
         <form id="becaForm">
-            <div id="dynamic-content"></div>
+            <div id="dynamic-content">
+                <?php if($studentInfo): ?>
+                    <div id="loading-profile" style="text-align:center; padding:40px;">
+                        <p>Cargando información de perfil...</p>
+                    </div>
+                <?php endif; ?>
+            </div>
 
-            <div class="nav-buttons" id="nav-buttons">
+            <div class="nav-buttons" id="nav-buttons" <?php echo $studentInfo ? 'style="display:none;"' : ''; ?>>
                 <button type="button" id="prevBtn" class="btn-prev">Anterior</button>
                 <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
             </div>
@@ -190,20 +174,19 @@ if (!$logged) {
     </div>
 
     <script>
-        // Cargar Sidebar
-        const sidebarBox = document.getElementById('sidebar-placeholder');
-        if(sidebarBox) {
-            fetch('./sidebar.html')
-                .then(res => res.ok ? res.text() : "")
-                .then(data => { sidebarBox.innerHTML = data; })
-                .catch(err => console.error("Error al cargar la barra lateral:", err));
-        }
-
-        // Datos para main.js
         window.studentProfile = <?php echo json_encode($studentInfo); ?>;
-        console.log("Datos enviados al JS:", window.studentProfile);
-    </script>
 
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.studentProfile) {
+                fetch('perfil_view.php')
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('dynamic-content').innerHTML = html;
+                    })
+                    .catch(err => console.error("Error al cargar la vista de perfil:", err));
+            }
+        });
+    </script>
     <script src="main.js"></script>
     <script src="script.js"></script>
 </body>

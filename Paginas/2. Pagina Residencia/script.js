@@ -8,14 +8,12 @@ async function initResidencia() {
     const tRes = document.getElementById('t_res');
     const rProp = document.getElementById('r_prop');
 
-    // 1. CARGA DINÁMICA DE ESTADOS Y MUNICIPIOS
     if (estadoSelect && municipioSelect) {
         try {
-            // Buscamos el JSON en la misma carpeta de la página 2
             const response = await fetch('Paginas/2. Pagina Residencia/venezuela.json');
             const datosVenezuela = await response.json();
 
-            // Llenar estados
+            // 1. Llenar estados
             estadoSelect.innerHTML = '<option value="" disabled selected>Seleccione Estado</option>';
             datosVenezuela.forEach(item => {
                 const option = document.createElement('option');
@@ -24,40 +22,53 @@ async function initResidencia() {
                 estadoSelect.appendChild(option);
             });
 
-            // Evento de cambio de estado para cargar municipios
+            // --- LÓGICA DE RECUPERACIÓN (ESTADO) ---
+            const estadoGuardado = window.formDataStorage?.['estado_res'];
+            if (estadoGuardado) {
+                estadoSelect.value = estadoGuardado;
+                llenarMunicipios(estadoGuardado, datosVenezuela, municipioSelect);
+                
+                // --- LÓGICA DE RECUPERACIÓN (MUNICIPIO) ---
+                const municipioGuardado = window.formDataStorage?.['municipio_res'];
+                if (municipioGuardado) {
+                    municipioSelect.value = municipioGuardado;
+                }
+
+                // --- NUEVO: Forzar validación tras recuperar datos ---
+                // Esto dispara el evento 'change' manualmente para que cualquier 
+                // validador externo se de cuenta de que ya hay datos.
+                estadoSelect.dispatchEvent(new Event('change'));
+                municipioSelect.dispatchEvent(new Event('change'));
+            }
+
+            // Evento de cambio de estado
             estadoSelect.onchange = () => {
                 const estadoSeleccionado = estadoSelect.value;
-                const infoEstado = datosVenezuela.find(est => est.estado === estadoSeleccionado);
-
-                municipioSelect.innerHTML = '<option value="" disabled selected>Seleccione Municipio</option>';
-                municipioSelect.disabled = !infoEstado;
-
-                if (infoEstado) {
-                    // Ordenamos alfabéticamente los municipios antes de insertarlos
-                    infoEstado.municipios.sort().forEach(muni => {
-                        const option = document.createElement('option');
-                        option.value = muni;
-                        option.textContent = muni;
-                        municipioSelect.appendChild(option);
-                    });
-                }
+                llenarMunicipios(estadoSeleccionado, datosVenezuela, municipioSelect);
                 
-                // Persistencia manual inmediata si es necesario
-                if(window.formDataStorage) window.formDataStorage['estado_res'] = estadoSeleccionado;
+                if(window.formDataStorage) {
+                    window.formDataStorage['estado_res'] = estadoSeleccionado;
+                    window.formDataStorage['municipio_res'] = ""; // Resetear municipio al cambiar estado
+                }
+            };
+
+            // Evento de cambio de municipio para persistencia
+            municipioSelect.onchange = () => {
+                if(window.formDataStorage) {
+                    window.formDataStorage['municipio_res'] = municipioSelect.value;
+                }
             };
 
         } catch (error) {
             console.error("Error al cargar el archivo de municipios:", error);
-            // Fallback: Si el JSON falla, convertir a inputs de texto para no bloquear al usuario
-            alert("Error al cargar lista de municipios. Por favor, escriba los datos manualmente.");
+            alert("Error al cargar lista de municipios.");
         }
     }
 
-    // 2. LÓGICA DE REDUNDANCIA (VIVIENDA)
+    // Lógica de vivienda (se mantiene igual)
     if (tRes && rProp) {
         const gestionarDinamismo = () => {
             const tipoResidencia = tRes.value;
-
             if (tipoResidencia === 'universitaria') {
                 rProp.value = 'cedida';
                 rProp.disabled = true;
@@ -68,10 +79,26 @@ async function initResidencia() {
                 rProp.style.backgroundColor = "";
             }
         };
-
         tRes.addEventListener('change', gestionarDinamismo);
-        // Ejecutar al inicio por si viene de un "Atrás"
         gestionarDinamismo();
+    }
+}
+
+/**
+ * Función auxiliar para evitar repetir código al llenar municipios
+ */
+function llenarMunicipios(estadoNombre, datos, selectElement) {
+    const infoEstado = datos.find(est => est.estado === estadoNombre);
+    selectElement.innerHTML = '<option value="" disabled selected>Seleccione Municipio</option>';
+    selectElement.disabled = !infoEstado;
+
+    if (infoEstado) {
+        infoEstado.municipios.sort().forEach(muni => {
+            const option = document.createElement('option');
+            option.value = muni;
+            option.textContent = muni;
+            selectElement.appendChild(option);
+        });
     }
 }
 

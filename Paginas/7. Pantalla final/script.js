@@ -2,7 +2,7 @@ window.renderFinalStatus = function() {
     const container = document.getElementById('status-container');
     if (!container) return;
 
-    // Esto hace que te de exito aunque no hayas llenado nada, no actualiza la base datos al hacelor(Borrar esto después de probar)
+    // Esto hace que te de exito aunque no hayas llenado nada, no actualiza la base datos al hacelo (Borrar esto después de probar)
     // window.formSubmitted = true;
 
     if (window.formSubmitted) {

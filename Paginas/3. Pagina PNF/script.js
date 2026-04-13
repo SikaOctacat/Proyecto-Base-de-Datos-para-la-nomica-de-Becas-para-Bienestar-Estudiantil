@@ -77,8 +77,8 @@ function validarPaso3() {
     if (!iraInput) return true;
     const valor = parseFloat(iraInput.value);
 
-    if (isNaN(valor) || valor < 16) {
-        alert("⚠️ El IRA mínimo es de 16.00 puntos.");
+    if (isNaN(valor) || valor < 17) {
+        alert("⚠️ El promedio del IRA debe ser mayor 16 para poder continuar con la solcitud");
         iraInput.focus();
         return false; 
     }

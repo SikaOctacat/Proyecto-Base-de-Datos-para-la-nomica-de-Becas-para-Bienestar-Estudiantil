@@ -4,7 +4,7 @@ if(session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$dsn = 'mysql:host=127.0.0.1;dbname=proyecto_db;charset=utf8mb4';
+$dsn = 'mysql:host=127.0.0.1;dbname=becas_database;charset=utf8mb4';
 $dbuser = 'root';
 $dbpass = '';
 

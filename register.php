@@ -31,15 +31,17 @@ require 'db.php';
         </div>
         
         <div style="position: absolute; top: 25px; right: 25px; display: flex; gap: 10px;">
-            <a href="index.php" id="btnVolverInicio" 
-            style="background: #ececec; color: #333; border: 1px solid #ccc; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;">
-            <i class="fa fa-home" style="margin-right: 5px;"></i> Inicio
-            </a>
+            
 
             <button type="button" id="btnLimpiarRegistro" class="btn-clear-data" 
                     style="background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                 Borrar Formulario
             </button>
+
+            <a href="index.php" id="btnVolverInicio" 
+            style="background: #ececec; color: #333; border: 1px solid #ccc; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;">
+            <i class="fa fa-home" style="margin-right: 5px;"></i> Inicio
+            </a>
         </div>
     </div>
         

@@ -341,8 +341,12 @@ if (btnLimpiar) {
     // --- GESTIÓN DE BOTONES DE VOLVER ---
     const btnVolverCabecera = document.getElementById('btnVolverInicio');
     if (btnVolverCabecera) {
-        // Ocultamos el botón de la cabecera si estamos en el paso final (7)
-        btnVolverCabecera.style.display = (step >= 7) ? 'none' : 'flex';
+        // Si el paso es 7 (Final), OCULTAMOS el botón verde de la esquina
+        if (step >= 7) {
+            btnVolverCabecera.style.display = 'none'; 
+        } else {
+            btnVolverCabecera.style.display = 'flex';
+        }
     }
 
     const prevBtn = document.getElementById('prevBtn');
@@ -356,18 +360,6 @@ if (btnLimpiar) {
         if (btnLimpiar) {
             // Se oculta en Verificación (6) y Pantalla Final (7)
             btnLimpiar.style.display = (step >= 4) ? 'none' : 'block';
-        }
-
-        // --- ESTILO DEL BOTÓN VOLVER (PARA EL FINAL) ---
-        // Usamos el ID correspondiente al botón que quieras transformar al terminar
-        const btnVolver = document.getElementById('btnVolverInicio');
-        if (btnVolver) {
-            if (step >= 7) {
-                btnVolver.style.background = "#4CAF50"; 
-                btnVolver.style.color = "white";
-                btnVolver.style.display = "flex"; // Nos aseguramos de que sea visible al final
-                btnVolver.innerHTML = '<i class="fa fa-arrow-left"></i> Volver al Inicio';
-            }
         }
 
         // --- GESTIÓN DEL BOTÓN SIGUIENTE ---

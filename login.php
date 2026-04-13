@@ -1,23 +1,36 @@
 <?php
 require 'db.php';
-session_start(); // <--- CRÍTICO: Asegúrate de que esté aquí
+
+// Solo iniciamos sesión si no existe una previamente
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user = $_POST['usuario'] ?? '';
+    // Limpiamos entradas básicas
+    $user = trim($_POST['usuario'] ?? '');
     $pass = $_POST['password'] ?? '';
 
     if ($user && $pass) {
+        // Buscamos al usuario en la tabla correcta
         $stmt = $pdo->prepare('SELECT id, usuario, password, rol FROM usuarios WHERE usuario = ?');
         $stmt->execute([$user]);
         $row = $stmt->fetch();
         
-        // Verificamos la contraseña (usando tu hash sha256)
-        if ($row && hash('sha256', $pass) === $row['password']) {
-            $_SESSION['user_id'] = $row['id']; // <--- ESTO ES LO QUE NECESITAMOS
+        // Verificamos usando password_verify para el hash $2y$10$...
+        if ($row && password_verify($pass, $row['password'])) {
+            
+            // SEGURIDAD: Regenerar ID de sesión al loguear
+            session_regenerate_id(true);
+
+            // Guardamos datos en la sesión
+            $_SESSION['user_id'] = $row['id'];
             $_SESSION['user'] = $row['usuario'];
             $_SESSION['rol'] = $row['rol'];
             
+            // Redirección según el rol definido en la DB
             if ($row['rol'] === 'admin') {
                 header('Location: admin/index.php');
             } else {
@@ -25,8 +38,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             exit;
         } else {
+            // Error genérico por seguridad
             $error = 'Usuario o contraseña incorrectos';
         }
+    } else {
+        $error = 'Por favor, complete todos los campos';
     }
 }
 ?>
