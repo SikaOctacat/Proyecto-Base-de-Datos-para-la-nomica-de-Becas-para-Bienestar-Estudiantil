@@ -6,9 +6,6 @@
 /**
  * Inicializa los eventos de la página.
  */
-/**
- * Inicializa los eventos de la página.
- */
 function initIdentificacion() {
     const fNacInput = document.getElementById('f_nac');
     const edadInput = document.getElementById('edad');
@@ -18,12 +15,11 @@ function initIdentificacion() {
 
     if (passInput && passConfirmInput) {
         // 1. SINCRONIZACIÓN INMEDIATA AL CARGAR
-        // Si el pass principal ya tiene valor (recuperado del storage), lo copiamos al confirm
         if (passInput.value && !passConfirmInput.value) {
             passConfirmInput.value = passInput.value;
         }
 
-        // 2. LÓGICA DE VALIDACIÓN EN TIEMPO REAL
+        // 2. LÓGICA DE VALIDACIÓN DE CONTRASEÑAS EN TIEMPO REAL
         const validarMatch = () => {
             if (passConfirmInput.value === "") {
                 errorText.style.display = 'none';
@@ -36,7 +32,6 @@ function initIdentificacion() {
                 passConfirmInput.style.borderColor = '#ddd';
             }
 
-            // IMPORTANTE: Llamamos a la validación global para que el botón Siguiente se active
             if (typeof window.validarFormularioActual === 'function') {
                 window.validarFormularioActual();
             }
@@ -46,7 +41,7 @@ function initIdentificacion() {
         passConfirmInput.addEventListener('input', validarMatch);
     }
 
-    // Lógica de edad (se mantiene)
+    // Lógica de cálculo de edad automática
     if (fNacInput && edadInput) {
         const actualizar = () => {
             const edadCalculada = calcularEdad(fNacInput.value);
@@ -86,67 +81,26 @@ function togglePassword(idInput) {
 }
 
 /**
- * Evita que el usuario borre el prefijo 'INT'
- */
-function prevenirBorradoPrefijo(e, input) {
-    // Si el cursor está en las primeras 3 posiciones y presiona borrar
-    if (input.selectionStart <= 3 && (e.key === 'Backspace' || e.key === 'Delete')) {
-        e.preventDefault();
-    }
-}
-
-/**
- * Mantiene el prefijo y solo permite números después de él
- */
-function validarSoloNumerosPostPrefijo(input) {
-    const prefijo = "INT";
-    const guia = document.getElementById('placeholder-guia');
-    let valorActual = input.value.toUpperCase();
-
-    // 1. Restaurar prefijo si se intenta borrar
-    if (valorActual.length < 3 || !valorActual.startsWith(prefijo)) {
-        input.value = prefijo;
-    } else {
-        const parteNumerica = valorActual.substring(3).replace(/[^\d]/g, '');
-        input.value = prefijo + parteNumerica;
-    }
-
-    // 2. Lógica del Placeholder simulado
-    if (guia) {
-        // Si el valor es solo "INT", mostramos la guía. Si hay más, la ocultamos.
-        guia.style.display = (input.value === prefijo) ? 'block' : 'none';
-    }
-
-    if (typeof window.validarFormularioActual === 'function') {
-        window.validarFormularioActual();
-    }
-}
-
-/**
  * Función de validación (Paso 1)
- */
-/**
- * Función de validación (Paso 1) mejorada con RegEx para Email y Código UPTAG
+ * Se ejecuta al hacer clic en "Siguiente"
  */
 function validarPaso1() {
     // --- 1. CAPTURA DE DATOS ---
     const cedula = document.getElementById('cedula')?.value || "";
     const codEst = document.getElementById('cod_est')?.value || "";
     const telf = document.querySelector('input[name="tel_estudiante"]')?.value || "";
-    const correo = document.querySelector('input[name="correo"]')?.value || ""; // Captura el correo
+    const correo = document.querySelector('input[name="correo"]')?.value || "";
     const pass = document.getElementById('reg_password')?.value || "";
     const passConfirm = document.getElementById('reg_password_confirm')?.value || "";
-    const edadValor = parseInt(document.getElementById('edad')?.value) || 0; // Capturamos la edad calculada
+    const edadValor = parseInt(document.getElementById('edad')?.value) || 0;
     const trabaja = document.querySelector('input[name="trabaja"]:checked')?.value;
     const estatus = document.querySelector('input[name="estatus_estudio"]:checked')?.value;
     
-    // --- 2. PRIORIDAD ALTA: CRITERIOS DE EXCLUSIÓN ---
-
+    // --- 2. CRITERIOS DE EXCLUSIÓN ---
     if (edadValor < 17 || edadValor > 39) {
         alert("⚠️ Lo sentimos, el programa de becas está dirigido a estudiantes entre 17 y 39 años.");
         return false;
     }
-
     if (trabaja === "si") {
         alert("⚠️ No puedes solicitar la beca si posees un empleo actualmente.");
         return false;
@@ -156,15 +110,13 @@ function validarPaso1() {
         return false;
     }
 
-    // --- 3. PRIORIDAD MEDIA: IDENTIDAD, EMAIL Y CONTRASEÑA ---
-    
-    // Validación de Cédula
+    // --- 3. IDENTIDAD, EMAIL Y CONTRASEÑA ---
     if (cedula.length < 6 || cedula.length > 8) {
         alert("⚠️ La cédula debe tener entre 6 y 8 dígitos.");
         return false;
     }
     
-    // Validación de Teléfono
+    // Validación de Teléfono (Formatos venezolanos comunes)
     if (telf.trim() !== "") {
         const regexTel = /^(0414|0424|0412|0416|0426|0268)[0-9]{7}$/;
         if (!regexTel.test(telf)) {
@@ -173,10 +125,10 @@ function validarPaso1() {
         }
     }
 
-    // NUEVA: Validación Rigurosa de Email
+    // Validación de Email
     const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!regexEmail.test(correo)) {
-        alert("⚠️ Por favor, ingresa un correo electrónico válido (Ej: usuario@gmail.com).");
+        alert("⚠️ Por favor, ingresa un correo electrónico válido.");
         return false;
     }
 
@@ -190,25 +142,19 @@ function validarPaso1() {
         return false;
     }
 
-    // --- VALIDACIÓN DE CÓDIGO DE ESTUDIANTE ---
-    // Ahora solo verificamos que tenga el largo exacto de 10 (INT + 7 números)
+    // --- 4. VALIDACIÓN DE CÓDIGO DE ESTUDIANTE (Solo Largo) ---
+    // Verificamos que tenga exactamente 10 caracteres (Ej: INT1234567)
     if (codEst.length !== 10) {
-        alert("⚠️ El código de estudiante debe tener el prefijo INT seguido de 7 números (Total 10 caracteres).");
+        alert("⚠️ El código de estudiante es inválido. Debe tener exactamente 10 caracteres (Prefijo INT + 7 números).");
         return false;
     }
 
-    // --- 4. PRIORIDAD BAJA: VALIDACIÓN CONDICIONAL ---
-
+    // Validación opcional de Carnet de la Patria
     const carnetPatria = document.querySelector('input[name="C_Patria"]')?.value || "";
-
-    // Validación de Carnet de la Patria (Si no está vacío)
-    if (carnetPatria.trim() !== "") {
-        if (carnetPatria.length !== 10) {
-            alert("⚠️ El serial del Carnet de la Patria debe tener exactamente 10 dígitos.");
-            return false;
-        }
+    if (carnetPatria.trim() !== "" && carnetPatria.length !== 10) {
+        alert("⚠️ El serial del Carnet de la Patria debe tener exactamente 10 dígitos.");
+        return false;
     }
 
     return true;
-
 }

@@ -65,71 +65,70 @@ function renderResumen() {
 
 
     // --- SECCIÓN 4: CARGA FAMILIAR ---
-    // --- SECCIÓN 4: CARGA FAMILIAR ---
-    html += `
-    <div class="resumen-seccion">
-        <h3>4. Grupo Familiar Conviviente</h3>`;
-    
-    if (data['no_familiares'] === true || data['no_familiares'] === "on") {
-        html += `
-        <div style="padding: 12px; background: #fff5e6; border: 1px solid #ffe0b3; border-radius: 6px; color: #856404; font-style: italic;">
-            📢 <strong>Declaración:</strong> El estudiante ha declarado que no convive con familiares (Vive solo).
-        </div>`;
-    } else {
-        const idsFam = [...new Set(
-            Object.keys(data)
-                .filter(key => key.startsWith('f_nom_'))
-                .map(key => key.split('_')[2])
-        )];
+    html += `
+    <div class="resumen-seccion">
+        <h3 style="margin-bottom: 10px;">4. Grupo Familiar Conviviente</h3>`;
 
-        if (idsFam.length > 0) {
-            html += `
-            <div style="overflow-x: auto; margin-top: 10px; border: 1px solid #eee; border-radius: 8px;">
-                <table style="width:100%; font-size: 0.85rem; border-collapse: collapse; min-width: 600px;">
-                    <thead>
-                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
-                            <th style="padding: 10px;">Nombre y Apellido</th>
-                            <th style="padding: 10px;">Parentesco</th>
-                            <th style="padding: 10px; text-align: center;">Edad</th>
-                            <th style="padding: 10px;">Instrucción</th>
-                            <th style="padding: 10px;">Ocupación</th>
-                            <th style="padding: 10px; text-align:right;">Ingreso</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            
-            idsFam.forEach(id => {
-                const ingreso = parseFloat(data['f_ing_'+id]) || 0;
+    if (data['no_familiares'] === true || data['no_familiares'] === "on") {
+        html += `
+        <div style="padding: 12px; background: #fff5e6; border: 1px solid #ffe0b3; border-radius: 6px; color: #856404; font-style: italic;">
+            📢 <strong>Declaración:</strong> El estudiante ha declarado que no convive con familiares (Vive solo).
+        </div>`;
+    } else {
+        const idsFam = [...new Set(
+            Object.keys(data)
+                .filter(key => key.startsWith('f_nom_'))
+                .map(key => key.split('_')[2])
+        )];
 
-                html += `
-                    <tr style="border-bottom: 1px solid #f0f0f0;">
-                        <td style="padding: 10px;">${data['f_nom_'+id]} ${data['f_ape_'+id]}</td>
-                        <td style="padding: 10px;">${data['f_par_'+id] || '---'}</td>
-                        <td style="padding: 10px; text-align: center;">${data['f_eda_'+id] || '--'}</td>
-                        <td style="padding: 10px;">${data['f_ins_'+id] || '---'}</td>
-                        <td style="padding: 10px;">${data['f_ocu_'+id] || '---'}</td>
-                        <td style="padding: 10px; text-align:right; font-weight: 600;">${ingreso.toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs</td>
-                    </tr>`;
-            });
-            
-            html += `
-                    </tbody>
-                </table>
-            </div>`;
-        } else {
-            html += `
-            <div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; color: #721c24;">
-                ⚠️ No se detectaron familiares registrados en el sistema.
-            </div>`;
-        }
-    }
-    html += `</div>`;
+        if (idsFam.length > 0) {
+            // Se quitó el margin-top y se ajustó el borde del contenedor
+            html += `
+            <div style="overflow-x: auto; border: 1px solid #eee; border-radius: 8px; margin-top: 5px;">
+                <table style="width:100%; font-size: 0.85rem; border-collapse: collapse; min-width: 600px; margin: 0;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                            <th style="padding: 10px; border-top: none;">Nombre y Apellido</th>
+                            <th style="padding: 10px; border-top: none;">Parentesco</th>
+                            <th style="padding: 10px; border-top: none; text-align: center;">Edad</th>
+                            <th style="padding: 10px; border-top: none;">Instrucción</th>
+                            <th style="padding: 10px; border-top: none;">Ocupación</th>
+                            <th style="padding: 10px; border-top: none; text-align:right;">Ingreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            idsFam.forEach(id => {
+                const ingreso = parseFloat(data['f_ing_'+id]) || 0;
+                html += `
+                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding: 10px;">${data['f_nom_'+id]} ${data['f_ape_'+id]}</td>
+                        <td style="padding: 10px;">${data['f_par_'+id] || '---'}</td>
+                        <td style="padding: 10px; text-align: center;">${data['f_eda_'+id] || '--'}</td>
+                        <td style="padding: 10px;">${data['f_ins_'+id] || '---'}</td>
+                        <td style="padding: 10px;">${data['f_ocu_'+id] || '---'}</td>
+                        <td style="padding: 10px; text-align:right; font-weight: 600;">${ingreso.toLocaleString('es-VE', {minimumFractionDigits: 2})} Bs</td>
+                    </tr>`;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            </div>`;
+        } else {
+            html += `
+            <div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 6px; color: #721c24;">
+                ⚠️ No se detectaron familiares registrados en el sistema.
+            </div>`;
+        }
+    }
+    html += `</div>`;
 
     // --- SECCIÓN 5: DATOS ADICIONALES ---
     html += `
-    <div class="resumen-seccion" style="border-bottom: none;">
+    <div class="resumen-seccion" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
         <h3>5. Observaciones y Comentarios</h3>
-        <div style="background: #fafafa; padding: 15px; border-left: 4px solid var(--primary); border-radius: 4px; font-size: 0.9rem; color: #444; line-height: 1.5;">
+        <div style="background: #fafafa; padding: 15px; border-left: 4px solid var(--primary); border-radius: 4px; font-size: 0.9rem; color: #444; line-height: 1.5; word-break: break-word; overflow-wrap: break-word; white-space: normal;">
             ${data['comentarios'] ? data['comentarios'] : '<i>Sin observaciones adicionales proporcionadas.</i>'}
         </div>
     </div>`;

@@ -23,7 +23,7 @@
 
         <div class="full-width">
             <label>Fecha Ingreso a la UPTAG</label>
-            <input type="date" name="f_ingreso" required>
+            <input type="date" name="f_ingreso" id="f_ingreso" required>
         </div>
 
         <div>

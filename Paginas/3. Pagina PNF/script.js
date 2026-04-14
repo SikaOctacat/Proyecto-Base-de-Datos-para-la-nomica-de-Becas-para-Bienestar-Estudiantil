@@ -8,7 +8,6 @@ window.initPNF = () => {
     if (iraInput && nextBtn) {
         iraInput.addEventListener('input', (e) => {
             let val = e.target.value;
-            // Limpieza básica
             if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
                 val = val.replace(/^0+/, '');
                 e.target.value = val;
@@ -17,52 +16,53 @@ window.initPNF = () => {
             if (numericValue > 20) e.target.value = 20;
             if (numericValue < 0) e.target.value = 0;
 
-            // Feedback visual: Si es menor a 16 se ve "apagado" pero sigue activo para el alert
-            if (numericValue < 16 || isNaN(numericValue)) {
-                nextBtn.style.opacity = "0.5";
-            } else {
-                nextBtn.style.opacity = "1";
-            }
+            nextBtn.style.opacity = (numericValue < 16 || isNaN(numericValue)) ? "0.5" : "1";
         });
     }
     
-    // --- LA SOLUCIÓN AL BLOQUEO ---
     if (nextBtn) {
-        // Usamos capture: true para interceptar el evento ANTES de que el script de navegación actúe
         nextBtn.addEventListener('click', function(e) {
-            // 1. Si el trayecto es inicial, bloqueo total
+            if (window.adminMode) return true;
+
             if (nextBtn.dataset.locked === "true") {
                 e.preventDefault();
                 e.stopImmediatePropagation();
                 return false;
             }
 
-            // 2. Ejecutamos la validación del IRA
             if (!validarPaso3()) {
-                // Si el alert sale (porque es < 16), detenemos el avance
                 e.preventDefault(); 
                 e.stopImmediatePropagation(); 
                 return false;
             }
-
-            // 3. SI LLEGA AQUÍ: No hacemos nada. 
-            // Al no llamar a preventDefault(), el navegador permite que 
-            // los otros scripts de "Siguiente" se ejecuten normalmente.
         }, { capture: true }); 
     }
 
     const gestionarBloqueoInicial = () => {
         if (!trayectoSelect || !nextBtn) return;
+
         if (trayectoSelect.value === 'inicial') {
+            if (trimestreSelect) {
+                trimestreSelect.selectedIndex = 0; 
+                trimestreSelect.disabled = true;
+                trimestreSelect.style.backgroundColor = "#f0f0f0";
+            }
             if (warning) warning.style.display = 'block';
             nextBtn.style.opacity = "0.5";
             nextBtn.dataset.locked = "true";
-            nextBtn.disabled = true; // Bloqueo físico en inicial
+            nextBtn.disabled = true;
         } else {
+            if (trimestreSelect) {
+                trimestreSelect.disabled = false;
+                trimestreSelect.style.backgroundColor = "#fff";
+                // Si está en el "Seleccione...", lo movemos al 1er trimestre automáticamente
+                if (trimestreSelect.selectedIndex <= 0) {
+                    trimestreSelect.selectedIndex = 1;
+                }
+            }
             if (warning) warning.style.display = 'none';
             nextBtn.dataset.locked = "false";
             nextBtn.disabled = false;
-            if (iraInput) iraInput.dispatchEvent(new Event('input'));
         }
     };
 
@@ -74,13 +74,38 @@ window.initPNF = () => {
 
 function validarPaso3() {
     const iraInput = document.getElementById('ira_anterior');
-    if (!iraInput) return true;
-    const valor = parseFloat(iraInput.value);
+    const fIngresoInput = document.getElementById('f_ingreso'); 
+    
+    if (fIngresoInput && fIngresoInput.value) {
+        // Convertimos el valor a un objeto Date
+        const fechaIngreso = new Date(fIngresoInput.value + 'T00:00:00'); // Forzamos formato local
+        const añoIngreso = fechaIngreso.getFullYear();
+        const hoy = new Date();
+        const añoActual = hoy.getFullYear();
 
-    if (isNaN(valor) || valor < 17) {
-        alert("⚠️ El promedio del IRA debe ser mayor 16 para poder continuar con la solcitud");
-        iraInput.focus();
-        return false; 
+        // 1. Validar año mínimo (2010) y que no sea futuro
+        if (añoIngreso < 2010 || añoIngreso > añoActual) {
+            alert("⚠️ La fecha de ingreso es inválida. El año debe estar entre 2010 y " + añoActual);
+            fIngresoInput.focus();
+            return false;
+        }
+
+        // 2. Validación extra por si el input date falla en navegadores viejos
+        if (fechaIngreso > hoy) {
+            alert("⚠️ La fecha de ingreso no puede ser una fecha futura.");
+            fIngresoInput.focus();
+            return false;
+        }
+    }
+
+    // Validación del IRA (Mínimo 16)
+    if (iraInput) {
+        const valor = parseFloat(iraInput.value);
+        if (isNaN(valor) || valor < 16) {
+            alert("⚠️ El promedio del IRA debe ser mínimo de 16 para poder continuar.");
+            iraInput.focus();
+            return false; 
+        }
     }
     return true; 
 }

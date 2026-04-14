@@ -101,19 +101,12 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
         <label>Código de Estudiante</label>
         <div style="position: relative; width: 100%; background: #fff; border-radius: 8px; border: 1px solid #ddd; overflow: hidden;">
             <input type="text" 
-                name="cod_est" 
-                id="cod_est" 
-                value="INT" 
+                name="cod_est"
+                placeholder="Ej: INT1234567"
+                id="cod_est"  
                 maxlength="10" 
                 style="background: transparent; border: none; width: 100%; padding: 10px; position: relative; z-index: 2; outline: none; font-size: 1rem;"
-                onkeydown="prevenirBorradoPrefijo(event, this)"
-                oninput="validarSoloNumerosPostPrefijo(this)"
                 required>
-            
-            <span id="placeholder-guia" 
-                style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #999; z-index: 1; pointer-events: none; font-size: 1rem; letter-spacing: 0.5px;">
-                <span style="visibility: hidden;">INT</span>1234567
-            </span>
         </div>
     </div>
 

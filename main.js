@@ -4,7 +4,7 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO INICIAL ---
-    let currentStep = 1;
+    let currentStep = 3;
     let maxStepReached = 1; 
     window.formSubmitted = false; 
     const totalSteps = 7;
@@ -42,21 +42,35 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Guarda los valores actuales en memoria
      */
+    /**
+     * Guarda los valores actuales en memoria y limpia guiones bajos de los valores
+     */
     window.saveCurrentData = () => {
         const viewPort = document.getElementById('dynamic-content');
         const inputs = viewPort.querySelectorAll('input, select, textarea');
         
         inputs.forEach(input => {
             if (input.name) {
+                let valueToSave;
+
                 if (input.type === 'checkbox') {
-                    window.formDataStorage[input.name] = input.checked;
+                    valueToSave = input.checked;
                 } 
                 else if (input.type === 'radio') {
-                    if (input.checked) window.formDataStorage[input.name] = input.value;
+                    if (input.checked) valueToSave = input.value;
+                    else return; // No guardar radios no seleccionados
                 } 
                 else {
-                    window.formDataStorage[input.name] = input.value;
+                    valueToSave = input.value;
                 }
+
+                // --- FILTRO DE LIMPIEZA ---
+                // Si es un texto, reemplazamos guiones bajos por espacios
+                if (typeof valueToSave === 'string') {
+                    valueToSave = valueToSave.replace(/_/g, ' ');
+                }
+
+                window.formDataStorage[input.name] = valueToSave;
             }
         });
     };
@@ -304,6 +318,7 @@ if (btnLimpiar) {
         });
 
         function actualizarEstadoBoton() {
+
             // Si el paso actual ha marcado el botón como bloqueado por lógica de negocio
             if (nextBtn.dataset.locked === "true") {
                 nextBtn.disabled = true;

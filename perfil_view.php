@@ -9,10 +9,10 @@ if (!$user_id) {
     exit;
 }
 
-// Función para normalizar texto (Mayúscula solo al principio)
 function normalizar($texto) {
     if (!$texto) return 'N/A';
-    return ucfirst(strtolower(htmlspecialchars($texto)));
+    $limpio = str_replace('_', ' ', $texto);
+    return ucfirst(strtolower(htmlspecialchars($limpio)));
 }
 
 try {
@@ -96,13 +96,16 @@ $tabla_familia .= '</tbody></table>';
             <?php echo strtoupper(substr($estudiante['nombre1'] ?? 'U', 0, 1)); ?>
         </div>
         <h2 style="margin:0; color:#333;">
-            <?php echo normalizar($estudiante['nombre1']) . " " . normalizar($estudiante['apellido_paterno']); ?>
+            <?php 
+                $nombre_completo = [$estudiante['nombre1'], $estudiante['nombre2'], $estudiante['apellido_paterno'], $estudiante['apellido_materno']];
+                echo implode(' ', array_map('normalizar', array_filter($nombre_completo))); 
+            ?>
         </h2>
         <p style="color:#777; font-size: 0.9rem; margin: 5px 0;">
-            CI: <strong><?php echo htmlspecialchars($estudiante['ci']); ?></strong> | Carnet: <?php echo htmlspecialchars($estudiante['cod_est'] ?? 'N/A'); ?>
+            CI: <strong><?php echo htmlspecialchars($estudiante['ci']); ?></strong> | ID: <?php echo htmlspecialchars($estudiante['cod_est'] ?? 'N/A'); ?>
         </p>
         <div class="status-badge">
-            Beca <?php echo normalizar($estudiante['tipo_beneficio']); ?> — Activa
+            <?php echo normalizar($estudiante['tipo_beneficio']); ?> — Activa
         </div>
     </div>
 
@@ -113,10 +116,9 @@ $tabla_familia .= '</tbody></table>';
         <div class="data-item"><span class="label">Trimestre:</span><span class="value"><?php echo htmlspecialchars($estudiante['trimestre'] ?? '0'); ?></span></div>
         <div class="data-item"><span class="label">Ingreso:</span><span class="value"><?php echo htmlspecialchars($estudiante['f_ingreso'] ?? 'N/A'); ?></span></div>
         <div class="data-item" style="border:none; margin-top:10px;">
-            <span class="label">I.R.A.:</span>
+            <span class="label">Índice (IRA)</span>
             <span class="value" style="color:#FF6600; font-size:1.1rem;"><?php echo number_format($estudiante['m_ira'] ?? 0, 2); ?> / 20</span>
         </div>
-        <div class="data-item"><span class="label">Estatus:</span><span class="value"><?php echo normalizar($estudiante['estatus_estudio']); ?></span></div>
     </div>
 
     <div class="glass-card">
@@ -125,40 +127,42 @@ $tabla_familia .= '</tbody></table>';
         <div class="data-item"><span class="label">Nacimiento:</span><span class="value"><?php echo htmlspecialchars($estudiante['f_nac'] ?? 'N/A'); ?></span></div>
         <div class="data-item"><span class="label">Edo. Civil:</span><span class="value"><?php echo normalizar($estudiante['edo_civil']); ?></span></div>
         <div class="data-item"><span class="label">Teléfono:</span><span class="value"><?php echo htmlspecialchars($estudiante['tel_estudiante'] ?? 'N/A'); ?></span></div>
-        <div class="data-item">
-            <span class="label">Correo:</span>
-            <span class="value">
-                <?php 
-                    $email = $estudiante['correo'] ?? 'N/A';
-                    $parts = explode('@', $email);
-                    if(count($parts) == 2) {
-                        echo htmlspecialchars($parts[0]) . "<br>@" . htmlspecialchars($parts[1]) . "</small>";
-                    } else {
-                        echo htmlspecialchars($email);
-                    }
-                ?>
-            </span>
-        </div>
-        <div class="data-item"><span class="label">¿Viaja?:</span><span class="value"><?php echo ($estudiante['viaja'] == 'si' || $estudiante['viaja'] == 'on') ? 'Sí' : 'No'; ?></span></div>
     </div>
 
     <div class="glass-card">
         <div class="card-title"><span>🏠</span> Residencia:</div>
         <div class="data-item"><span class="label">Vivienda:</span><span class="value"><?php echo normalizar($estudiante['t_viv']); ?></span></div>
-        <div class="data-item"><span class="label">Tipo:</span><span class="value"><?php echo normalizar($estudiante['t_res']); ?></span></div>
-        <div class="data-item"><span class="label">Propiedad:</span><span class="value"><?php echo normalizar($estudiante['r_prop']); ?></span></div>
         <div class="data-item"><span class="label">Estado:</span><span class="value"><?php echo normalizar($estudiante['estado_res']); ?></span></div>
-        <div class="data-item"><span class="label">Municipio:</span><span class="value"><?php echo normalizar($estudiante['municipio_res']); ?></span></div>
         <div style="margin-top:10px;">
-            <span class="label" style="font-size:0.8rem;">Dirección Exacta:</span>
-            <div class="address-box"><?php echo ucfirst(strtolower(htmlspecialchars($estudiante['dir_local'] ?? 'Sin dirección registrada'))); ?></div>
+            <span class="label" style="font-size:0.8rem;">Dirección:</span>
+            <div class="address-box"><?php echo ucfirst(strtolower(htmlspecialchars($estudiante['dir_local'] ?? 'Sin dirección'))); ?></div>
         </div>
     </div>
 
     <div class="glass-card full-width">
-        <div class="card-title"><span>👨‍👩‍👧‍👦</span> Grupo Familiar Conviviente:</div>
+        <div class="card-title"><span>👨‍👩‍👧‍👦</span> Grupo Familiar:</div>
         <div style="overflow-x: auto;">
             <?php echo $tabla_familia; ?> 
         </div>
     </div>
+
+    <div class="glass-card full-width" style="margin-top: 20px;">
+        <div class="card-title"><span>📝</span> Datos adicionales:</div>
+        <div style="background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #f0f0f0; color: #555; font-size: 0.9rem;">
+            <?php 
+                $obs = $estudiante['observaciones'] ?? ''; 
+                echo !empty($obs) ? nl2br(htmlspecialchars($obs)) : '<em style="color:#bbb;">Sin observaciones.</em>';
+            ?>
+        </div>
+    </div>
 </div>
+
+<script>
+/**
+ * CIERRE DE SESIÓN AUTOMÁTICO AL ABANDONAR
+ */
+window.addEventListener('pagehide', function() {
+    // Usamos 'pagehide' porque es más confiable que 'unload' en móviles y navegadores modernos
+    navigator.sendBeacon('logout.php');
+});
+</script>

@@ -93,28 +93,18 @@ if (!$logged) {
     <body>
         <header class="top-nav">
             <img src="img/logo.png" alt="Logo" style="height:64px">
-            <nav><a href="#" id="openLogin" style="color:#fff; text-decoration:none;">Iniciar sesión</a></nav>
+            
         </header>
         <main class="hero">
             <div class="hero-content">
                 <h1>SISTEMA <span class="highlight">INTEGRADO</span> DE BECAS</h1>
                 <p>Postúlate hoy y asegura tu futuro académico.</p>
                 <div class="hero-actions">
-                    <a class="btn-cta" href="login.php">Entrar al Portal</a>
+                    <a class="btn-cta" href="login.php">Inicar sesion</a>
                     <a class="btn-sec" href="register.php">Postularse Ahora</a>
                 </div>
             </div>
         </main>
-        <div id="loginModal" class="modal oculto" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; display:flex; align-items:center; justify-content:center;">
-            <div style="background:#fff; padding:30px; border-radius:12px; position:relative; width:90%; max-width:400px;">
-                <button id="closeLogin" style="position:absolute; top:10px; right:15px; border:none; background:none; font-size:24px; cursor:pointer;">&times;</button>
-                <h3 style="color:#333">Iniciar sesión</h3>
-                <form method="POST" action="login.php">
-                    <input name="usuario" type="text" placeholder="Usuario" required style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ccc; border-radius:5px;">
-                    <input name="password" type="password" placeholder="Contraseña" required style="width:100%; margin-bottom:10px; padding:10px; border:1px solid #ccc; border-radius:5px;">
-                    <button type="submit" class="btn-cta" style="width:100%;">Ingresar</button>
-                </form>
-            </div>
         </div>
         <script>
             const modal = document.getElementById('loginModal');
@@ -141,10 +131,7 @@ if (!$logged) {
     <div id="main-container">
         <div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <h2>SISTEMA DE SOLICITUD DE BECAS</h2>
-                <div style="color: #666; font-size: 0.9rem;">
-                    Bienvenido, <strong><?php echo htmlspecialchars($_SESSION['user']); ?></strong> 
-                </div>
+                <h2>PERFIL DE USUARIO<h2>
             </div>
             <a href="?logout=1" 
                onclick="return confirm('¿Estás seguro de que deseas cerrar tu sesión actual?');"
@@ -175,7 +162,7 @@ if (!$logged) {
 
     <script>
         window.studentProfile = <?php echo json_encode($studentInfo); ?>;
-
+        
         document.addEventListener('DOMContentLoaded', function() {
             if (window.studentProfile) {
                 fetch('perfil_view.php')
