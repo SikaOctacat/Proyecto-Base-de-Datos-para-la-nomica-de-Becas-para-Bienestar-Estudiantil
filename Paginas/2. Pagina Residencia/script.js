@@ -10,7 +10,7 @@ async function initResidencia() {
 
     if (estadoSelect && municipioSelect) {
         try {
-            const response = await fetch('Paginas/2. Pagina Residencia/venezuela.json');
+            const response = await fetch('../venezuela.json');
             const datosVenezuela = await response.json();
 
             // 1. Llenar estados

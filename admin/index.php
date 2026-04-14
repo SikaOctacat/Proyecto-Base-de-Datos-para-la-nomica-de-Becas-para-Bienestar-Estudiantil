@@ -104,56 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
     exit;
 }
 
-// --- LÓGICA: REGISTRO / EDICIÓN DE ESTUDIANTE CON ACCESO ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reg_student'])) {
-    try {
-        $pdo->beginTransaction();
-        
-        $usuario = $_POST['std_usuario'];
-        $password = $_POST['std_password'];
-        $ci = $_POST['std_ci'];
-        $nombres = $_POST['std_nombres'];
-        $apellidos = $_POST['std_apellidos'];
-        $id = $_POST['std_id'] ?? null;
-
-        if ($id) {
-            $stmt_u = $pdo->prepare('SELECT usuario_id FROM estudiantes WHERE id = ?');
-            $stmt_u->execute([$id]);
-            $usuario_id = $stmt_u->fetchColumn();
-
-            if ($usuario_id) {
-                if (!empty($password)) {
-                    $hash = hash('sha256', $password);
-                    $pdo->prepare('UPDATE usuarios SET usuario = ?, password = ? WHERE id = ?')
-                        ->execute([$usuario, $hash, $usuario_id]);
-                } else {
-                    $pdo->prepare('UPDATE usuarios SET usuario = ? WHERE id = ?')
-                        ->execute([$usuario, $usuario_id]);
-                }
-            }
-            $stmt2 = $pdo->prepare('UPDATE estudiantes SET ci = ?, nombres = ?, apellidos = ? WHERE id = ?');
-            $stmt2->execute([$ci, $nombres, $apellidos, $id]);
-            $msg = 'Acceso actualizado para el estudiante';
-        } else {
-            // Nuevo Registro Completo
-            $hash = hash('sha256', $password);
-            $stmt1 = $pdo->prepare('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, "estudiante")');
-            $stmt1->execute([$usuario, $hash]);
-            $usuario_id = $pdo->lastInsertId();
-
-            $stmt2 = $pdo->prepare('INSERT INTO estudiantes (ci, nombres, apellidos, usuario_id) VALUES (?, ?, ?, ?)');
-            $stmt2->execute([$ci, $nombres, $apellidos, $usuario_id]);
-            $msg = 'Nuevo estudiante registrado con éxito';
-        }
-
-        $pdo->commit();
-        header('Location: index.php?msg=' . urlencode($msg));
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        header('Location: index.php?msg=Error: ' . urlencode($e->getMessage()));
-    }
-    exit;
-}
 
 $query = "SELECT e.ci, e.nombre1, e.apellido_paterno, e.carrera, r.ira_anterior
           FROM estudiante e 
@@ -320,6 +270,7 @@ if (isset($_GET['edit_user'])) {
             background: #e1f5fe; color: #0288d1;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="dashboard">
@@ -327,7 +278,7 @@ if (isset($_GET['edit_user'])) {
             <h2>🎓 <span>Panel de Control</span></h2>
             <div style="display: flex; gap: 12px;">
                 <a href="export_excel.php" class="btn-action" style="background: var(--success); color:#fff; padding: 12px 20px;">📥 Excel</a>
-                <a href="../logout.php" class="btn-logout">Cerrar Sesión</a>
+                <a href="../logout.php" class="btn-logout" onclick="return confirm('¿Estás seguro de que deseas cerrar sesión? Todos los cambios no guardados se perderán.')">Cerrar Sesión</a>
             </div>
         </header>
 
@@ -347,7 +298,12 @@ if (isset($_GET['edit_user'])) {
                     </div>
                     <div>
                         <label>Contraseña <?php echo $edit_admin ? '(dejar vacío para no cambiar)' : ''; ?></label>
-                        <input type="password" name="password_form" <?php echo $edit_admin ? '' : 'required'; ?>>
+                        <div class="password-wrapper">
+                            <input type="password" name="password_form" id="pass_admin" <?php echo $edit_admin ? '' : 'required'; ?>>
+                            <button type="button" class="btn-view-pass" onclick="togglePassword('pass_admin', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 10px; align-items: flex-end;">
                         <button type="submit" name="save_user" style="background: var(--secondary); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; width:100%;">
@@ -361,40 +317,7 @@ if (isset($_GET['edit_user'])) {
             </form>
         </div>
 
-        <div class="form-section" style="border-left: 6px solid var(--primary);">
-            <h3>🎓 <?php echo $edit_student ? 'Modificar Acceso' : 'Vincular Estudiante con Acceso'; ?></h3>
-            <form method="POST">
-                <input type="hidden" name="std_id" value="<?php echo $edit_student['id'] ?? ''; ?>">
-                
-                <div class="grid-3">
-                    <div>
-                        <label>Cédula</label>
-                        <input type="text" name="std_ci" value="<?php echo $edit_student['ci'] ?? ''; ?>" required>
-                    </div>
-                    <div>
-                        <label>Primer Nombre</label>
-                        <input type="text" name="std_nombres" value="<?php echo $edit_student['nombre1'] ?? ''; ?>" required>
-                    </div>
-                    <div>
-                        <label>Apellido Paterno</label>
-                        <input type="text" name="std_apellidos" value="<?php echo $edit_student['apellido_paterno'] ?? ''; ?>" required>
-                    </div>
-                    <div>
-                        <label>Usuario (Acceso)</label>
-                        <input type="text" name="std_usuario" required>
-                    </div>
-                    <div>
-                        <label>Contraseña</label>
-                        <input type="password" name="std_password" <?php echo $edit_student ? '' : 'required'; ?>>
-                    </div>
-                </div>
-                <div style="margin-top:15px;">
-                    <button type="submit" name="reg_student" class="btn-action" style="background: var(--primary); color:white; width:100%; border:none; cursor:pointer; padding:12px;">
-                        Guardar Cambios
-                    </button>
-                </div>
-            </form>
-        </div>
+        
 
         <h3>📋 Listado de Solicitudes</h3>
         <div style="overflow-x: auto;">
@@ -451,6 +374,7 @@ if (isset($_GET['edit_user'])) {
                     <p><strong>Email:</strong> <?php echo $details['base']['correo'] ?? 'N/P'; ?></p>
                     <p><strong>Teléfono:</strong> <?php echo $details['base']['tel_estudiante'] ?? 'N/P'; ?></p>
                     <p><strong>Estado Civil:</strong> <?php echo ucfirst($details['base']['edo_civil'] ?? 'N/P'); ?></p>
+                    <p><strong>Edad:</strong> <?php echo $details['base']['edad'] ?? 'N/P'; ?> años</p>
                     <p><strong>F. Nacimiento:</strong> <?php echo $details['base']['f_nac'] ?? 'N/P'; ?></p>
                 </div>
 
@@ -521,20 +445,19 @@ if (isset($_GET['edit_user'])) {
     <?php endif; ?>
 
     <script>
-        // Auto-completar datos si la CI ya existe (AJAX opcional)
-        document.getElementById('std_ci')?.addEventListener('blur', function() {
-            const ci = this.value;
-            if(ci.length > 6) {
-                fetch(`get_student_info.php?ci=${ci}`)
-                .then(r => r.json())
-                .then(data => {
-                    if(data.found) {
-                        document.getElementById('std_nombres').value = data.nombres;
-                        document.getElementById('std_apellidos').value = data.apellidos;
-                    }
-                });
+
+        function togglePassword(idInput, btn) {
+            const input = document.getElementById(idInput);
+            const icon = btn.querySelector('i');
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                input.type = "password";
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
             }
-        });
+        }
     </script>
+    <?php include '../footer.php'; ?>
 </body>
 </html>

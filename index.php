@@ -112,6 +112,7 @@ if (!$logged) {
             document.getElementById('closeLogin').onclick = () => modal.classList.add('oculto');
             window.onclick = (event) => { if (event.target == modal) modal.classList.add('oculto'); }
         </script>
+        <?php include 'footer.php'; ?>
     </body>
     </html>
 <?php
@@ -176,5 +177,6 @@ if (!$logged) {
     </script>
     <script src="main.js"></script>
     <script src="script.js"></script>
+    <?php include 'footer.php'; ?>
 </body>
 </html>

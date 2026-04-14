@@ -53,7 +53,7 @@ try {
     $stmt = $pdo->prepare('
         UPDATE estudiante SET 
             nombre1 = ?, nombre2 = ?, apellido_paterno = ?, apellido_materno = ?,
-            f_nac = ?, edad = ?, tel_estudiante = ?, correo = ?, edo_civil = ?, 
+            f_nac = ?, tel_estudiante = ?, correo = ?, edo_civil = ?, 
             tipo_beneficio = ?, C_Patria = ?, viaja = ?, estatus_estudio = ?, 
             carrera = ?, cod_est = ?, f_ingreso = ?, trayecto = ?, trimestre = ?,
             ira_anterior = ?, observaciones = ?
@@ -64,8 +64,7 @@ try {
         $data['nombre2'] ?? '', 
         $data['apellido_paterno'] ?? '', 
         $data['apellido_materno'] ?? '',
-        $data['f_nac'] ?? null, 
-        (int)($data['edad'] ?? 0), 
+        $data['f_nac'] ?? null,
         $data['tel_estudiante'] ?? '', 
         $data['correo'] ?? '', 
         $data['edo_civil'] ?? '', 

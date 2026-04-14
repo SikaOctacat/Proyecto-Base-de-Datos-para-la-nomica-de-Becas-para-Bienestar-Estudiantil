@@ -35,7 +35,7 @@ CREATE TABLE `estudiante` (
   `apellido_paterno` varchar(50) DEFAULT NULL,
   `apellido_materno` varchar(50) DEFAULT NULL,
   `f_nac` date DEFAULT NULL,
-  `edad` int(3) DEFAULT NULL,
+  `edad` int(3) AS (TIMESTAMPDIFF(YEAR, `f_nac`, CURDATE())) VIRTUAL,
   `tel_estudiante` varchar(20) DEFAULT NULL,
   `correo` varchar(60) DEFAULT NULL,
   `edo_civil` varchar(30) DEFAULT NULL,

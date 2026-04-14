@@ -84,8 +84,8 @@ function validarPaso3() {
         const añoActual = hoy.getFullYear();
 
         // 1. Validar año mínimo (2010) y que no sea futuro
-        if (añoIngreso < 2010 || añoIngreso > añoActual) {
-            alert("⚠️ La fecha de ingreso es inválida. El año debe estar entre 2010 y " + añoActual);
+        if (añoIngreso < (añoActual-30) || añoIngreso > añoActual) {
+            alert("⚠️ Ingrese una año de entrada valido");
             fIngresoInput.focus();
             return false;
         }
