@@ -156,17 +156,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Entrar</button>
             
             <div style="margin-top:15px; text-align:center; display: flex; flex-direction: column; gap: 10px;">
-                <a href="recuperar.php" style="text-decoration:none; color:#666; font-size:0.85rem;">Recuperar contraseña</a>
+                <a href="recuperar.php" style="text-decoration:none; color:#666; font-weight: bold; font-size:0.85rem;">¿Olvidaste tu contraseña?</a>
                 <a href="index.php" style="text-decoration:none; color:#FF6600; font-weight:700; font-size:0.9rem;">← Volver al Inicio</a>
             </div>
         </form>
         
     </div>
 
-    <footer class="site-footer">
-        <div style="max-width:900px;margin:0 auto;padding:12px;color:#666;text-align:center;">
-            <small>UPTAG - Sistema de Solicitudes · &copy; <?php echo date('Y'); ?></small>
-        </div>
-    </footer>
+    <?php include 'footer.php'; ?>
 </body>
 </html>

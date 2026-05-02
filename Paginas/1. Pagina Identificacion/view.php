@@ -91,7 +91,7 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             <label>Beneficio al cual aspira</label>
             <select name="tipo_beneficio" required>
                 <option value="" disabled selected>Seleccione una opción...</option>
-                <option value="Beca_Estudiantil/Universitaria">Beca Estudiantil/Universitaria</option>
+                <option value="Beca Estudiantil/Universitaria">Beca Estudiantil/Universitaria</option>
                 <option value="ayudantia">Ayudantía</option>
                 <option value="preparaduria">Preparaduría</option>
             </select>

@@ -73,10 +73,5 @@ require 'db.php';
         });
     </script>
     <?php include 'footer.php'; ?>
-    <footer class="site-footer">
-        <div style="max-width:900px;margin:0 auto;padding:18px 12px;color:#666;text-align:center;">
-            <small>UPTAG - Sistema de Solicitudes · &copy; <?php echo date('Y'); ?></small>
-        </div>
-    </footer>
 </body>
 </html>
