@@ -137,18 +137,39 @@ INSERT INTO `residencia` (`id`, `ci_estudiante`, `t_res`, `t_viv`, `t_loc`, `r_p
 --
 
 CREATE TABLE `usuarios` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `usuario` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `rol` varchar(20) DEFAULT 'estudiante'
+  `pregunta_seguridad` varchar(255) DEFAULT NULL,
+  `respuesta_seguridad` varchar(255) DEFAULT NULL,
+  `rol` varchar(20) DEFAULT 'estudiante',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `usuario` (`usuario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id`, `usuario`, `password`, `rol`) VALUES
-(1, '32546208', '$2y$10$z.xixekm1AVnscpufBAVj.hREeJ7ivfGqWZnRBHnZdnBHFgcN0tVu', 'estudiante');
+INSERT INTO `usuarios` (`id`, `usuario`, `password`, `pregunta_seguridad`, `respuesta_seguridad`, `rol`) VALUES
+(1, '32546208', '$2y$10$z.xixekm1AVnscpufBAVj.hREeJ7ivfGqWZnRBHnZdnBHFgcN0tVu', NULL, NULL, 'estudiante');
+
+--
+-- Estructura de tabla para la tabla `bitacora`
+--
+
+CREATE TABLE `bitacora` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` int(11) DEFAULT NULL,
+  `accion` varchar(255) NOT NULL,
+  `tabla_afectada` varchar(50) DEFAULT NULL,
+  `detalles` text DEFAULT NULL,
+  `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`),
+  CONSTRAINT `bitacora_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- Índices para tablas volcadas
@@ -181,13 +202,6 @@ ALTER TABLE `record_academico`
 ALTER TABLE `residencia`
   ADD PRIMARY KEY (`id`),
   ADD KEY `ci_estudiante` (`ci_estudiante`);
-
---
--- Indices de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `usuario` (`usuario`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas

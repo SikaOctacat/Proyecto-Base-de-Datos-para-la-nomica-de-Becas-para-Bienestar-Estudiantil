@@ -1,6 +1,13 @@
 <?php
 session_start();
 require 'db.php';
+
+// Función para registrar movimientos en la bitácora
+function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
+    $stmt = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+}
+
 header('Content-Type: application/json');
 
 // Recibir el JSON enviado desde el frontend
@@ -29,27 +36,50 @@ if (!$estudiante_ci) {
 try {
     $pdo->beginTransaction();
 
-    // 2. VERIFICAR O CREAR USUARIO (Si es registro nuevo)
-    $stmt = $pdo->prepare('SELECT ci FROM estudiante WHERE ci = ?');
+    // 2. VERIFICAR O CREAR USUARIO Y OBTENER EL ID
+    // Buscamos el usuario_id en la tabla estudiante para saber si ya tiene cuenta vinculada
+    $stmt = $pdo->prepare('SELECT usuario_id FROM estudiante WHERE ci = ?');
     $stmt->execute([$estudiante_ci]);
     $existe = $stmt->fetch();
+    $usuario_id = null;
 
-    if (!$existe) {
-        // Si no existe, creamos el usuario primero
-        $password = !empty($data['password']) ? $data['password'] : $estudiante_ci; // Password por defecto es la CI
-        $hash = password_hash($password, PASSWORD_BCRYPT);
+    if (!$existe || empty($existe['usuario_id'])) {
+        // Si no existe, creamos el usuario con su pregunta de seguridad
+        $password = !empty($data['password']) ? $data['password'] : $estudiante_ci; 
+        $hash_pass = password_hash($password, PASSWORD_BCRYPT);
         
-        $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, "estudiante")');
-        $stmt->execute([$estudiante_ci, $hash]);
+        $pregunta = $data['pregunta_seguridad'] ?? null;
+        $respuesta = !empty($data['respuesta_seguridad']) ? strtolower(trim($data['respuesta_seguridad'])) : null;
+        $hash_respuesta = $respuesta ? password_hash($respuesta, PASSWORD_BCRYPT) : null;
+
+        $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, pregunta_seguridad, respuesta_seguridad, rol) VALUES (?, ?, ?, ?, "estudiante")');
+        $stmt->execute([
+            $estudiante_ci, 
+            $hash_pass, 
+            $pregunta, 
+            $hash_respuesta
+        ]);
+        
         $usuario_id = $pdo->lastInsertId();
 
-        // Creamos el registro en estudiante
-        $stmt = $pdo->prepare('INSERT INTO estudiante (ci, usuario_id) VALUES (?, ?)');
-        $stmt->execute([$estudiante_ci, $usuario_id]);
+        if (!$existe) {
+            // Creamos el registro en estudiante vinculado al usuario_id
+            $stmt = $pdo->prepare('INSERT INTO estudiante (ci, usuario_id) VALUES (?, ?)');
+            $stmt->execute([$estudiante_ci, $usuario_id]);
+        } else {
+            // Si el estudiante existía pero no tenía usuario vinculado (caso raro, pero previene errores)
+            $stmt = $pdo->prepare('UPDATE estudiante SET usuario_id = ? WHERE ci = ?');
+            $stmt->execute([$usuario_id, $estudiante_ci]);
+        }
+
+        // Registrar en bitácora
+        registrarMovimiento($pdo, $usuario_id, 'Registro Inicial', 'usuarios/estudiante', 'Creación de cuenta y vinculación de cédula');
+    } else {
+        // Si ya existía, simplemente capturamos su ID para los logs siguientes
+        $usuario_id = $existe['usuario_id'];
     }
 
     // 3. ACTUALIZAR TABLA 'estudiante' (Datos personales, PNF y académicos)
-    // Según tu script JS, estos son los nombres de las llaves en window.formDataStorage
     $stmt = $pdo->prepare('
         UPDATE estudiante SET 
             nombre1 = ?, nombre2 = ?, apellido_paterno = ?, apellido_materno = ?,
@@ -78,9 +108,12 @@ try {
         $data['trayecto'] ?? '', 
         $data['trimestre'] ?? '',
         $data['ira_anterior'] ?? 0, 
-        $data['comentarios'] ?? '', // Se mapea a 'Observaciones' según tu JS
+        $data['comentarios'] ?? '', 
         $estudiante_ci
     ]);
+
+    // Registrar actualización en bitácora
+    registrarMovimiento($pdo, $usuario_id, 'Actualización de Perfil', 'estudiante', 'Actualización de datos personales y/o académicos');
 
     // 4. LIMPIEZA DE TABLAS RELACIONADAS (Para evitar duplicados al re-enviar)
     $pdo->prepare("DELETE FROM residencia WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
@@ -105,11 +138,10 @@ try {
     $stmt = $pdo->prepare('INSERT INTO record_academico (ci_estudiante, ira_anterior) VALUES (?,?)');
     $stmt->execute([$estudiante_ci, $data['ira_anterior'] ?? 0]);
 
-    // 7. INSERTAR FAMILIARES (Lógica dinámica de f_nom_X)
-    $vive_solo = ($data['no_familiares'] === true || $data['no_familiares'] === "on");
+    // 7. INSERTAR FAMILIARES
+    $vive_solo = (isset($data['no_familiares']) && ($data['no_familiares'] === true || $data['no_familiares'] === "on"));
     
     if (!$vive_solo) {
-        // Extraer los IDs únicos de los familiares enviados (ej: de f_nom_1 extrae "1")
         $idsFam = [];
         foreach ($data as $key => $val) {
             if (strpos($key, 'f_nom_') === 0) {
@@ -130,6 +162,14 @@ try {
                 (float)($data['f_ing_'.$id] ?? 0)
             ]);
         }
+
+        // Registrar familiares en bitácora
+        if (count($idsFam) > 0) {
+            registrarMovimiento($pdo, $usuario_id, 'Carga de Familiares', 'familiar', 'Se registraron ' . count($idsFam) . ' familiares en el sistema');
+        }
+    } else {
+        // Opcional: Registrar que vive solo si marcó la casilla
+        registrarMovimiento($pdo, $usuario_id, 'Actualización de Familiares', 'familiar', 'Indicó vivir solo/sin carga familiar');
     }
 
     $pdo->commit();

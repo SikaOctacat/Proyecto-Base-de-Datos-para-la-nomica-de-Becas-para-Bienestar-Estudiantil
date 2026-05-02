@@ -1,90 +1,89 @@
 <?php
+ob_start();
+session_start();
 require '../db.php';
 
-// Simple session check
+// 1. Verificación de sesión (Asegúrate de que coincida con tu login)
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {
     die("Acceso denegado.");
 }
 
-// Fetch all student data with related info
+// 2. Query ajustada a TU base de datos real
+// Nota: He unido los nombres y apellidos para que el Excel sea más limpio
 $query = $pdo->query("
     SELECT 
-        e.id, e.ci, e.nombres, e.apellidos, e.fecha_nacimiento, e.edad, e.estado_civil, e.telefono, e.correo,
-        p.carrera, p.trayecto, p.trimestre_actual,
-        r.indice_trimestre,
-        res.direccion, res.tipo_vivienda,
-        t.lugar as trabajo_lugar, t.ingreso as trabajo_ingreso
-    FROM estudiantes e
-    LEFT JOIN pnfs p ON e.pnf_id = p.id
-    LEFT JOIN records_academicos r ON e.id = r.estudiante_id
-    LEFT JOIN residencias res ON e.id = res.estudiante_id
-    LEFT JOIN trabajos t ON e.id = t.estudiante_id
-    ORDER BY e.id ASC
+        e.ci, 
+        e.nombre1, e.nombre2, e.apellido_paterno, e.apellido_materno,
+        e.f_nac, e.edad, e.edo_civil, e.tel_estudiante, e.correo,
+        e.carrera, e.trayecto, e.trimestre, e.ira_anterior,
+        e.tipo_beneficio, e.viaja,
+        r.t_viv, r.municipio_res, r.dir_local
+    FROM estudiante e
+    LEFT JOIN residencia r ON e.ci = r.ci_estudiante
+    ORDER BY e.ci ASC
 ");
-$data = $query->fetchAll();
+$data = $query->fetchAll(PDO::FETCH_ASSOC);
 
-// Filename
-$filename = "reporte_becas_" . date('Y-m-d') . ".xls"; // Use .xls to force Excel to treat it as a spreadsheet
+// 3. Preparación del archivo
+$filename = "reporte_becas_" . date('Y-m-d') . ".xls";
 
-// Clear output buffer
 if (ob_get_length()) ob_clean();
 
-// Headers for Excel download (UTF-16LE Tab-Separated)
-header('Content-Type: application/vnd.ms-excel; charset=UTF-16LE');
+// Headers para forzar descarga y compatibilidad con caracteres especiales (UTF-8)
+header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Cache-Control: max-age=0');
 
-// Open the output stream
-$output = fopen('php://output', 'w');
-
-// Add UTF-16LE BOM
-fwrite($output, chr(0xFF).chr(0xFE));
-
-// Helper function to convert text to UTF-16LE and escape quotes
-function toUTF16($text) {
-    if ($text === null) $text = '';
-    $text = (string)$text;
-    $text = str_replace('"', '""', $text); // Escape double quotes
-    return mb_convert_encoding('"' . $text . '"', 'UTF-16LE', 'UTF-8');
-}
-
-// Prepare header row
-$headers = [
-    'ID', 'Cédula', 'Nombres', 'Apellidos', 'Fecha de Nacimiento', 'Edad', 'Estado Civil', 'Teléfono', 'Correo Electrónico',
-    'Carrera Universitaria', 'Carrera (Trayecto/Trimestre)', 'Índice Académico', 'Dirección de Habitación', 'Tipo de Vivienda', 'Lugar de Trabajo', 'Ingreso Mensual (Bs)'
-];
-
-// Write header row
-$headerLine = [];
-foreach ($headers as $h) { $headerLine[] = toUTF16($h); }
-fwrite($output, implode(mb_convert_encoding("\t", 'UTF-16LE', 'UTF-8'), $headerLine) . mb_convert_encoding("\r\n", 'UTF-16LE', 'UTF-8'));
-
-// Add data rows
-foreach ($data as $row) {
-    $line = [
-        $row['id'],
-        $row['ci'],
-        $row['nombres'],
-        $row['apellidos'],
-        $row['fecha_nacimiento'],
-        $row['edad'],
-        $row['estado_civil'],
-        $row['telefono'],
-        $row['correo'],
-        $row['carrera'],
-        $row['trayecto'] . " / " . $row['trimestre_actual'],
-        $row['indice_trimestre'],
-        $row['direccion'],
-        $row['tipo_vivienda'],
-        $row['trabajo_lugar'] ?? 'No trabaja',
-        $row['trabajo_ingreso'] ?? '0.00'
-    ];
-    
-    $rowCells = [];
-    foreach ($line as $cell) { $rowCells[] = toUTF16($cell); }
-    fwrite($output, implode(mb_convert_encoding("\t", 'UTF-16LE', 'UTF-8'), $rowCells) . mb_convert_encoding("\r\n", 'UTF-16LE', 'UTF-8'));
-}
-
-fclose($output);
+// Creamos la estructura de la tabla HTML que Excel interpreta perfectamente
+?>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<table border="1">
+    <thead>
+        <tr style="background-color: #FF6600; color: white; font-weight: bold;">
+            <th>Cédula</th>
+            <th>Nombres</th>
+            <th>Apellidos</th>
+            <th>F. Nacimiento</th>
+            <th>Edad</th>
+            <th>Edo. Civil</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Carrera</th>
+            <th>Trayecto/Trim</th>
+            <th>IRA</th>
+            <th>Tipo Beneficio</th>
+            <th>Viaja</th>
+            <th>Vivienda</th>
+            <th>Municipio</th>
+            <th>Dirección</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($data as $row): 
+            $nombres = $row['nombre1'] . ' ' . ($row['nombre2'] ?? '');
+            $apellidos = $row['apellido_paterno'] . ' ' . ($row['apellido_materno'] ?? '');
+        ?>
+        <tr>
+            <td><?php echo $row['ci']; ?></td>
+            <td><?php echo htmlspecialchars($nombres); ?></td>
+            <td><?php echo htmlspecialchars($apellidos); ?></td>
+            <td><?php echo $row['f_nac']; ?></td>
+            <td><?php echo $row['edad']; ?></td>
+            <td><?php echo ucfirst($row['edo_civil']); ?></td>
+            <td><?php echo $row['tel_estudiante']; ?></td>
+            <td><?php echo $row['correo']; ?></td>
+            <td><?php echo htmlspecialchars($row['carrera']); ?></td>
+            <td><?php echo "T" . $row['trayecto'] . " / Trim " . $row['trimestre']; ?></td>
+            <td><?php echo number_format($row['ira_anterior'], 2); ?></td>
+            <td><?php echo $row['tipo_beneficio']; ?></td>
+            <td><?php echo $row['viaja']; ?></td>
+            <td><?php echo $row['t_viv']; ?></td>
+            <td><?php echo $row['municipio_res']; ?></td>
+            <td><?php echo htmlspecialchars($row['dir_local']); ?></td>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<?php
 exit;
 ?>

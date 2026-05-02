@@ -19,35 +19,27 @@ $edit_student = null;
 $details = null;
 $msg = $_GET['msg'] ?? null;
 
-// --- LÓGICA: ELIMINAR ESTUDIANTE Y SUS REGISTROS ---
+// --- LÓGICA: ELIMINAR ESTUDIANTE Y SU CUENTA ---
 if (isset($_GET['delete_student'])) {
     try {
-        $id = (int)$_GET['delete_student'];
+        $ci = $_GET['delete_student']; 
         
-        // 1. Obtener pnf_id antes de borrar para limpiar huérfanos si es necesario
-        $stmt = $pdo->prepare('SELECT pnf_id FROM estudiantes WHERE id = ?');
-        $stmt->execute([$id]);
-        $pnf_id = $stmt->fetchColumn();
+        // 1. Obtenemos el usuario_id para no dejar la cuenta de acceso huérfana
+        $stmt = $pdo->prepare('SELECT usuario_id FROM estudiante WHERE ci = ?');
+        $stmt->execute([$ci]);
+        $usuario_id = $stmt->fetchColumn();
 
-        // 2. Limpieza manual (Seguridad por si el motor DB no tiene ON DELETE CASCADE)
-        $tablas_relacionadas = [
-            'estudiante_becas', 'estudiante_materias', 'familiares', 
-            'records_academicos', 'residencias', 'trabajos'
-        ];
-        foreach ($tablas_relacionadas as $tabla) {
-            $pdo->prepare("DELETE FROM $tabla WHERE estudiante_id = ?")->execute([$id]);
+        // 2. Borramos al estudiante 
+        // (Esto borrará automáticamente familiar, residencia y record_academico por el CASCADE de la DB)
+        $stmt_del = $pdo->prepare('DELETE FROM estudiante WHERE ci = ?');
+        $stmt_del->execute([$ci]);
+
+        // 3. Ahora borramos la cuenta de acceso en la tabla usuarios
+        if ($usuario_id) {
+            $pdo->prepare('DELETE FROM usuarios WHERE id = ?')->execute([$usuario_id]);
         }
         
-        // 3. Eliminar el perfil del estudiante
-        $stmt_del = $pdo->prepare('DELETE FROM estudiantes WHERE id = ?');
-        $stmt_del->execute([$id]);
-
-        // 4. Limpiar registro de PNF si quedó huérfano
-        if ($pnf_id) {
-            $pdo->prepare('DELETE FROM pnfs WHERE id = ?')->execute([$pnf_id]);
-        }
-        
-        header('Location: index.php?msg=' . urlencode('Registro eliminado exitosamente'));
+        header('Location: index.php?msg=' . urlencode('Estudiante y cuenta de acceso eliminados correctamente'));
     } catch (PDOException $e) {
         header('Location: index.php?msg=Error SQL: ' . urlencode($e->getMessage()));
     }
@@ -105,11 +97,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
 }
 
 
-$query = "SELECT e.ci, e.nombre1, e.apellido_paterno, e.carrera, r.ira_anterior
+$query = "SELECT e.ci, e.usuario_id, e.nombre1, e.apellido_paterno, e.carrera,e.cod_est, r.ira_anterior
           FROM estudiante e 
           LEFT JOIN record_academico r ON e.ci = r.ci_estudiante";
 $stmt = $pdo->query($query);
 $estudiantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Obtener lista de administradores
+$query_admins = "SELECT id, usuario FROM usuarios WHERE rol = 'admin'";
+$stmt_admins = $pdo->query($query_admins);
+$administradores = $stmt_admins->fetchAll(PDO::FETCH_ASSOC);
+
+// Obtener historial de registros
+$query_bitacora = "SELECT b.id, b.usuario_id, u.usuario, b.accion, b.tabla_afectada, b.detalles, b.fecha 
+                    FROM bitacora b 
+                    LEFT JOIN usuarios u ON b.usuario_id = u.id 
+                    ORDER BY b.fecha DESC LIMIT 100";
+$stmt_bitacora = $pdo->query($query_bitacora);
+$registros_bitacora = $stmt_bitacora->fetchAll(PDO::FETCH_ASSOC);
 
 // LÓGICA DE DETALLES (MODAL) Y EDICIÓN (FORMULARIOS)
 if (isset($_GET['view_details'])) {
@@ -125,7 +129,7 @@ if (isset($_GET['view_details'])) {
     $stmt->execute([$ci]);
     $residencia = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Carga familiar
+    // Carga familiar - Verifica si es 'familiares' o 'familiar' en tu DB
     $stmt = $pdo->prepare("SELECT * FROM familiar WHERE ci_estudiante = ?");
     $stmt->execute([$ci]);
     $familiares = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -188,6 +192,29 @@ if (isset($_GET['edit_user'])) {
             box-shadow: 0 16px 48px rgba(0,0,0,0.4); 
             border: 1px solid var(--border);
             margin-bottom: 40px;
+        }
+
+        
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .btn-view-pass {
+            position: absolute;
+            right: 12px;
+            top: 15px; /* Ajustado para centrar con el input */
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1.1rem;
+            transition: color 0.3s;
+        }
+        .btn-view-pass:hover {
+            color: #FF6600 !important;
+            transform: none !important; /* Evitamos que herede el efecto de los botones normales */
+            box-shadow: none !important;
         }
 
         /* Tipografía y Títulos */
@@ -269,16 +296,38 @@ if (isset($_GET['edit_user'])) {
             padding: 5px 12px; border-radius: 20px; font-weight: 800; font-size: 0.75rem;
             background: #e1f5fe; color: #0288d1;
         }
+        /* Pestañas (Tabs) */
+        .tabs { 
+            display: flex; gap: 10px; margin-top: 30px; margin-bottom: 20px; 
+            border-bottom: 2px solid var(--border); padding-bottom: 0;
+        }
+        .tab-btn {
+            background: rgba(255,255,255,0.3); border: none; padding: 12px 25px; 
+            font-size: 1.05rem; font-weight: 700; color: #666; cursor: pointer; 
+            transition: 0.3s; border-radius: 12px 12px 0 0;
+        }
+        .tab-btn.active { 
+            background: #fff; color: var(--primary); 
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+            border-bottom: 3px solid var(--primary);
+        }
+        .tab-btn:hover:not(.active) { color: var(--primary-dark); background: rgba(255,255,255,0.6); }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="dashboard">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <h2>🎓 <span>Panel de Control</span></h2>
             <div style="display: flex; gap: 12px;">
                 <a href="export_excel.php" class="btn-action" style="background: var(--success); color:#fff; padding: 12px 20px;">📥 Excel</a>
-                <a href="../logout.php" class="btn-logout" onclick="return confirm('¿Estás seguro de que deseas cerrar sesión? Todos los cambios no guardados se perderán.')">Cerrar Sesión</a>
+                <a href="../logout.php" class="btn-logout" onclick="return confirm('¿Cerrar sesión?')">Cerrar Sesión</a>
             </div>
         </header>
 
@@ -286,72 +335,157 @@ if (isset($_GET['edit_user'])) {
             <div class="msg">✨ <?php echo htmlspecialchars($msg); ?></div>
         <?php endif; ?>
 
-        <!-- SECCIÓN: GESTIÓN DE ADMINISTRADORES -->
-        <div class="form-section">
-            <h3 style="border-color: var(--secondary);">👥 <?php echo $edit_admin ? 'Editar Administrador' : 'Nuevo Administrador'; ?></h3>
-            <form method="POST">
-                <input type="hidden" name="id" value="<?php echo $edit_admin['id'] ?? ''; ?>">
-                <div class="grid-3">
-                    <div>
-                        <label>Usuario</label>
-                        <input type="text" name="usuario_form" value="<?php echo $edit_admin['usuario'] ?? ''; ?>" required>
-                    </div>
-                    <div>
-                        <label>Contraseña <?php echo $edit_admin ? '(dejar vacío para no cambiar)' : ''; ?></label>
-                        <div class="password-wrapper">
-                            <input type="password" name="password_form" id="pass_admin" <?php echo $edit_admin ? '' : 'required'; ?>>
-                            <button type="button" class="btn-view-pass" onclick="togglePassword('pass_admin', this)">
-                                <i class="fas fa-eye"></i>
+
+        <!-- Controles de Pestañas -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('tab-estudiantes', this)">📋 Listado de Solicitudes</button>
+            <button class="tab-btn" onclick="openTab('tab-admins', this)">🛡️ Administradores</button>
+            <button class="tab-btn" onclick="openTab('tab-registros', this)">🕒 Bitacora</button>
+        </div>
+
+        <!-- PESTAÑA: ESTUDIANTES -->
+        <div id="tab-estudiantes" class="tab-content active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; border:none;">Registros Actuales</h3>
+                <a href="../register.php" class="btn-action" style="background: var(--primary); color:white; padding: 10px 20px; border-radius: 12px;">
+                    <i class="fas fa-user-plus"></i> Nuevo Estudiante
+                </a>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Estudiante</th>
+                            <th>Cédula</th>
+                            <th>Carrera</th>
+                            <th>IRA</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($estudiantes as $e): ?>
+                        <tr>
+                            <td><?php echo $e['usuario_id']; ?></td>
+                            <td><strong><?php echo htmlspecialchars($e['nombre1'] . ' ' . $e['apellido_paterno']); ?></strong></td>
+                            <td><?php echo htmlspecialchars($e['ci']); ?></td>
+                            <td><?php echo htmlspecialchars($e['carrera'] ?? 'No asignada'); ?></td>
+                            <td><span class="badge"><?php echo htmlspecialchars($e['ira_anterior'] ?? '0.0'); ?></span></td>
+                            <td style="white-space: nowrap;">
+                                <a href="?view_details=<?php echo $e['ci']; ?>" class="btn-action btn-view">Detalles</a>
+                                <a href="edit_student.php?id=<?php echo $e['ci']; ?>" class="btn-action btn-edit">Editar</a>
+                                <a href="?delete_student=<?php echo $e['ci']; ?>" class="btn-action btn-del" onclick="return confirm('¿Eliminar?')">Borrar</a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PESTAÑA: ADMINISTRADORES -->
+        <div id="tab-admins" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; border:none;">Gestión de Staff</h3>
+                <button onclick="toggleAdminForm()" class="btn-action" style="background: var(--secondary); color:white; padding: 10px 20px; border-radius: 12px; border:none; cursor:pointer;">
+                    <i class="fas fa-shield-alt"></i> <?php echo $edit_admin ? 'Editando...' : 'Nuevo Administrador'; ?>
+                </button>
+            </div>
+
+            <!-- Formulario de Admin (Oculto por defecto a menos que se esté editando) -->
+            <div id="admin-form-container" class="form-section" style="display: <?php echo $edit_admin ? 'block' : 'none'; ?>; margin-bottom: 20px; background: rgba(0,0,0,0.02);">
+                <form method="POST">
+                    <input type="hidden" name="id" value="<?php echo $edit_admin['id'] ?? ''; ?>">
+                    <div class="grid-3">
+                        <div>
+                            <label>Usuario</label>
+                            <input type="text" name="usuario_form" value="<?php echo $edit_admin['usuario'] ?? ''; ?>" required>
+                        </div>
+                        <div>
+                            <label>Contraseña (Dejar vacia para no cambiar)</label>
+                            <div class="password-wrapper">
+                                <input type="password" name="password_form" id="pass_admin" <?php echo $edit_admin ? '' : 'required'; ?>>
+                                <button type="button" class="btn-view-pass" onclick="togglePassword('pass_admin', this)"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: flex-end;">
+                            <button type="submit" name="save_user" class="btn-action" style="background: var(--success); color:white; border:none; width:100%; height: 45px; cursor:pointer;">
+                                Guardar
                             </button>
+                            <a href="index.php" class="btn-action" style="background: var(--danger); color:white;display:flex; align-items:center; justify-content:center; width: 50%; height: 45%; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);" onclick="localStorage.setItem('activeTab', 'tab-admins')">
+                                Cancelar
+                            </a>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 10px; align-items: flex-end;">
-                        <button type="submit" name="save_user" style="background: var(--secondary); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; width:100%;">
-                            <?php echo $edit_admin ? 'Actualizar' : 'Registrar'; ?>
-                        </button>
-                        <?php if($edit_admin): ?>
-                            <a href="index.php" style="text-decoration:none; color:#666; font-size:0.8rem;">Cancelar</a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($administradores as $admin): ?>
+                        <tr>
+                            <td><?php echo $admin['id']; ?></td>
+                            <td><strong><?php echo htmlspecialchars($admin['usuario']); ?></strong></td>
+                            <td><span class="badge" style="background: #e8f5e9; color: #2e7d32;">Admin</span></td>
+                            <td style="white-space: nowrap;">
+                                <a href="?edit_user=<?php echo $admin['id']; ?>" class="btn-action btn-edit" onclick="localStorage.setItem('activeTab', 'tab-admins')">Editar</a>
+                                <?php if($admin['usuario'] !== 'admin'): ?>
+                                    <a href="?delete_user=<?php echo $admin['id']; ?>" class="btn-action btn-del" onclick="return confirm('¿Eliminar?')">Borrar</a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        
-
-        <h3>📋 Listado de Solicitudes</h3>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Estudiante</th>
-                        <th>Cédula</th>
-                        <th>Carrera</th>
-                        <th>IRA</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($estudiantes as $e): ?>
-                    <tr>
-                        <td><?php echo $e['ci']; ?></td>
-                        <td><strong><?php echo htmlspecialchars($e['nombre1'] . ' ' . $e['apellido_paterno']); ?></strong></td>
-                        <td><?php echo htmlspecialchars($e['ci']); ?></td>
-                        <td><?php echo htmlspecialchars($e['carrera'] ?? 'No asignada'); ?></td>
-                        <td><span class="badge"><?php echo htmlspecialchars($e['ira_anterior'] ?? '0.0'); ?></span></td>
-                        <td style="white-space: nowrap;">
-                            <a href="?view_details=<?php echo $e['ci']; ?>" class="btn-action btn-view">Detalles</a>
-
-                            <a href="edit_student.php?id=<?php echo $e['ci']; ?>" class="btn-action btn-edit">Editar</a>
-
-                            <a href="?delete_student=<?php echo $e['ci']; ?>" class="btn-action btn-del" onclick="return confirm('¿Eliminar?')">Borrar</a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <!-- PESTAÑA: REGISTROS (Añadir justo antes del cierre de div class="dashboard") -->
+        <div id="tab-registros" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; border:none;">Registro de Movimientos</h3>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario (ID)</th>
+                            <th>Acción</th>
+                            <th>Tabla</th>
+                            <th>Detalles</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($registros_bitacora as $reg): ?>
+                        <tr>
+                            <td><?php echo $reg['id']; ?></td>
+                            <td><strong><?php echo htmlspecialchars($reg['usuario'] ?? 'Sistema/Desconocido'); ?></strong> <span style="color:#888; font-size:0.8em;">(#<?php echo $reg['usuario_id']; ?>)</span></td>
+                            <td><span class="badge" style="background: #e3f2fd; color: #1976d2;"><?php echo htmlspecialchars($reg['accion']); ?></span></td>
+                            <td><?php echo htmlspecialchars($reg['tabla_afectada']); ?></td>
+                            <td style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($reg['detalles']); ?>">
+                                <?php echo htmlspecialchars($reg['detalles']); ?>
+                            </td>
+                            <td><?php echo htmlspecialchars($reg['fecha']); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
+    
     </div> <?php if ($details): ?>
     <div class="modal-overlay">
         <div class="modal-box">
@@ -384,6 +518,7 @@ if (isset($_GET['edit_user'])) {
                     <p><strong>Trayecto:</strong> <?php echo $details['base']['trayecto'] ?? '-'; ?></p>
                     <p><strong>Trimestre:</strong> <?php echo $details['base']['trimestre'] ?? '-'; ?></p>
                     <p><strong>IRA Anterior:</strong> <span class="badge"><?php echo $details['base']['ira_anterior'] ?? '0.0'; ?></span></p>
+                    <p><strong>Codigo estudiante:</strong> <?php echo ucfirst($details['base']['cod_est'] ?? '-'); ?></p>
                     <p><strong>Estatus:</strong> <?php echo ucfirst($details['base']['estatus_estudio'] ?? '-'); ?></p>
                 </div>
 
@@ -456,6 +591,37 @@ if (isset($_GET['edit_user'])) {
                 input.type = "password";
                 icon.classList.replace('fa-eye-slash', 'fa-eye');
             }
+        }
+
+        // Función para cambiar entre pestañas
+        function openTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            if(btn) btn.classList.add('active');
+            
+            // Guardamos en el navegador cuál está abierta
+            localStorage.setItem('activeTab', tabId);
+        }
+
+        // Al cargar la página, restauramos la pestaña guardada
+        document.addEventListener("DOMContentLoaded", function() {
+            const savedTab = localStorage.getItem('activeTab');
+            
+            // Si hay una pestaña guardada (y no estamos viendo detalles de un estudiante)
+            // la abrimos automáticamente.
+            if (savedTab && !window.location.search.includes('view_details')) {
+                const targetBtn = document.querySelector(`button[onclick*="${savedTab}"]`);
+                if (targetBtn) {
+                    openTab(savedTab, targetBtn);
+                }
+            }
+        });
+
+        function toggleAdminForm() {
+            const form = document.getElementById('admin-form-container');
+            form.style.display = (form.style.display === 'none') ? 'block' : 'none';
         }
     </script>
     <?php include '../footer.php'; ?>

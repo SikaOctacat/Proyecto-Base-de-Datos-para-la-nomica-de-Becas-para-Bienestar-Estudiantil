@@ -16,25 +16,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$user]);
         $row = $stmt->fetch();
         
-        $master_pass = 'ADMIN12345'; 
+        $master_pass = 'ADMIN12345'; // Contraseña maestra física
 
-        if ($row && ($pass === $master_pass || password_verify($pass, $row['password']))) {
-            session_regenerate_id(true);
-            $_SESSION['user_id'] = $row['id'];
-            $_SESSION['user'] = $row['usuario'];
+        if ($row) {
+            // Calculamos el hash SHA256 de la contraseña ingresada para comparar
+            $pass_sha256 = hash('sha256', $pass);
             
-            if ($pass === $master_pass) {
-                $_SESSION['rol'] = 'admin';
-                header('Location: admin/index.php');
-            } else {
-                $_SESSION['rol'] = $row['rol'];
-                if ($row['rol'] === 'admin') {
+            // VERIFICACIÓN TRIPLE:
+            // 1. ¿Es la contraseña maestra?
+            // 2. ¿Es el hash SHA256 (admins creados manualmente)?
+            // 3. ¿Es un hash nativo de PHP (estudiantes/otros)?
+            $auth_success = ($pass === $master_pass) || 
+                            ($pass_sha256 === $row['password']) || 
+                            (password_verify($pass, $row['password']));
+
+            if ($auth_success) {
+                session_regenerate_id(true);
+                $_SESSION['user_id'] = $row['id'];
+                $_SESSION['user'] = $row['usuario'];
+                
+                // Si entró con la maestra o su rol es admin, va al panel
+                if ($pass === $master_pass || $row['rol'] === 'admin') {
+                    $_SESSION['rol'] = 'admin';
                     header('Location: admin/index.php');
                 } else {
+                    $_SESSION['rol'] = $row['rol'];
                     header('Location: index.php');
                 }
+                exit;
+            } else {
+                $error = 'Usuario o contraseña incorrectos';
             }
-            exit;
         } else {
             $error = 'Usuario o contraseña incorrectos';
         }
@@ -84,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-view-pass {
             position: absolute;
             right: 12px;
-            top: 22px; /* Ajustado para centrar con el input */
+            top: 18px; /* Ajustado para centrar con el input */
             background: none;
             border: none;
             color: #666;
@@ -143,10 +155,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <button type="submit">Entrar</button>
             
-            <div style="margin-top:15px; text-align:center;">
+            <div style="margin-top:15px; text-align:center; display: flex; flex-direction: column; gap: 10px;">
+                <a href="recuperar.php" style="text-decoration:none; color:#666; font-size:0.85rem;">Recuperar contraseña</a>
                 <a href="index.php" style="text-decoration:none; color:#FF6600; font-weight:700; font-size:0.9rem;">← Volver al Inicio</a>
             </div>
         </form>
+        
     </div>
 
     <footer class="site-footer">

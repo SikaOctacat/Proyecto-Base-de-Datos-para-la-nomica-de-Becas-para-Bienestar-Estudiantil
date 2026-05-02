@@ -1,5 +1,5 @@
 <?php 
-if(session_status()==PHP_SESSION_NONE) session_start(); 
+if(session_status() == PHP_SESSION_NONE) session_start(); 
 
 // Calculamos las fechas en PHP para que el HTML ya venga con los límites
 $fecha_hoy = new DateTime();

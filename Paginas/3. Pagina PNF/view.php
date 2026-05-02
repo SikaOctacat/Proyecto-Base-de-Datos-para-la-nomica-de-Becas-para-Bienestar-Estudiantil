@@ -1,4 +1,15 @@
-<?php if(session_status()==PHP_SESSION_NONE) session_start(); ?>
+<?php 
+if(session_status() == PHP_SESSION_NONE) session_start(); 
+
+// Leer el archivo JSON
+$json_path = '../../carreras.json';
+$carreras = [];
+
+if (file_exists($json_path)) {
+    $json_content = file_get_contents($json_path);
+    $carreras = json_decode($json_content, true);
+}
+?>
 <div class="step-content">
     <h2>3. Información del PNF</h2>
     <div class="grid-container">
@@ -6,18 +17,15 @@
             <label>Carrera (PNF)</label>
             <select name="carrera" id="carreraSelect" required>
                 <option value="" disabled selected>Seleccione su PNF...</option>
-                <option value="administracion">Administración de Empresas</option>
-                <option value="agroalimentacion">Agroalimentación</option>
-                <option value="automotriz">Mantenimiento de Sistemas Automotrices</option>
-                <option value="construccion_civil">Construcción Civil</option>
-                <option value="contaduria">Contaduría Pública</option>
-                <option value="electricidad">Electricidad</option>
-                <option value="electronica">Electrónica</option>
-                <option value="informatica">Informática</option>
-                <option value="instrumentacion">Instrumentación y Control</option>
-                <option value="mecanica">Mecánica</option>
-                <option value="procesos_quimicos">Procesos Químicos</option>
-                <option value="quimica">Química</option>
+                <?php if (!empty($carreras)): ?>
+                    <?php foreach ($carreras as $carrera): ?>
+                        <option value="<?php echo htmlspecialchars($carrera['id']); ?>">
+                            <?php echo htmlspecialchars($carrera['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <option value="">Error al cargar carreras</option>
+                <?php endif; ?>
             </select>
         </div>
 
@@ -37,6 +45,7 @@
                 <option value="4">Trayecto IV</option>
             </select>
         </div>
+        
         <div>
             <label>Trimestre actual</label>
             <select name="trimestre" required id="trimestreSelect">
