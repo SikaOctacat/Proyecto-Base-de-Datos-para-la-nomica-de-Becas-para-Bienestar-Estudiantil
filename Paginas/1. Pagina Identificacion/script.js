@@ -120,7 +120,7 @@ function validarPaso1() {
     if (telf.trim() !== "") {
         const regexTel = /^(0414|0424|0412|0416|0426|0268)[0-9]{7}$/;
         if (!regexTel.test(telf)) {
-            alert("⚠️ El formato del teléfono es inválido (Ej: 04121234567).");
+            alert("⚠️ El numero de teléfono debe cumplir con los formatos: 0414, 0424, 0412, 0416, 0426, 0268 y debe tener 11 dígitos");
             return false;
         }
     }

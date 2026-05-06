@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
     try {
         $pdo->beginTransaction();
         
-        // 1. Estudiante (Incluyendo f_ingreso y campos faltantes)
+        // 1. Actualización de Estudiante
         $stmt = $pdo->prepare('UPDATE estudiante SET 
             nombre1=?, nombre2=?, apellido_paterno=?, apellido_materno=?, 
             f_nac=?, carrera=?, trayecto=?, trimestre=?, cod_est=?, 
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
             $_POST['viaja'], $_POST['estatus_estudio'], $_POST['observaciones'], $_POST['f_ingreso'], $ci
         ]);
         
-        // 2. Residencia (Con los nuevos campos de ubicación)
+        // 2. Actualización de Residencia
         $pdo->prepare('UPDATE residencia SET 
             t_res=?, t_viv=?, t_loc=?, r_prop=?, estado_res=?, municipio_res=?, dir_local=?, tel_local=? 
             WHERE ci_estudiante=?')
@@ -55,19 +55,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
             }
         }
 
-        // 5. LÓGICA DE SEGURIDAD (Opcional en edición)
-        // Solo se actualiza si el campo de password no está vacío
+        // 5. Lógica de Seguridad
         if (!empty($_POST['reg_password'])) {
-            $pass_hash = hash('sha256', $_POST['reg_password']);
+            $pass_hash = password_hash($_POST['reg_password'], PASSWORD_BCRYPT);
             $pregunta = $_POST['pregunta_seguridad'] ?? '';
-            $respuesta = hash('sha256', strtolower(trim($_POST['respuesta_seguridad'])));
+            $respuesta = password_hash(strtolower(trim($_POST['respuesta_seguridad'])), PASSWORD_BCRYPT);
             
             $stmt_user = $pdo->prepare('UPDATE usuarios SET password = ?, pregunta_seguridad = ?, respuesta_seguridad = ? WHERE usuario = ?');
             $stmt_user->execute([$pass_hash, $pregunta, $respuesta, $ci]);
         }
         
+        // --- REGISTRO EN BITÁCORA (Antes del Header) ---
+        // Extraemos el ID del administrador de la sesión
+        $admin_id = $_SESSION['user_id'] ?? null; 
+        if ($admin_id) {
+            $detalles = "Se editó el expediente completo del estudiante con C.I. $ci. Incluyó actualización de datos personales, académicos y carga familiar.";
+            
+            $stmt_bit = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
+            $stmt_bit->execute([$admin_id, 'Actualización de Expediente', 'Múltiples Tablas', $detalles]);
+        }
+
         $pdo->commit();
-        header("Location: index.php?msg=success"); exit;
+        header("Location: index.php?msg=success"); 
+        exit;
+
     } catch (Exception $e) { 
         if ($pdo->inTransaction()) $pdo->rollBack(); 
         $error = "Error: " . $e->getMessage(); 

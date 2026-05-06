@@ -26,9 +26,10 @@ function renderResumen() {
     html += `
     <div class="resumen-seccion">
         <h3>1. Identificación del Estudiante</h3>
-        <div class="dato-fila"><span class="dato-label">Nombre Completo:</span> <span class="dato-valor">${getV('nombre1')} ${data['nombre2'] || ''} ${getV('apellido_paterno')} ${getV('apellido_materno')}</span></div>
-        <div class="dato-fila"><span class="dato-label">Cédula / Código:</span> <span class="dato-valor">${getV('cedula')} / ${getV('cod_est')}</span></div>
-        <div class="dato-fila"><span class="dato-label">Fecha Nac. / Edad:</span> <span class="dato-valor">${getV('f_nac')} (${getV('edad')} años)</span></div>
+        <div class="dato-fila"><span class="dato-label">Nombre completo:</span> <span class="dato-valor">${getV('nombre1')} ${data['nombre2'] || ''} ${getV('apellido_paterno')} ${getV('apellido_materno')}</span></div>
+        <div class="dato-fila"><span class="dato-label">Cédula:</span> <span class="dato-valor">${getV('cedula')}</span></div>
+        <div class="dato-fila"><span class="dato-label">Código de Estudiante:</span> <span class="dato-valor">${getV('cod_est')}</span></div>
+        <div class="dato-fila"><span class="dato-label">Fecha de nacimiento: / Edad:</span> <span class="dato-valor">${getV('f_nac')} (${getV('edad')} años)</span></div>
         <div class="dato-fila"><span class="dato-label">Teléfono:</span> <span class="dato-valor">${getV('tel_estudiante')}</span></div>
         <div class="dato-fila"><span class="dato-label">Correo:</span> <span class="dato-valor">${getV('correo')}</span></div>
         <div class="dato-fila"><span class="dato-label">Estado Civil:</span> <span class="dato-valor">${getV('edo_civil')}</span></div>

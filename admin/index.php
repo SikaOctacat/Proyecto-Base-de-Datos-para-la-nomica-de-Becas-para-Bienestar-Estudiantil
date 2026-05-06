@@ -3,6 +3,12 @@ ob_start();
 session_start(); // Asegúrate de iniciar sesión antes de cualquier chequeo
 require '../db.php';
 
+// --- FUNCIÓN DE BITÁCORA ---
+function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
+    $stmt = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+}
+
 // Prevenir el almacenamiento en caché para seguridad de datos administrativos
 header("Cache-Control: no-cache, must-revalidate");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
@@ -30,7 +36,6 @@ if (isset($_GET['delete_student'])) {
         $usuario_id = $stmt->fetchColumn();
 
         // 2. Borramos al estudiante 
-        // (Esto borrará automáticamente familiar, residencia y record_academico por el CASCADE de la DB)
         $stmt_del = $pdo->prepare('DELETE FROM estudiante WHERE ci = ?');
         $stmt_del->execute([$ci]);
 
@@ -38,6 +43,15 @@ if (isset($_GET['delete_student'])) {
         if ($usuario_id) {
             $pdo->prepare('DELETE FROM usuarios WHERE id = ?')->execute([$usuario_id]);
         }
+        
+        // Registro en Bitácora[cite: 2]
+        registrarMovimiento(
+            $pdo, 
+            $_SESSION['user_id'], 
+            "Eliminación", 
+            "Estudiante/Usuarios", 
+            "Se eliminó al estudiante con CI: $ci y su cuenta de acceso vinculada."
+        );
         
         header('Location: index.php?msg=' . urlencode('Estudiante y cuenta de acceso eliminados correctamente'));
     } catch (PDOException $e) {
@@ -54,7 +68,20 @@ if (isset($_GET['delete_user'])) {
         $stmt = $pdo->prepare('DELETE FROM usuarios WHERE id = ? AND usuario != "admin"');
         $stmt->execute([$id]);
         
-        $mensaje = ($stmt->rowCount() > 0) ? 'Usuario eliminado' : 'Cuidado: No se pudo eliminar el usuario';
+        if ($stmt->rowCount() > 0) {
+            // Registro en Bitácora[cite: 2]
+            registrarMovimiento(
+                $pdo, 
+                $_SESSION['user_id'], 
+                "Eliminación", 
+                "Usuarios", 
+                "Se eliminó al administrador con ID: $id."
+            );
+            $mensaje = 'Usuario eliminado';
+        } else {
+            $mensaje = 'Cuidado: No se pudo eliminar el usuario';
+        }
+        
         header('Location: index.php?msg=' . urlencode($mensaje));
     } catch (PDOException $e) {
         header('Location: index.php?msg=Error SQL: ' . urlencode($e->getMessage()));
@@ -85,29 +112,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
             $stmt = $pdo->prepare('UPDATE usuarios SET usuario = ? WHERE id = ?');
             $stmt->execute([$username, $id]);
         }
+        
+        // Registro en Bitácora[cite: 2]
+        registrarMovimiento(
+            $pdo, 
+            $_SESSION['user_id'], 
+            "Actualización", 
+            "Usuarios", 
+            "Se modificaron los datos del administrador: $username (ID: $id)."
+        );
         $msg = 'Administrador actualizado';
     } else {
         $hash = hash('sha256', $password);
         $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, "admin")');
         $stmt->execute([$username, $hash]);
+        
+        // Registro en Bitácora[cite: 2]
+        registrarMovimiento(
+            $pdo, 
+            $_SESSION['user_id'], 
+            "Registro de Usuario", 
+            "Usuarios", 
+            "Se creó un nuevo administrador: $username."
+        );
         $msg = 'Nuevo administrador creado';
     }
     header('Location: index.php?msg=' . urlencode($msg));
     exit;
 }
 
-
+// --- CONSULTAS PARA LA VISTA ---
 $query = "SELECT e.ci, e.usuario_id, e.nombre1, e.apellido_paterno, e.carrera,e.cod_est, r.ira_anterior
           FROM estudiante e 
           LEFT JOIN record_academico r ON e.ci = r.ci_estudiante";
 $stmt = $pdo->query($query);
 $estudiantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-// Obtener lista de administradores
+
 $query_admins = "SELECT id, usuario FROM usuarios WHERE rol = 'admin'";
 $stmt_admins = $pdo->query($query_admins);
 $administradores = $stmt_admins->fetchAll(PDO::FETCH_ASSOC);
 
-// Obtener historial de registros
 $query_bitacora = "SELECT b.id, b.usuario_id, u.usuario, b.accion, b.tabla_afectada, b.detalles, b.fecha 
                     FROM bitacora b 
                     LEFT JOIN usuarios u ON b.usuario_id = u.id 
@@ -115,35 +159,31 @@ $query_bitacora = "SELECT b.id, b.usuario_id, u.usuario, b.accion, b.tabla_afect
 $stmt_bitacora = $pdo->query($query_bitacora);
 $registros_bitacora = $stmt_bitacora->fetchAll(PDO::FETCH_ASSOC);
 
-// LÓGICA DE DETALLES (MODAL) Y EDICIÓN (FORMULARIOS)
+// --- LÓGICA DE DETALLES Y EDICIÓN ---
 if (isset($_GET['view_details'])) {
     $ci = $_GET['view_details'];
-    
-    // Datos básicos de la tabla 'estudiante'
     $stmt = $pdo->prepare("SELECT * FROM estudiante WHERE ci = ?");
     $stmt->execute([$ci]);
     $base = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Datos de residencia
     $stmt = $pdo->prepare("SELECT * FROM residencia WHERE ci_estudiante = ?");
     $stmt->execute([$ci]);
     $residencia = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Carga familiar - Verifica si es 'familiares' o 'familiar' en tu DB
     $stmt = $pdo->prepare("SELECT * FROM familiar WHERE ci_estudiante = ?");
     $stmt->execute([$ci]);
     $familiares = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $details = ['base' => $base, 'residencia' => $residencia, 'familiares' => $familiares];
 }
-// (Aquí terminamos la lógica de carga para edición de admin/estudiante)
+
 if (isset($_GET['edit_student'])) {
     $ci_edit = $_GET['edit_student'];
-    // Cambiamos "estudiantes" por "estudiante" y buscamos por "ci"
     $stmt = $pdo->prepare("SELECT * FROM estudiante WHERE ci = ?");
     $stmt->execute([$ci_edit]);
     $edit_student = $stmt->fetch(PDO::FETCH_ASSOC);
 }
+
 if (isset($_GET['edit_user'])) {
     $stmt = $pdo->prepare('SELECT id, usuario FROM usuarios WHERE id = ? AND usuario != "admin" AND rol = "admin"');
     $stmt->execute([$_GET['edit_user']]);
@@ -293,8 +333,22 @@ if (isset($_GET['edit_user'])) {
         }
 
         .badge { 
-            padding: 5px 12px; border-radius: 20px; font-weight: 800; font-size: 0.75rem;
-            background: #e1f5fe; color: #0288d1;
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            font-weight: 800; 
+            font-size: 0.75rem;
+            background: #e1f5fe; 
+            color: #0288d1;
+            display: inline-block; /* Asegura que respete el padding */
+            white-space: normal;   /* Permite que el texto baje a la siguiente línea si es largo */
+            text-align: center;
+            line-height: 1.2;
+            max-width: 120px;      /* Evita que se estire demasiado */
+        }
+
+        /* Ajuste específico para la columna de Acción en la bitácora */
+        #tab-registros td:nth-child(3) {
+            min-width: 130px;
         }
         /* Pestañas (Tabs) */
         .tabs { 
@@ -475,7 +529,7 @@ if (isset($_GET['edit_user'])) {
                             <td><strong><?php echo htmlspecialchars($reg['usuario'] ?? 'Sistema/Desconocido'); ?></strong> <span style="color:#888; font-size:0.8em;">(#<?php echo $reg['usuario_id']; ?>)</span></td>
                             <td><span class="badge" style="background: #e3f2fd; color: #1976d2;"><?php echo htmlspecialchars($reg['accion']); ?></span></td>
                             <td><?php echo htmlspecialchars($reg['tabla_afectada']); ?></td>
-                            <td style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?php echo htmlspecialchars($reg['detalles']); ?>">
+                            <td style="max-width: 400px; word-wrap: break-word; white-space: normal; font-size: 0.85rem; line-height: 1.4;">
                                 <?php echo htmlspecialchars($reg['detalles']); ?>
                             </td>
                             <td><?php echo htmlspecialchars($reg['fecha']); ?></td>

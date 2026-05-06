@@ -1,6 +1,6 @@
 <?php
 require 'db.php';
-// register.php ahora funciona como el formulario de postulación abierta
+$url_inicio = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin') ? 'admin/index.php' : 'index.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -38,7 +38,7 @@ require 'db.php';
                 Borrar Formulario
             </button>
 
-            <a href="index.php" id="btnVolverInicio" 
+            <a href="<?php echo $url_inicio; ?>" id="btnVolverInicio" 
             style="background: #ececec; color: #333; border: 1px solid #ccc; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;">
             <i class="fa fa-home" style="margin-right: 5px;"></i> Inicio
             </a>

@@ -5,20 +5,30 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// 1. FUNCIÓN DE BITÁCORA
+function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
+    $stmt = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+}
+
 $error = '';
 $success = '';
+$pregunta = ''; 
 $step = isset($_POST['step']) ? (int)$_POST['step'] : 1; 
-$user_data = null;
+
+// Recuperación de la pregunta para evitar que se pierda al recargar
+if (($step == 2 || $step == 3) && isset($_SESSION['reset_user_id'])) {
+    $stmt = $pdo->prepare("SELECT pregunta_seguridad FROM usuarios WHERE id = ?");
+    $stmt->execute([$_SESSION['reset_user_id']]);
+    $pregunta = $stmt->fetchColumn();
+}
 
 // Lógica para el botón "Regresar"
 if (isset($_POST['go_back'])) {
     if ($step > 1) {
         $step--;
-        // Si volvemos al paso 2, necesitamos recuperar la pregunta de nuevo
-        if ($step == 2 && isset($_SESSION['reset_user_id'])) {
-            $stmt = $pdo->prepare("SELECT pregunta_seguridad FROM usuarios WHERE id = ?");
-            $stmt->execute([$_SESSION['reset_user_id']]);
-            $pregunta = $stmt->fetchColumn();
+        if ($step == 1) {
+            unset($_SESSION['reset_user_id'], $_SESSION['reset_user_name'], $_SESSION['db_answer']);
         }
     } else {
         header("Location: login.php");
@@ -27,6 +37,8 @@ if (isset($_POST['go_back'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
+    
+    // PASO 1: Buscar usuario
     if (isset($_POST['check_user'])) {
         $usuario = trim($_POST['usuario']);
         $stmt = $pdo->prepare("SELECT id, usuario, pregunta_seguridad, respuesta_seguridad FROM usuarios WHERE usuario = ?");
@@ -37,41 +49,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
             $error = "El nombre de usuario o cédula no está registrado.";
             $step = 1;
         } elseif (empty($user_data['pregunta_seguridad'])) {
-            $error = "Este usuario no tiene configurada una pregunta de seguridad. Contacte al administrador.";
+            $error = "Este usuario no tiene configurada una pregunta de seguridad.";
             $step = 1;
         } else {
             $_SESSION['reset_user_id'] = $user_data['id'];
-            $_SESSION['db_answer'] = $user_data['respuesta_seguridad'];
+            $_SESSION['reset_user_name'] = $user_data['usuario']; 
+            $_SESSION['db_answer'] = $user_data['respuesta_seguridad']; // Aquí está el HASH
             $pregunta = $user_data['pregunta_seguridad'];
             $step = 2;
         }
     }
 
+    // PASO 2: Verificar respuesta (DECODIFICANDO EL HASH)
     if (isset($_POST['verify_answer'])) {
-        $respuesta_user = trim($_POST['respuesta']);
-        if (strcasecmp($respuesta_user, $_SESSION['db_answer']) === 0) {
+        $respuesta_user = strtolower(trim($_POST['respuesta']));
+        $hash_en_db = $_SESSION['db_answer'] ?? '';
+
+        // Usamos password_verify porque la respuesta se guardó con hash
+        if (password_verify($respuesta_user, $hash_en_db)) {
             $step = 3;
         } else {
             $error = "La respuesta es incorrecta.";
             $step = 2;
-            $stmt = $pdo->prepare("SELECT pregunta_seguridad FROM usuarios WHERE id = ?");
-            $stmt->execute([$_SESSION['reset_user_id']]);
-            $pregunta = $stmt->fetchColumn();
         }
     }
 
+    // PASO 3: Cambio de contraseña
     if (isset($_POST['change_password'])) {
         $pass1 = $_POST['pass1'];
         $pass2 = $_POST['pass2'];
 
         if ($pass1 === $pass2 && !empty($pass1)) {
             $new_hash = password_hash($pass1, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE usuarios SET password = ? WHERE id = ?");
-            $stmt->execute([$new_hash, $_SESSION['reset_user_id']]);
             
-            unset($_SESSION['reset_user_id'], $_SESSION['db_answer']);
-            $success = "Contraseña actualizada exitosamente.";
-            $step = 4;
+            try {
+                $pdo->beginTransaction();
+
+                $stmt = $pdo->prepare("UPDATE usuarios SET password = ? WHERE id = ?");
+                $stmt->execute([$new_hash, $_SESSION['reset_user_id']]);
+                
+                registrarMovimiento(
+                    $pdo, 
+                    $_SESSION['reset_user_id'], 
+                    "Recuperación de Cuenta", 
+                    "Usuarios", 
+                    "El usuario " . $_SESSION['reset_user_name'] . " (" . $_SESSION['reset_user_id'] . ") restableció su contraseña exitosamente."
+                );
+
+                $pdo->commit();
+
+                unset($_SESSION['reset_user_id'], $_SESSION['reset_user_name'], $_SESSION['db_answer']);
+                $success = "Contraseña actualizada exitosamente.";
+                $step = 4;
+
+            } catch (Exception $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $error = "Error al procesar la solicitud.";
+            }
         } else {
             $error = "Las contraseñas no coinciden.";
             $step = 3;

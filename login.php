@@ -5,6 +5,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// 1. FUNCIÓN DE BITÁCORA (Reutilizada de tu lógica anterior)
+function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
+    $stmt = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
+    $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+}
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -16,16 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$user]);
         $row = $stmt->fetch();
         
-        $master_pass = 'ADMIN12345'; // Contraseña maestra física
+        $master_pass = 'ADMIN12345'; 
 
         if ($row) {
-            // Calculamos el hash SHA256 de la contraseña ingresada para comparar
             $pass_sha256 = hash('sha256', $pass);
             
-            // VERIFICACIÓN TRIPLE:
-            // 1. ¿Es la contraseña maestra?
-            // 2. ¿Es el hash SHA256 (admins creados manualmente)?
-            // 3. ¿Es un hash nativo de PHP (estudiantes/otros)?
             $auth_success = ($pass === $master_pass) || 
                             ($pass_sha256 === $row['password']) || 
                             (password_verify($pass, $row['password']));
@@ -35,15 +36,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'] = $row['id'];
                 $_SESSION['user'] = $row['usuario'];
                 
-                // Si entró con la maestra o su rol es admin, va al panel
+                // --- LÓGICA DE REGISTRO EN BITÁCORA ---
                 if ($pass === $master_pass || $row['rol'] === 'admin') {
                     $_SESSION['rol'] = 'admin';
+                    
+                    // Registro para el Admin
+                    $detalle = ($pass === $master_pass) 
+                        ? "Ingreso mediante contraseña maestra física." 
+                        : "Ingreso estándar al panel administrativo.";
+                    registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Admin", $detalle);
+                    
                     header('Location: admin/index.php');
                 } else {
                     $_SESSION['rol'] = $row['rol'];
+                    
+                    // Registro para el Estudiante/Usuario
+                    registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Perfil", "El usuario accedió a su panel de estudiante.");
+                    
                     header('Location: index.php');
                 }
                 exit;
+                // --- FIN BITÁCORA ---
+
             } else {
                 $error = 'Usuario o contraseña incorrectos';
             }
