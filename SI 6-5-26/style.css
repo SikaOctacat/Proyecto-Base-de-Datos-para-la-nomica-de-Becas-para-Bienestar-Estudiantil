@@ -1,0 +1,422 @@
+/* ==========================================================================
+   1. CONFIGURACIÓN Y FUENTES
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary: #FF6600;
+    --primary-light: #FFA500;
+    --primary-dark: #e65500;
+    --danger: #dc3545;
+    --success: #28a745;
+    --gray-light: #f4f6fb;
+    --glass-bg: rgba(250, 250, 250, 0.75);
+}
+
+/* ==========================================================================
+   2. ESTILOS BASE
+   ========================================================================== */
+body {
+    background: linear-gradient(135deg, rgba(0,0,0,0.85), rgba(0,0,0,0.6)), url('img/fondo.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    font-family: 'Montserrat', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    align-items: center;
+    opacity: 0; 
+    transition: opacity 0.5s ease;
+    opacity: 1; /* Aseguramos que sea visible siempre al cargar */
+    transition: opacity 0.4s ease;
+}
+
+/* Solo se desvanece si el contenedor TIENE la clase, no por defecto */
+#main-container.fade-out {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+body.page-visible { opacity: 1; }
+
+h1, h2, h3, h4, h5, h6 { font-family: 'Montserrat', sans-serif; }
+p, label, input, select, textarea, button, a { font-weight: 400; }
+
+a { color: var(--primary-light); text-decoration: none; transition: color 0.2s; }
+a:hover { color: var(--primary-dark); }
+
+/* ==========================================================================
+   3. LAYOUT (CONTENEDORES)
+   ========================================================================== */
+#main-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    width: 95%;
+    max-width: 850px;
+    padding: 0 24px 24px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+    border-top: 6px solid var(--primary);
+    position: relative;
+    margin: 40px auto;
+    flex: 1 0 auto;
+    animation: slideIn 0.5s ease-out forwards;
+}
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 0 12px 0;
+    border-bottom: 2px solid rgba(0,0,0,0.05);
+}
+
+.page-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* ==========================================================================
+   4. FORMULARIOS (Inputs y Radios)
+   ========================================================================== */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px 25px;
+    margin-bottom: 25px;
+}
+
+label { 
+    font-size: 0.85rem; 
+    font-weight: bold; 
+    display: block; 
+    margin-bottom: 5px; 
+    color: #444;
+}
+
+/* Busca el label que está justo antes de un input que NO es requerido */
+label:has(+ input:not([required])):after,
+label:has(+ select:not([required])):after,
+label:has(+ textarea:not([required])):after {
+    content: " (Opcional)";
+    font-weight: normal;
+    font-size: 0.75rem;
+    color: #888;
+    margin-left: 4px;
+}
+
+/* Solo afecta a inputs de texto/número/fecha */
+input:not([type="radio"]):not([type="checkbox"]), 
+select, 
+textarea { 
+    width: 100%; 
+    padding: 10px 12px; 
+    border: 1px solid #ccc; 
+    border-radius: 6px;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    background-color: #fdfdfd;
+    transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(255,102,0,0.1);
+}
+
+select {
+    height: 41px; /* Ajuste aproximado basado en tu padding de 10px + font-size */
+    appearance: none; /* Elimina el estilo por defecto del sistema (flecha fea) */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px !important; /* Espacio para la nueva flecha */
+}
+
+/* --- ESTILO PERSONALIZADO DE RADIO BUTTONS --- */
+.checkbox-group {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.pregunta-row {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.radio-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* Importante: Evitar que el radio herede el width 100% */
+.radio-item input[type="radio"] {
+    appearance: none;
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    margin: 0;
+    display: grid;
+    place-content: center;
+    background: white;
+}
+
+.radio-item input[type="radio"]:checked { border-color: var(--primary); }
+.radio-item input[type="radio"]::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: 0.1s transform ease;
+    background-color: var(--primary);
+}
+.radio-item input[type="radio"]:checked::before { transform: scale(1); }
+
+/* --- MEJORAS TABLA FAMILIARES --- */
+.table-responsive {
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    margin-top: 15px;
+    border: 1px solid #eee;
+}
+
+#cuerpo-tabla tr {
+    transition: background 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#cuerpo-tabla tr:hover {
+    background-color: #fffaf5; /* Un toque naranja muy sutil */
+}
+
+#cuerpo-tabla td {
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+
+/* Estilo para los inputs dentro de la tabla */
+#cuerpo-tabla input {
+    border: 1px solid #e0e0e0;
+    padding: 8px;
+    font-size: 0.85rem;
+    border-radius: 4px;
+}
+
+#cuerpo-tabla input:disabled {
+    background-color: #f9f9f9;
+    cursor: not-allowed;
+    border-color: #eee;
+}
+
+/* Botón de eliminar más elegante */
+.btn-remove {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    line-height: 0;
+    transition: all 0.2s;
+}
+
+.btn-remove:hover {
+    background: #d32f2f !important;
+    transform: scale(1.1);
+}
+
+/* Estilo para el botón de añadir cuando está bloqueado */
+.btn-add:disabled {
+    background: #ccc !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+
+
+/* ==========================================================================
+   5. BOTONES DE NAVEGACIÓN (Reparados)
+   ========================================================================== */
+.nav-buttons { 
+    margin-top: 30px; 
+    display: flex; 
+    justify-content: space-between; 
+    gap: 15px; 
+}
+
+/* Estilo unificado para los botones del SPA */
+.nav-buttons button { 
+    flex: 1; 
+    padding: 14px 20px; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 700; 
+    font-size: 0.95rem;
+    color: white;
+    transition: all 0.25s ease;
+}
+
+.btn-next { background: var(--primary) !important; }
+.btn-prev { background: #888 !important; }
+.btn-submit { background: var(--success) !important; }
+
+.nav-buttons button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    filter: brightness(1.1);
+}
+
+
+
+/* ==========================================================================
+   6. OTROS COMPONENTES
+   ========================================================================== */
+.progress-wrapper {
+    background: #e0e0e0;
+    height: 8px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+    width: 0%;
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+/* Contenedor del Slide Enorme */
+.resumen-texto-container {
+    background: #fff !important;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    overflow-y: auto;
+    color: #333;
+}
+
+.resumen-seccion {
+    margin-bottom: 25px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+.resumen-seccion h3 {
+    color: var(--primary);
+    font-size: 1rem;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.dato-fila {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 0.95rem;
+}
+
+.dato-label {
+    font-weight: 600;
+    color: #555;
+}
+
+.dato-valor {
+    color: #000;
+    text-align: right;
+}
+
+
+.oculto { display: none !important; }
+.full-width { grid-column: 1 / -1; }
+
+/* Estilos para la iconografía de éxito */
+.success-icon {
+    width: 100px; /* Aumentado de 80px */
+    height: 100px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem; /* Icono mucho más grande */
+    margin: 0 auto 25px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    animation: scaleIn 0.5s ease-out;
+}
+
+.input-group-ira {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-group-ira input {
+    width: 100%;
+    padding-right: 45px; /* Espacio para el /20 */
+}
+
+.input-suffix {
+    position: absolute;
+    right: 15px;
+    color: #666;
+    font-weight: bold;
+    pointer-events: none; /* Para que el click pase al input */
+}
+
+/* Ocultar flechas en Chrome, Safari, Edge y Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Ocultar flechas en Firefox */
+input[type=number] {
+  -appearance: textfield;
+}
+
+@keyframes scaleIn {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+    .grid-container { grid-template-columns: 1fr; }
+    .pregunta-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .nav-buttons { flex-direction: column-reverse; }
+}

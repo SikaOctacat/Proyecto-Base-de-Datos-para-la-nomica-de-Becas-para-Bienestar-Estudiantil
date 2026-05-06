@@ -1,0 +1,14 @@
+[
+    {"id": "administracion", "nombre": "Administración de Empresas"},
+    {"id": "agroalimentacion", "nombre": "Agroalimentación"},
+    {"id": "automotriz", "nombre": "Mantenimiento de Sistemas Automotrices"},
+    {"id": "construccion_civil", "nombre": "Construcción Civil"},
+    {"id": "contaduria", "nombre": "Contaduría Pública"},
+    {"id": "electricidad", "nombre": "Electricidad"},
+    {"id": "electronica", "nombre": "Electrónica"},
+    {"id": "informatica", "nombre": "Informática"},
+    {"id": "instrumentacion", "nombre": "Instrumentación y Control"},
+    {"id": "mecanica", "nombre": "Mecánica"},
+    {"id": "procesos_quimicos", "nombre": "Procesos Químicos"},
+    {"id": "quimica", "nombre": "Química"}
+]
