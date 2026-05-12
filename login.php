@@ -6,8 +6,10 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // 1. FUNCIÓN DE BITÁCORA (Reutilizada de tu lógica anterior)
+// Modifica la línea 11 de login.php con esto:
 function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
-    $stmt = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
+    // Agregamos 'id' a la lista de columnas y pasamos NULL como primer valor
+    $stmt = $pdo->prepare('INSERT INTO bitacora (id, usuario_id, accion, tabla_afectada, detalles) VALUES (NULL, ?, ?, ?, ?)');
     $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
 }
 
