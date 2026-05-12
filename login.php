@@ -8,16 +8,13 @@ if (session_status() === PHP_SESSION_NONE) {
 // 1. FUNCIÓN DE BITÁCORA (Reutilizada de tu lógica anterior)
 // Modifica la línea 11 de login.php con esto:
 function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
-    // Generamos un ID manual basado en el tiempo actual para evitar el error 1364
-    $id_manual = time() . rand(100, 999); 
-
-    $sql = 'INSERT INTO bitacora (id, usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?, ?)';
+    // Ya no mandamos ID, TiDB lo generará por nosotros gracias a AUTO_RANDOM
+    $sql = 'INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)';
     $stmt = $pdo->prepare($sql);
     
     try {
-        $stmt->execute([$id_manual, $usuario_id, $accion, $tabla, $detalles]);
+        $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
     } catch (PDOException $e) {
-        // Si falla, al menos que no detenga el login del usuario
         error_log("Error en bitácora: " . $e->getMessage());
     }
 }
