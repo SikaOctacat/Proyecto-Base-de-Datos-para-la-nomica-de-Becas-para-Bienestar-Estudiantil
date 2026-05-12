@@ -19,9 +19,12 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
 
-    // Si estamos en Render (detectando el host de TiDB), activamos SSL
+    // Configuración para TiDB Cloud en Render
     if (getenv('DB_HOST')) {
+        // Activamos SSL
         $options[PDO::MYSQL_ATTR_SSL_CA] = true;
+        // Deshabilitamos la verificación estricta del certificado para evitar el error [2002]
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
     }
 
     $pdo = new PDO($dsn, $dbuser, $dbpass, $options);
