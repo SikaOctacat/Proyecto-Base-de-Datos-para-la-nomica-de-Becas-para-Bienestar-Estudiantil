@@ -153,12 +153,13 @@ if (!$logged) {
                     </div>
                 <?php endif; ?>
             </div>
-
-            <div class="nav-buttons" id="nav-buttons" <?php echo $studentInfo ? 'style="display:none;"' : ''; ?>>
-                <button type="button" id="prevBtn" class="btn-prev">Anterior</button>
-                <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
-            </div>
         </form>
+        
+        <div class="nav-buttons" id="nav-buttons" <?php echo $studentInfo ? 'style="display:none;"' : ''; ?>>
+            <button type="button" id="prevBtn" class="btn-prev">Anterior</button>
+            <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
+        </div>
+        
     </div>
 
     <script>

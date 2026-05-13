@@ -396,42 +396,59 @@ if (btnLimpiar) {
      */
     const nextBtnEl = document.getElementById('nextBtn');
     if (nextBtnEl) {
-        nextBtnEl.onclick = async (e) => {
-            // 1. EL BLOQUEO MECÁNICO: Evita que el navegador recargue la página
-            e.preventDefault(); 
+        // Aseguramos que el botón no sea de tipo submit por accidente
+        nextBtnEl.type = 'button'; 
 
-            if (currentStep === 1 && typeof validarPaso1 === 'function' && !validarPaso1()) return;
+        nextBtnEl.onclick = async (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            if (currentStep === 1 && typeof validarPaso1 === 'function' && !validarPaso1()) return false;
 
             window.saveCurrentData();
 
-            if (currentStep === 6) { // Paso de Verificación
-                try {
-                    // Imprimimos en consola para tener control manual de lo que sale
-                    console.log("JSON empaquetado para envío:", window.formDataStorage); 
+            if (currentStep === 6) { 
+                // Deshabilitamos el botón para que no le den click dos veces
+                nextBtnEl.disabled = true;
+                nextBtnEl.textContent = "Enviando...";
 
+                try {
                     const res = await fetch('submit.php', {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
                         body: JSON.stringify(window.formDataStorage)
                     });
                     
-                    const obj = await res.json();
+                    const text = await res.text(); // Leemos como texto primero para debug
+                    console.log("Respuesta bruta del servidor:", text);
+                    
+                    const obj = JSON.parse(text);
                     
                     if (obj.status !== 'ok') { 
-                        alert('Error del servidor: ' + obj.error); 
-                        return; 
+                        alert('Error: ' + obj.error); 
+                        nextBtnEl.disabled = false;
+                        nextBtnEl.textContent = "Confirmar";
+                        return false; 
                     }
                     
                     window.formSubmitted = true;
                 } catch(err) { 
-                    alert('Error de red: La conexión fue interrumpida.'); 
-                    console.error("Detalle del fallo:", err);
-                    return; 
+                    alert('Error de red o JSON mal formado. Revisa la consola.'); 
+                    console.error("Fallo detallado:", err);
+                    nextBtnEl.disabled = false;
+                    nextBtnEl.textContent = "Confirmar";
+                    return false; 
                 }
             }
 
             currentStep++;
             loadStep(currentStep);
+            return false;
         };
     }
 
