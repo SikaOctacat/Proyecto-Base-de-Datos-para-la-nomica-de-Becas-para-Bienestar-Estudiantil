@@ -55,6 +55,7 @@ try {
         $stmt->execute([$estudiante_ci, $user_id]);
     }
 
+    $obs = !empty($data['observaciones']) ? $data['observaciones'] : "Sin observaciones adicionales.";
     // --- B. ACTUALIZACIÓN DE DATOS DE ESTUDIANTE ---
     $sql_est = "UPDATE estudiante SET 
                 nombre1=?, nombre2=?, apellido_paterno=?, apellido_materno=?, 
@@ -83,7 +84,8 @@ try {
         $data['trayecto'] ?? null, 
         $data['trimestre'] ?? null,
         $data['ira_anterior'] ?? 0.00, 
-        $data['observaciones'] ?? null, 
+        $data['observaciones'] ?? null,
+        $obs,
         $estudiante_ci
     ]);
 

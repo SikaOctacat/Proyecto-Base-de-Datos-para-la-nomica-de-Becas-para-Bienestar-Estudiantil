@@ -129,18 +129,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
         );
         $msg = 'Administrador actualizado';
     } else {
-        $hash = hash('sha256', $password);
-        // IMPORTANTE: Quitamos 'id' de la lista de columnas
-        $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, "admin")');
-        $stmt->execute([$username, $hash]);
+        // Generamos un ID manual porque la tabla usuarios no tiene auto_increment
+        $nuevo_id = mt_rand(100000, 99999999); 
+        $hash = password_hash($password, PASSWORD_BCRYPT); // Usamos BCRYPT para ser compatibles con el login
+
+        // IMPORTANTE: Incluimos el 'id' generado manualmente
+        $stmt = $pdo->prepare('INSERT INTO usuarios (id, usuario, password, rol) VALUES (?, ?, ?, "admin")');
+        $stmt->execute([$nuevo_id, $username, $hash]);
         
-        // El resto sigue igual...
         registrarMovimiento(
             $pdo, 
             $_SESSION['user_id'], 
             "Registro de Usuario", 
             "Usuarios", 
-            "Se creó un nuevo administrador: $username."
+            "Se creó un nuevo administrador: $username con ID: $nuevo_id."
         );
         $msg = 'Nuevo administrador creado';
     }
@@ -149,9 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
 }
 
 // --- CONSULTAS PARA LA VISTA ---
-$query = "SELECT e.ci, e.usuario_id, e.nombre1, e.apellido_paterno, e.carrera,e.cod_est, r.ira_anterior
-          FROM estudiante e 
-          LEFT JOIN record_academico r ON e.ci = r.ci_estudiante";
+$query = "SELECT ci, usuario_id, nombre1, apellido_paterno, carrera, cod_est, ira_anterior 
+          FROM estudiante";
 $stmt = $pdo->query($query);
 $estudiantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
