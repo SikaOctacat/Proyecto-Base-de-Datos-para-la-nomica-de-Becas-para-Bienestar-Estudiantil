@@ -25,7 +25,11 @@ if (json_last_error() !== JSON_ERROR_NONE || empty($data)) {
 }
 
 if (empty($data)) {
-    echo json_encode(['status' => 'error', 'error' => 'No se recibieron datos']);
+    echo json_encode([
+        'status' => 'error', 
+        'error' => 'No se recibieron datos',
+        'debug' => ['metodo' => $_SERVER['REQUEST_METHOD'], 'raw_body' => substr($raw, 0, 100)]
+    ]);
     exit;
 }
 
