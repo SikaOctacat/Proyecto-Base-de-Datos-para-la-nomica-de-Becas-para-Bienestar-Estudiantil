@@ -35,12 +35,12 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             <input type="text" name="nombre2" placeholder="Ej: Alberto">
         </div>
         <div>
-            <label>Apellido Paterno</label>
+            <label>Primer Apellido</label>
             <input type="text" name="apellido_paterno" placeholder="Ej: Pérez" required>
         </div>
         <div>
-            <label>Apellido Materno</label>
-            <input type="text" name="apellido_materno" placeholder="Ej: García" required>
+            <label>Segundo Apellido</label>
+            <input type="text" name="apellido_materno" placeholder="Ej: García">
         </div>
 
         <div>
@@ -48,11 +48,16 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             <input type="text" name="cedula" id="cedula" placeholder="Ej: 28123456" 
                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" 
                    maxlength="8" required>
+            <div id="cedula-warning" style="display:none; color: #d32f2f; font-size: 0.75rem; margin-top: 5px; font-weight: bold;">
+                ⚠️ Esta cédula ya está registrada.
+            </div>
         </div>
 
         <div>
             <label>Teléfono</label>
-            <input type="tel" name="tel_estudiante" placeholder="Ej: 04121234567" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" pattern="^(0414|0424|0412|0416|0426|0268)[0-9]{7}$" required>
+            <input type="tel" name="tel_estudiante" placeholder="Ej: 04221234567" maxlength="11" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')" 
+                   pattern="^(0414|0424|0412|0416|0426|0422|0268)[0-9]{7}$" required>
         </div>
 
         <div>
@@ -219,4 +224,24 @@ if(passConfirm){
         this.setCustomValidity(this.value !== pass ? 'Las contraseñas no coinciden' : '');
     });
 }
+
+document.getElementById('cedula').addEventListener('blur', function() {
+    const ci = this.value;
+    const warning = document.getElementById('cedula-warning');
+    
+    if (ci.length >= 7) {
+        // Hacemos una consulta rápida a un pequeño script que verifique si existe
+        fetch(`verificar_cedula.php?ci=${ci}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.existe) {
+                    warning.style.display = 'block';
+                    this.style.borderColor = '#d32f2f';
+                } else {
+                    warning.style.display = 'none';
+                    this.style.borderColor = '#ddd';
+                }
+            });
+    }
+});
 </script>

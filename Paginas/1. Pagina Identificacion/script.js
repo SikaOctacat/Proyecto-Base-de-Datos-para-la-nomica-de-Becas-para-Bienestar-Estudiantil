@@ -118,9 +118,9 @@ function validarPaso1() {
     
     // Validación de Teléfono (Formatos venezolanos comunes)
     if (telf.trim() !== "") {
-        const regexTel = /^(0414|0424|0412|0416|0426|0268)[0-9]{7}$/;
+        const regexTel = /^(0414|0424|0412|0416|0426|0422|0268)[0-9]{7}$/;
         if (!regexTel.test(telf)) {
-            alert("⚠️ El numero de teléfono debe cumplir con los formatos: 0414, 0424, 0412, 0416, 0426, 0268 y debe tener 11 dígitos");
+            alert("⚠️ El número de teléfono debe cumplir con los formatos: 0414, 0424, 0412, 0416, 0426, 0422, 0268 y debe tener 11 dígitos");
             return false;
         }
     }
