@@ -429,8 +429,10 @@ if (btnLimpiar) {
                     // Usamos ./submit.php para evitar problemas de rutas relativas en algunos proxies
                     const res = await fetch('https://proyecto-base-de-datos-para-la-nomica-de.onrender.com/submit.php', {
                         method: 'POST',
+                        mode: 'cors', // Forzamos modo CORS para asegurar que el navegador respete el método
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         },
                         body: JSON.stringify(window.formDataStorage)
                     });
