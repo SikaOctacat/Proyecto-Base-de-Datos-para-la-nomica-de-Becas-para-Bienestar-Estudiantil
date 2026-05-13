@@ -225,23 +225,31 @@ if(passConfirm){
     });
 }
 
-document.getElementById('cedula').addEventListener('blur', function() {
+document.getElementById('cedula').addEventListener('input', function() {
     const ci = this.value;
     const warning = document.getElementById('cedula-warning');
-    
+    const inputCedula = this;
+
     if (ci.length >= 7) {
-        // Hacemos una consulta rápida a un pequeño script que verifique si existe
         fetch(`verificar_cedula.php?ci=${ci}`)
             .then(response => response.json())
             .then(data => {
                 if (data.existe) {
                     warning.style.display = 'block';
-                    this.style.borderColor = '#d32f2f';
+                    inputCedula.style.borderColor = '#d32f2f';
+                    // ESTO DETIENE EL PROCESO:
+                    inputCedula.setCustomValidity("Esta cédula ya está registrada.");
                 } else {
                     warning.style.display = 'none';
-                    this.style.borderColor = '#ddd';
+                    inputCedula.style.borderColor = '#ddd';
+                    // ESTO HABILITA EL PROCESO:
+                    inputCedula.setCustomValidity("");
                 }
-            });
+            })
+            .catch(error => console.error('Error:', error));
+    } else {
+        inputCedula.setCustomValidity("");
+        warning.style.display = 'none';
     }
 });
 </script>
