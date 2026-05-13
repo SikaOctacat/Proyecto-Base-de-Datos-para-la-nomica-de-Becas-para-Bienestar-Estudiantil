@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
     try {
         $pdo->beginTransaction();
         
-        // 1. Actualización de Estudiante
+        // 1. Actualización de Estudiante (Los UPDATE no cambian)
         $stmt = $pdo->prepare('UPDATE estudiante SET 
             nombre1=?, nombre2=?, apellido_paterno=?, apellido_materno=?, 
             f_nac=?, carrera=?, trayecto=?, trimestre=?, cod_est=?, 
@@ -44,18 +44,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
         $pdo->prepare('UPDATE record_academico SET ira_anterior=? WHERE ci_estudiante=?')
             ->execute([$_POST['indice'], $ci]);
 
-        // 4. Familiares (Reemplazo total)
+        // 4. Familiares (Ajuste en el INSERT: omitimos la columna 'id')
         $pdo->prepare('DELETE FROM familiar WHERE ci_estudiante = ?')->execute([$ci]);
         if (!empty($_POST['f_nom'])) {
+            // Quitamos 'id' de la lista de columnas y de los VALUES
             $stmt_fam = $pdo->prepare('INSERT INTO familiar (ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing) VALUES (?,?,?,?,?,?,?,?)');
             foreach ($_POST['f_nom'] as $k => $nom) {
                 if (!empty(trim($nom))) {
-                    $stmt_fam->execute([$ci, $nom, $_POST['f_ape'][$k], $_POST['f_par'][$k], $_POST['f_eda'][$k], $_POST['f_ins'][$k], $_POST['f_ocu'][$k], $_POST['f_ing'][$k]]);
+                    $stmt_fam->execute([
+                        $ci, 
+                        $nom, 
+                        $_POST['f_ape'][$k], 
+                        $_POST['f_par'][$k], 
+                        (int)$_POST['f_eda'][$k], 
+                        $_POST['f_ins'][$k], 
+                        $_POST['f_ocu'][$k], 
+                        (float)$_POST['f_ing'][$k]
+                    ]);
                 }
             }
         }
 
-        // 5. Lógica de Seguridad
+        // 5. Lógica de Seguridad (Actualización de password)
         if (!empty($_POST['reg_password'])) {
             $pass_hash = password_hash($_POST['reg_password'], PASSWORD_BCRYPT);
             $pregunta = $_POST['pregunta_seguridad'] ?? '';
@@ -65,12 +75,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
             $stmt_user->execute([$pass_hash, $pregunta, $respuesta, $ci]);
         }
         
-        // --- REGISTRO EN BITÁCORA (Antes del Header) ---
-        // Extraemos el ID del administrador de la sesión
+        // --- REGISTRO EN BITÁCORA (Ajuste: omitimos la columna 'id') ---
         $admin_id = $_SESSION['user_id'] ?? null; 
         if ($admin_id) {
-            $detalles = "Se editó el expediente completo del estudiante con C.I. $ci. Incluyó actualización de datos personales, académicos y carga familiar.";
+            $detalles = "Se editó el expediente del estudiante C.I. $ci. Operación realizada por el administrador.";
             
+            // Quitamos el ID manual para que TiDB use AUTO_RANDOM
             $stmt_bit = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
             $stmt_bit->execute([$admin_id, 'Actualización de Expediente', 'Múltiples Tablas', $detalles]);
         }

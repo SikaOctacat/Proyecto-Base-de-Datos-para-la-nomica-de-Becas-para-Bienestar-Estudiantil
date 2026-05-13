@@ -5,8 +5,14 @@ require '../db.php';
 
 // --- FUNCIÓN DE BITÁCORA ---
 function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
-    $stmt = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
-    $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+    // Quitamos cualquier referencia al 'id' manual
+    $sql = 'INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)';
+    $stmt = $pdo->prepare($sql);
+    try {
+        $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+    } catch (PDOException $e) {
+        error_log("Error en bitácora: " . $e->getMessage());
+    }
 }
 
 // Prevenir el almacenamiento en caché para seguridad de datos administrativos
@@ -124,10 +130,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
         $msg = 'Administrador actualizado';
     } else {
         $hash = hash('sha256', $password);
+        // IMPORTANTE: Quitamos 'id' de la lista de columnas
         $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, rol) VALUES (?, ?, "admin")');
         $stmt->execute([$username, $hash]);
         
-        // Registro en Bitácora[cite: 2]
+        // El resto sigue igual...
         registrarMovimiento(
             $pdo, 
             $_SESSION['user_id'], 

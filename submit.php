@@ -2,10 +2,15 @@
 session_start();
 require 'db.php';
 
-// Función para registrar movimientos en la bitácora
+// 1. FUNCIÓN DE BITÁCORA ACTUALIZADA (Sin ID manual para que use AUTO_RANDOM)
 function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
-    $stmt = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
-    $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+    $sql = 'INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)';
+    $stmt = $pdo->prepare($sql);
+    try {
+        $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+    } catch (PDOException $e) {
+        error_log("Error en bitácora: " . $e->getMessage());
+    }
 }
 
 header('Content-Type: application/json');
@@ -18,7 +23,7 @@ if (!$data) {
     exit;
 }
 
-// 1. IDENTIFICAR AL EJECUTOR Y AL ESTUDIANTE
+// IDENTIFICAR AL EJECUTOR Y AL ESTUDIANTE
 $ejecutor_id = $_SESSION['user_id'] ?? null; 
 $es_admin = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin');
 $nombre_ejecutor = $_SESSION['user'] ?? 'Desconocido'; 
@@ -38,7 +43,7 @@ if (!$estudiante_ci) {
 try {
     $pdo->beginTransaction();
 
-    // 2. VERIFICAR O CREAR USUARIO Y OBTENER EL ID
+    // 2. VERIFICAR O CREAR USUARIO
     $stmt = $pdo->prepare('SELECT usuario_id FROM estudiante WHERE ci = ?');
     $stmt->execute([$estudiante_ci]);
     $existe = $stmt->fetch();
@@ -54,6 +59,7 @@ try {
         $respuesta = !empty($data['respuesta_seguridad']) ? strtolower(trim($data['respuesta_seguridad'])) : null;
         $hash_respuesta = $respuesta ? password_hash($respuesta, PASSWORD_BCRYPT) : null;
 
+        // ELIMINAMOS 'id' DEL INSERT DE USUARIOS (TiDB lo genera solo)
         $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, pregunta_seguridad, respuesta_seguridad, rol) VALUES (?, ?, ?, ?, "estudiante")');
         $stmt->execute([$estudiante_ci, $hash_pass, $pregunta, $hash_respuesta]);
         
@@ -88,15 +94,16 @@ try {
         $data['ira_anterior'] ?? 0, $data['comentarios'] ?? '', $estudiante_ci
     ]);
 
-    // 4. LIMPIEZA E INSERCIÓN DE TABLAS RELACIONADAS (Residencia, Record, Familiares)
-    // [Se mantiene tu lógica de borrado e inserción]
+    // 4. LIMPIEZA E INSERCIÓN (Quitando 'id' de los INSERT para que TiDB use AUTO_RANDOM/INCREMENT)
     $pdo->prepare("DELETE FROM residencia WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
     $pdo->prepare("DELETE FROM record_academico WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
     $pdo->prepare("DELETE FROM familiar WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
 
+    // Inserción en Residencia (Sin columna ID)
     $stmt = $pdo->prepare('INSERT INTO residencia (ci_estudiante, t_res, t_viv, t_loc, r_prop, estado_res, municipio_res, dir_local, tel_local) VALUES (?,?,?,?,?,?,?,?,?)');
     $stmt->execute([$estudiante_ci, $data['t_res'] ?? null, $data['t_viv'] ?? null, $data['t_loc'] ?? null, $data['r_prop'] ?? null, $data['estado_res'] ?? null, $data['municipio_res'] ?? null, $data['dir_local'] ?? null, $data['tel_local'] ?? null]);
 
+    // Inserción en Record (Sin columna ID)
     $stmt = $pdo->prepare('INSERT INTO record_academico (ci_estudiante, ira_anterior) VALUES (?,?)');
     $stmt->execute([$estudiante_ci, $data['ira_anterior'] ?? 0]);
 
@@ -105,27 +112,23 @@ try {
         $idsFam = [];
         foreach ($data as $key => $val) { if (strpos($key, 'f_nom_') === 0) { $idsFam[] = substr($key, 6); } }
         foreach ($idsFam as $id) {
+            // Inserción en Familiar (Sin columna ID)
             $stmt = $pdo->prepare('INSERT INTO familiar (ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing) VALUES (?,?,?,?,?,?,?,?)');
             $stmt->execute([$estudiante_ci, $data['f_nom_'.$id], $data['f_ape_'.$id] ?? '', $data['f_par_'.$id] ?? '', (int)($data['f_eda_'.$id] ?? 0), $data['f_ins_'.$id] ?? '', $data['f_ocu_'.$id] ?? '', (float)($data['f_ing_'.$id] ?? 0)]);
         }
     }
 
-    // --- 8. LÓGICA DE DOBLE BITÁCORA ---
-    // Creamos una variable con el nombre para usarla en los mensajes
+    // LÓGICA DE BITÁCORA
     $nombre_est_log = trim(($data['nombre1'] ?? '') . ' ' . ($data['apellido_paterno'] ?? ''));
 
     if ($nuevo_registro) {
         if ($es_admin) {
-            // LOG 1: Registro del Administrador
-            // Aquí incluimos el nombre directamente en el texto del detalle
             $detalle_admin = "El administrador $nombre_ejecutor registró al usuario $estudiante_ci ($nombre_est_log)";
             registrarMovimiento($pdo, $ejecutor_id, "Registro de Usuario", "Sistema/Multitabla", $detalle_admin);
 
-            // LOG 2: Registro para el Estudiante
             $detalle_estudiante = "Cuenta creada por el administrador $nombre_ejecutor";
             registrarMovimiento($pdo, $usuario_id_estudiante, "Cuenta Creada", "Sistema", $detalle_estudiante);
         } else {
-            // Caso de autorregistro
             $detalle_self = "El usuario $nombre_est_log ($estudiante_ci) se registró exitosamente";
             registrarMovimiento($pdo, $usuario_id_estudiante, "Registro de Usuario", "Sistema/Multitabla", $detalle_self);
         }
@@ -135,6 +138,6 @@ try {
     echo json_encode(['status' => 'ok', 'message' => '¡Registro procesado con éxito!']);
 
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
+    if ($pdo && $pdo->inTransaction()) $pdo->rollBack();
     echo json_encode(['status' => 'error', 'error' => $e->getMessage()]);
 }
