@@ -19,6 +19,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT 
             e.*, 
+            e.observaciones as nota_estudiante, 
             r.t_res, r.t_viv, r.estado_res, r.municipio_res, r.t_loc, r.r_prop, r.tel_local, r.dir_local,
             ra.ira_anterior as m_ira
         FROM estudiante e
@@ -217,10 +218,16 @@ $tabla_familia .= '</tbody></table>';
 
     <div class="glass-card full-width" style="margin-top: 10px;">
         <div class="card-title"><span>📝</span> Observaciones del Sistema:</div>
-        <div style="background: #fffcf5; padding: 15px; border-radius: 12px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9rem;">
+        <div style="background: #fffcf5; padding: 15px; border-radius: 12px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9rem; line-height: 1.5;">
             <?php 
-                $obs = $estudiante['observaciones'] ?? ''; 
-                echo !empty($obs) ? nl2br(htmlspecialchars($obs)) : '<em>No hay observaciones registradas para este expediente.</em>';
+                // Priorizamos el alias nota_estudiante, luego el campo normal, luego vacío
+                $obs = $estudiante['nota_estudiante'] ?? $estudiante['observaciones'] ?? ''; 
+                
+                if (!empty($obs) && $obs !== 'Sin observaciones adicionales.') {
+                    echo nl2br(htmlspecialchars($obs));
+                } else {
+                    echo '<em style="color: #b5a47a;">No hay observaciones registradas para este expediente.</em>';
+                }
             ?>
         </div>
     </div>

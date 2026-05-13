@@ -200,12 +200,12 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
                 <input type="text" name="nombre2" value="<?php echo htmlspecialchars($std['nombre2']); ?>">
             </div>
             <div>
-                <label>Apellido Paterno</label>
+                <label>Primer Apellido</label>
                 <input type="text" name="apellido_paterno" value="<?php echo htmlspecialchars($std['apellido_paterno']); ?>" required>
             </div>
             <div>
-                <label>Apellido Materno</label>
-                <input type="text" name="apellido_materno" value="<?php echo htmlspecialchars($std['apellido_materno']); ?>" required>
+                <label>Segundo Apellido</label>
+                <input type="text" name="apellido_materno" value="<?php echo htmlspecialchars($std['apellido_materno']); ?>">
             </div>
             <div>
                 <label>Fecha de Nacimiento</label>

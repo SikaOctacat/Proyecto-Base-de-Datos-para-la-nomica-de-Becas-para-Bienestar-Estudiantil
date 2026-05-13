@@ -55,8 +55,9 @@ try {
         $stmt->execute([$estudiante_ci, $user_id]);
     }
 
-    $obs = !empty($data['observaciones']) ? $data['observaciones'] : "Sin observaciones adicionales.";
-    // --- B. ACTUALIZACIÓN DE DATOS DE ESTUDIANTE ---
+    $carnet = !empty($data['C_Patria']) ? $data['C_Patria'] : "N/A";
+    $obs = !empty($data['observaciones']) ? trim($data['observaciones']) : "Sin observaciones adicionales.";
+
     $sql_est = "UPDATE estudiante SET 
                 nombre1=?, nombre2=?, apellido_paterno=?, apellido_materno=?, 
                 f_nac=?, edad=?, tel_estudiante=?, correo=?, edo_civil=?, 
@@ -75,7 +76,7 @@ try {
         $data['correo'] ?? null, 
         $data['edo_civil'] ?? null,
         $data['tipo_beneficio'] ?? null, 
-        $data['C_Patria'] ?? null, 
+        $carnet, // Uso de la variable limpia
         $data['viaja'] ?? 'no', 
         $data['estatus_estudio'] ?? 'activo',
         $data['carrera'] ?? null, 
@@ -84,12 +85,14 @@ try {
         $data['trayecto'] ?? null, 
         $data['trimestre'] ?? null,
         $data['ira_anterior'] ?? 0.00, 
-        $obs,
+        $obs, // Uso de la variable limpia
         $estudiante_ci
     ]);
 
     // --- C. RESIDENCIA (ID AUTOMÁTICO: AUTO_INCREMENT) ---
     // Borramos anterior para evitar duplicados si re-envía
+    $tel_local = !empty($data['tel_local']) ? $data['tel_local'] : "No posee";
+
     $pdo->prepare("DELETE FROM residencia WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
     $sql_res = "INSERT INTO residencia (ci_estudiante, t_res, t_viv, t_loc, r_prop, estado_res, municipio_res, dir_local, tel_local) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -102,7 +105,7 @@ try {
         $data['estado_res'] ?? null, 
         $data['municipio_res'] ?? null, 
         $data['dir_local'] ?? null, 
-        $data['tel_local'] ?? null
+        $tel_local
     ]);
 
     // --- D. FAMILIARES (ID MANUAL) ---
