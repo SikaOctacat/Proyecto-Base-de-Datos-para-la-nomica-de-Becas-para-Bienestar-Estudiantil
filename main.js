@@ -396,7 +396,6 @@ if (btnLimpiar) {
      */
     const nextBtnEl = document.getElementById('nextBtn');
     if (nextBtnEl) {
-        // Aseguramos que el botón no sea de tipo submit por accidente
         nextBtnEl.type = 'button'; 
 
         nextBtnEl.onclick = async (e) => {
@@ -405,32 +404,27 @@ if (btnLimpiar) {
                 e.stopPropagation();
             }
 
+            // Validación manual del paso 1 si existe la función
             if (currentStep === 1 && typeof validarPaso1 === 'function' && !validarPaso1()) return false;
 
+            // Guardamos lo que haya en los inputs actuales antes de movernos o enviar
             window.saveCurrentData();
 
-            // --- DENTRO DEL nextBtnEl.onclick ---
-            // --- BLOQUE DE ENVÍO CON DEBUG ELABORADO ---
+            // --- BLOQUE DE ENVÍO FINAL (PASO 6) ---
             if (currentStep === 6) {
                 nextBtnEl.disabled = true;
-                nextBtnEl.textContent = "Analizando...";
+                nextBtnEl.textContent = "Procesando...";
 
-                // 1. Verificar qué hay en el recolector antes de enviar
-                console.log("DATOS RECOLECTADOS:", window.formDataStorage);
-                
                 if (!window.formDataStorage || Object.keys(window.formDataStorage).length === 0) {
-                    alert("ERROR: El recolector (main.js) no tiene datos. Revisa los pasos anteriores.");
+                    alert("Error: No hay datos para enviar.");
                     nextBtnEl.disabled = false;
+                    nextBtnEl.textContent = "Confirmar";
                     return;
                 }
 
                 try {
-                    // 2. Usar la URL ABSOLUTA para evitar la redirección que borra los datos
-                    // IMPORTANTE: Asegúrate de que sea EXACTAMENTE la URL de tu app en Render
-                    const urlDestino = 'https://proyecto-base-de-datos-para-la-nomica-de.onrender.com/submit.php';
+                    const urlDestino = 'submit.php'; // Usa ruta relativa para evitar líos de CORS
                     
-                    console.log("Enviando POST a:", urlDestino);
-
                     const res = await fetch(urlDestino, {
                         method: 'POST',
                         headers: {
@@ -440,31 +434,36 @@ if (btnLimpiar) {
                         body: JSON.stringify(window.formDataStorage)
                     });
 
-                    const textoRespuesta = await res.text(); // Leemos como texto primero para no romper si no es JSON
-                    console.log("RESPUESTA CRUDA DEL SERVIDOR:", textoRespuesta);
-
+                    const textoRespuesta = await res.text();
                     const obj = JSON.parse(textoRespuesta);
                     
                     if (obj.status === 'ok') {
-                        alert("¡Éxito!");
-                        window.location.href = 'success.php'; // O lo que uses
+                        // ¡LOGRADO! 
+                        window.formSubmitted = true;
+                        currentStep = 7; // Saltamos al paso final
+                        loadStep(7);     // Cargamos la vista de éxito
+                        return;          // IMPORTANTE: Salimos de la función aquí
                     } else {
-                        console.error("Detalle del error del servidor:", obj);
                         alert("Error del servidor: " + (obj.error || "Desconocido"));
+                        nextBtnEl.disabled = false;
+                        nextBtnEl.textContent = "Confirmar";
+                        return; // No avanzamos si hay error
                     }
 
                 } catch (err) {
-                    console.error("ERROR CRÍTICO EN EL ENVÍO:", err);
+                    console.error("ERROR CRÍTICO:", err);
                     alert("Fallo la comunicación: " + err.message);
-                } finally {
                     nextBtnEl.disabled = false;
                     nextBtnEl.textContent = "Confirmar";
+                    return;
                 }
             }
 
-            currentStep++;
-            loadStep(currentStep);
-            return false;
+            // --- NAVEGACIÓN NORMAL (Pasos 1 al 5) ---
+            if (currentStep < 6) {
+                currentStep++;
+                loadStep(currentStep);
+            }
         };
     }
 
