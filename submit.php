@@ -84,7 +84,6 @@ try {
         $data['trayecto'] ?? null, 
         $data['trimestre'] ?? null,
         $data['ira_anterior'] ?? 0.00, 
-        $data['observaciones'] ?? null,
         $obs,
         $estudiante_ci
     ]);
