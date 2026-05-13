@@ -4,13 +4,19 @@ require 'db.php';
 
 header('Content-Type: application/json');
 
-// 1. FUNCIÓN DE BITÁCORA (TiDB genera el ID automáticamente)
+// 0. GENERADOR DE ID MANUAL PARA TiDB
+function generarIdTiDB() {
+    return mt_rand(100000000, 999999999);
+}
+
+// 1. FUNCIÓN DE BITÁCORA (Forzando el ID manual)
 function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
     if (!$usuario_id) return; 
     try {
-        $sql = 'INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)';
+        $id_bitacora = generarIdTiDB();
+        $sql = 'INSERT INTO bitacora (id, usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?, ?)';
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$usuario_id, $accion, $tabla, $detalles]);
+        $stmt->execute([$id_bitacora, $usuario_id, $accion, $tabla, $detalles]);
     } catch (PDOException $e) {
         error_log("Error en bitácora: " . $e->getMessage());
     }
@@ -65,12 +71,13 @@ try {
         $respuesta = !empty($data['respuesta_seguridad']) ? strtolower(trim($data['respuesta_seguridad'])) : null;
         $hash_respuesta = $respuesta ? password_hash($respuesta, PASSWORD_BCRYPT) : null;
 
-        // INSERT EN USUARIOS: Dejamos que TiDB use su AUTO_RANDOM para el ID
-        $stmt = $pdo->prepare('INSERT INTO usuarios (usuario, password, pregunta_seguridad, respuesta_seguridad, rol) VALUES (?, ?, ?, ?, "estudiante")');
-        $stmt->execute([$estudiante_ci, $hash_pass, $pregunta, $hash_respuesta]);
+        // INSERT EN USUARIOS: Inyectamos el ID manual para que TiDB no dé el error 1364
+        $nuevo_id_usuario = generarIdTiDB();
+        $stmt = $pdo->prepare('INSERT INTO usuarios (id, usuario, password, pregunta_seguridad, respuesta_seguridad, rol) VALUES (?, ?, ?, ?, ?, "estudiante")');
+        $stmt->execute([$nuevo_id_usuario, $estudiante_ci, $hash_pass, $pregunta, $hash_respuesta]);
         
-        // Recuperamos el ID generado por TiDB
-        $usuario_id_estudiante = $pdo->lastInsertId();
+        // Usamos el ID seguro que acabamos de generar
+        $usuario_id_estudiante = $nuevo_id_usuario;
 
         if (!$existe) {
             $stmt = $pdo->prepare('INSERT INTO estudiante (ci, usuario_id, nombre1, apellido_paterno, carrera) VALUES (?, ?, "", "", "")');
