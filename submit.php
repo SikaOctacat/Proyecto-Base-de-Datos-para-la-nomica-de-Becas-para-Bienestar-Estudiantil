@@ -15,11 +15,29 @@ function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = nul
 
 header('Content-Type: application/json');
 
+// 1. Intentamos la lectura estándar
 $raw = file_get_contents('php://input');
 
-// LÍNEA DE DIAGNÓSTICO TEMPORAL:
+// 2. Si falla (vacío), intentamos forzar la lectura del stream 
+// Esto soluciona problemas con proxies que no envían el content-length correctamente
 if (empty($raw)) {
-    echo json_encode(['status' => 'error', 'error' => 'El cuerpo de la solicitud (raw) llegó totalmente vacío']);
+    $stream = fopen('php://input', 'r');
+    $raw = stream_get_contents($stream);
+    fclose($stream);
+}
+
+// 3. Diagnóstico real: si sigue vacío, enviamos los Headers para ver qué está pasando
+if (empty($raw)) {
+    echo json_encode([
+        'status' => 'error', 
+        'error' => 'Cuerpo totalmente vacío en el servidor',
+        'debug_info' => [
+            'method' => $_SERVER['REQUEST_METHOD'],
+            'content_type' => $_SERVER['CONTENT_TYPE'] ?? 'no definido',
+            'content_length' => $_SERVER['CONTENT_LENGTH'] ?? 'no definido',
+            'all_headers' => getallheaders() 
+        ]
+    ]);
     exit;
 }
 
