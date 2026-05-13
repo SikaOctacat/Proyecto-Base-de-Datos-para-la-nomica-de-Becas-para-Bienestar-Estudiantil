@@ -1,4 +1,9 @@
 <?php
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Si llegamos aquí por error, vamos a ver si hay algo en la URL
+    error_log("Se recibió un GET en submit.php desde: " . $_SERVER['HTTP_REFERER']);
+}
+
 session_start();
 require 'db.php';
 
