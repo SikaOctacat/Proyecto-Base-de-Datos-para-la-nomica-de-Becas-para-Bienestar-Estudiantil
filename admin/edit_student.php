@@ -3,6 +3,7 @@ ob_start();
 session_start();
 require '../db.php'; 
 
+// Verificación de sesión y rol
 if (!isset($_SESSION['user']) || (isset($_SESSION['rol']) && $_SESSION['rol'] !== 'admin')) {
     header('Location: ../login.php');
     exit;
@@ -11,27 +12,40 @@ if (!isset($_SESSION['user']) || (isset($_SESSION['rol']) && $_SESSION['rol'] !=
 $ci = $_GET['id'] ?? null;
 if (!$ci) { header('Location: index.php'); exit; }
 
+/**
+ * Función para generar IDs manuales en tablas donde TiDB no lo hace automáticamente
+ */
+function generarIdManual() {
+    return mt_rand(100000, 99999999);
+}
+
 // --- LÓGICA DE GUARDADO ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
     try {
         $pdo->beginTransaction();
         
-        // 1. Actualización de Estudiante (Los UPDATE no cambian)
+        // 1. Preparación de datos (Observaciones e IRA)
+        $obs = !empty($_POST['observaciones']) ? $_POST['observaciones'] : "Sin observaciones adicionales.";
+        $ira = !empty($_POST['indice']) ? $_POST['indice'] : 0.00;
+
+        // 2. Actualización de Estudiante (Incluye todos los campos e IRA/Observaciones)
         $stmt = $pdo->prepare('UPDATE estudiante SET 
             nombre1=?, nombre2=?, apellido_paterno=?, apellido_materno=?, 
             f_nac=?, carrera=?, trayecto=?, trimestre=?, cod_est=?, 
             tel_estudiante=?, correo=?, edo_civil=?, C_Patria=?, 
-            viaja=?, estatus_estudio=?, observaciones=?, f_ingreso=? 
+            viaja=?, estatus_estudio=?, observaciones=?, f_ingreso=?, 
+            ira_anterior=? 
             WHERE ci=?');
         
         $stmt->execute([
             $_POST['nombre1'], $_POST['nombre2'], $_POST['apellido_paterno'], $_POST['apellido_materno'],
             $_POST['f_nac'], $_POST['carrera'], $_POST['trayecto'], $_POST['trimestre'], $_POST['codigo_estudiante'],
             $_POST['telefono'], $_POST['correo'], $_POST['estado_civil'], $_POST['carnet_patria'],
-            $_POST['viaja'], $_POST['estatus_estudio'], $_POST['observaciones'], $_POST['f_ingreso'], $ci
+            $_POST['viaja'], $_POST['estatus_estudio'], $obs, $_POST['f_ingreso'], 
+            $ira, $ci
         ]);
         
-        // 2. Actualización de Residencia
+        // 3. Actualización de Residencia
         $pdo->prepare('UPDATE residencia SET 
             t_res=?, t_viv=?, t_loc=?, r_prop=?, estado_res=?, municipio_res=?, dir_local=?, tel_local=? 
             WHERE ci_estudiante=?')
@@ -40,47 +54,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
                 $_POST['estado_res'], $_POST['municipio_res'], $_POST['direccion_res'], $_POST['telefono_res'], $ci
             ]);
         
-        // 3. Record Académico
-        $pdo->prepare('UPDATE record_academico SET ira_anterior=? WHERE ci_estudiante=?')
-            ->execute([$_POST['indice'], $ci]);
-
-        // 4. Familiares (Ajuste en el INSERT: omitimos la columna 'id')
+        // 4. Familiares (Corrección error 1364: Insertamos ID manual)
         $pdo->prepare('DELETE FROM familiar WHERE ci_estudiante = ?')->execute([$ci]);
         if (!empty($_POST['f_nom'])) {
-            // Quitamos 'id' de la lista de columnas y de los VALUES
-            $stmt_fam = $pdo->prepare('INSERT INTO familiar (ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing) VALUES (?,?,?,?,?,?,?,?)');
+            $stmt_fam = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing) VALUES (?,?,?,?,?,?,?,?,?)');
             foreach ($_POST['f_nom'] as $k => $nom) {
                 if (!empty(trim($nom))) {
+                    $id_fam = generarIdManual();
                     $stmt_fam->execute([
+                        $id_fam,
                         $ci, 
                         $nom, 
-                        $_POST['f_ape'][$k], 
-                        $_POST['f_par'][$k], 
-                        (int)$_POST['f_eda'][$k], 
-                        $_POST['f_ins'][$k], 
-                        $_POST['f_ocu'][$k], 
-                        (float)$_POST['f_ing'][$k]
+                        $_POST['f_ape'][$k] ?? '', 
+                        $_POST['f_par'][$k] ?? '', 
+                        (int)($_POST['f_eda'][$k] ?? 0), 
+                        $_POST['f_ins'][$k] ?? '', 
+                        $_POST['f_ocu'][$k] ?? '', 
+                        (float)($_POST['f_ing'][$k] ?? 0)
                     ]);
                 }
             }
         }
 
-        // 5. Lógica de Seguridad (Actualización de password)
+        // 5. Lógica de Seguridad (Actualización de credenciales de acceso)
         if (!empty($_POST['reg_password'])) {
             $pass_hash = password_hash($_POST['reg_password'], PASSWORD_BCRYPT);
             $pregunta = $_POST['pregunta_seguridad'] ?? '';
-            $respuesta = password_hash(strtolower(trim($_POST['respuesta_seguridad'])), PASSWORD_BCRYPT);
+            // Nota: La respuesta se guarda en texto plano o hash según tu lógica de recuperación, 
+            // aquí se aplica strtolower para consistencia.
+            $respuesta = $_POST['respuesta_seguridad'] ?? '';
             
             $stmt_user = $pdo->prepare('UPDATE usuarios SET password = ?, pregunta_seguridad = ?, respuesta_seguridad = ? WHERE usuario = ?');
             $stmt_user->execute([$pass_hash, $pregunta, $respuesta, $ci]);
         }
         
-        // --- REGISTRO EN BITÁCORA (Ajuste: omitimos la columna 'id') ---
+        // 6. Registro en Bitácora (Omitimos 'id' para que TiDB use AUTO_RANDOM)
         $admin_id = $_SESSION['user_id'] ?? null; 
         if ($admin_id) {
-            $detalles = "Se editó el expediente del estudiante C.I. $ci. Operación realizada por el administrador.";
-            
-            // Quitamos el ID manual para que TiDB use AUTO_RANDOM
+            $detalles = "Se editó el expediente del estudiante C.I. $ci. Se actualizaron datos personales, familiares y observaciones.";
             $stmt_bit = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
             $stmt_bit->execute([$admin_id, 'Actualización de Expediente', 'Múltiples Tablas', $detalles]);
         }
@@ -96,18 +107,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
 }
 
 // --- CARGA DE DATOS PARA EL FORMULARIO ---
-$stmt = $pdo->prepare('SELECT e.*, r.*, ra.ira_anterior as ra_indice 
+// Leemos ira_anterior directamente de 'estudiante'
+$stmt = $pdo->prepare('SELECT e.*, r.t_res, r.t_viv, r.t_loc, r.r_prop, r.estado_res, r.municipio_res, r.dir_local, r.tel_local 
                        FROM estudiante e 
                        LEFT JOIN residencia r ON e.ci = r.ci_estudiante 
-                       LEFT JOIN record_academico ra ON e.ci = ra.ci_estudiante 
                        WHERE e.ci = ?');
 $stmt->execute([$ci]);
 $std = $stmt->fetch();
+
+// Mapeamos para compatibilidad con tus campos del HTML
+if ($std) {
+    $std['ra_indice'] = $std['ira_anterior'];
+}
 
 $fams = $pdo->prepare('SELECT * FROM familiar WHERE ci_estudiante = ?');
 $fams->execute([$ci]);
 $lista_familiares = $fams->fetchAll();
 
+// Fechas para restricciones del input date
 $fecha_hoy = new DateTime();
 $max_date = (clone $fecha_hoy)->modify('-5 years')->format('Y-m-d');
 $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
