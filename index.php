@@ -145,7 +145,7 @@ if (!$logged) {
             <div id="progressBar" class="progress-bar"></div>
         </div>
 
-        <form id="becaForm">
+        <form id="becaForm" onsubmit="event.preventDefault(); return false;">
             <div id="dynamic-content">
                 <?php if($studentInfo): ?>
                     <div id="loading-profile" style="text-align:center; padding:40px;">
@@ -154,7 +154,7 @@ if (!$logged) {
                 <?php endif; ?>
             </div>
         </form>
-        
+
         <div class="nav-buttons" id="nav-buttons" <?php echo $studentInfo ? 'style="display:none;"' : ''; ?>>
             <button type="button" id="prevBtn" class="btn-prev">Anterior</button>
             <button type="button" id="nextBtn" class="btn-next">Siguiente</button>

@@ -409,28 +409,46 @@ if (btnLimpiar) {
 
             window.saveCurrentData();
 
+            // --- DENTRO DEL nextBtnEl.onclick ---
             if (currentStep === 6) { 
-                // Deshabilitamos el botón para que no le den click dos veces
                 nextBtnEl.disabled = true;
                 nextBtnEl.textContent = "Enviando...";
 
+                // 1. Aseguramos que guardamos lo último de la vista de verificación si hubiera algo
+                window.saveCurrentData();
+
+                // 2. Verificación de seguridad: ¿Hay datos realmente?
+                if (Object.keys(window.formDataStorage).length === 0) {
+                    alert("Error: El almacén de datos está vacío. No hay nada que enviar.");
+                    nextBtnEl.disabled = false;
+                    nextBtnEl.textContent = "Confirmar";
+                    return false;
+                }
+
                 try {
-                    const res = await fetch('submit.php', {
+                    // Usamos ./submit.php para evitar problemas de rutas relativas en algunos proxies
+                    const res = await fetch('./submit.php', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Accept': 'application/json'
+                            // Eliminamos 'Accept' innecesario para simplificar la petición
                         },
+                        // IMPORTANTE: Nos aseguramos de que no sea un string vacío
                         body: JSON.stringify(window.formDataStorage)
                     });
-                    
-                    const text = await res.text(); // Leemos como texto primero para debug
-                    console.log("Respuesta bruta del servidor:", text);
-                    
-                    const obj = JSON.parse(text);
+
+                    // Verificamos si la respuesta es JSON antes de intentar parsear
+                    const contentType = res.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) {
+                        const textoError = await res.text();
+                        console.error("Respuesta no-JSON recibida:", textoError);
+                        throw new Error("El servidor no respondió con JSON. Revisa la consola.");
+                    }
+
+                    const obj = await res.json();
                     
                     if (obj.status !== 'ok') { 
-                        alert('Error: ' + obj.error); 
+                        alert('Error del servidor: ' + (obj.error || 'Desconocido')); 
                         nextBtnEl.disabled = false;
                         nextBtnEl.textContent = "Confirmar";
                         return false; 
@@ -438,8 +456,8 @@ if (btnLimpiar) {
                     
                     window.formSubmitted = true;
                 } catch(err) { 
-                    alert('Error de red o JSON mal formado. Revisa la consola.'); 
-                    console.error("Fallo detallado:", err);
+                    alert('Fallo en el registro: ' + err.message); 
+                    console.error("Detalle del fallo:", err);
                     nextBtnEl.disabled = false;
                     nextBtnEl.textContent = "Confirmar";
                     return false; 
