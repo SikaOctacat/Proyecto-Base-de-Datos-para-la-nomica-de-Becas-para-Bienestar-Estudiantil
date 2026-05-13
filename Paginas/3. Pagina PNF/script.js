@@ -1,13 +1,46 @@
 window.initPNF = () => {
+    const carreraSelect = document.getElementById('carreraSelect');
     const trayectoSelect = document.getElementById('trayectoSelect');
     const trimestreSelect = document.getElementById('trimestreSelect');
     const warning = document.getElementById('warningTrayecto');
     const nextBtn = document.getElementById('nextBtn');
     const iraInput = document.getElementById('ira_anterior');
 
+    // --- LÓGICA PARA EL TRAYECTO V (ELECTRÓNICA) ---
+    const gestionarTrayectosEspeciales = () => {
+        // Obtenemos el texto de la opción seleccionada para mayor seguridad
+        const carreraNombre = carreraSelect.options[carreraSelect.selectedIndex].text.toLowerCase();
+        
+        // Verificamos si existe la opción 5
+        let opcion5 = trayectoSelect.querySelector('option[value="5"]');
+
+        if (carreraNombre.includes('electrónica')) {
+            if (!opcion5) {
+                // Si es electrónica y no existe la opción, la creamos
+                const nuevaOpcion = document.createElement('option');
+                nuevaOpcion.value = "5";
+                nuevaOpcion.textContent = "Trayecto V";
+                trayectoSelect.appendChild(nuevaOpcion);
+            }
+        } else {
+            // Si no es electrónica, quitamos la opción 5 si existe
+            if (opcion5) {
+                if (trayectoSelect.value === "5") trayectoSelect.value = ""; 
+                opcion5.remove();
+            }
+        }
+    };
+
+    if (carreraSelect) {
+        carreraSelect.addEventListener('change', gestionarTrayectosEspeciales);
+    }
+    // -----------------------------------------------
+
+    // Tu lógica existente del IRA
     if (iraInput && nextBtn) {
         iraInput.addEventListener('input', (e) => {
             let val = e.target.value;
+            // Limpieza de ceros a la izquierda
             if (val.length > 1 && val.startsWith('0') && val[1] !== '.') {
                 val = val.replace(/^0+/, '');
                 e.target.value = val;
@@ -18,24 +51,6 @@ window.initPNF = () => {
 
             nextBtn.style.opacity = (numericValue < 16 || isNaN(numericValue)) ? "0.5" : "1";
         });
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', function(e) {
-            if (window.adminMode) return true;
-
-            if (nextBtn.dataset.locked === "true") {
-                e.preventDefault();
-                e.stopImmediatePropagation();
-                return false;
-            }
-
-            if (!validarPaso3()) {
-                e.preventDefault(); 
-                e.stopImmediatePropagation(); 
-                return false;
-            }
-        }, { capture: true }); 
     }
 
     const gestionarBloqueoInicial = () => {
@@ -55,7 +70,6 @@ window.initPNF = () => {
             if (trimestreSelect) {
                 trimestreSelect.disabled = false;
                 trimestreSelect.style.backgroundColor = "#fff";
-                // Si está en el "Seleccione...", lo movemos al 1er trimestre automáticamente
                 if (trimestreSelect.selectedIndex <= 0) {
                     trimestreSelect.selectedIndex = 1;
                 }
