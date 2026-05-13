@@ -4,8 +4,7 @@ require 'db.php';
 
 header('Content-Type: application/json');
 
-// 1. FORZAR MÉTODO POST (Esto evita el error de "Cuerpo Vacío" por GET)
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET)) {
     echo json_encode([
         'status' => 'error',
         'error' => 'Método no permitido. Se requiere POST.',
