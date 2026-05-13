@@ -66,7 +66,9 @@ try {
         $usuario_id_estudiante = $pdo->lastInsertId();
 
         if (!$existe) {
-            $stmt = $pdo->prepare('INSERT INTO estudiante (ci, usuario_id) VALUES (?, ?)');
+            // Le pasamos un string vacío a nombre1, apellido_paterno y carrera 
+            // para que TiDB nos deje crear el "esqueleto" inicial.
+            $stmt = $pdo->prepare('INSERT INTO estudiante (ci, usuario_id, nombre1, apellido_paterno, carrera) VALUES (?, ?, "", "", "")');
             $stmt->execute([$estudiante_ci, $usuario_id_estudiante]);
         } else {
             $stmt = $pdo->prepare('UPDATE estudiante SET usuario_id = ? WHERE ci = ?');
