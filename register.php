@@ -55,12 +55,12 @@ $url_inicio = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin') ? 'admin
                     Cargando componentes del sistema...
                 </div>
             </div>
-
-            <div class="nav-buttons">
-                <button type="button" id="prevBtn" class="btn-prev">← Anterior</button>
-                <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
-            </div>
         </form>
+
+        <div class="nav-buttons">
+            <button type="button" id="prevBtn" class="btn-prev">← Anterior</button>
+            <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
+        </div>
     </div>
 
     <script src="main.js?v=<?php echo time(); ?>"></script>
