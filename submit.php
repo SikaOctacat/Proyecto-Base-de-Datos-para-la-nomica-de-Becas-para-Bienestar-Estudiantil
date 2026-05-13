@@ -16,10 +16,26 @@ function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = nul
 header('Content-Type: application/json');
 
 $raw = file_get_contents('php://input');
+
+// LÍNEA DE DIAGNÓSTICO TEMPORAL:
+if (empty($raw)) {
+    echo json_encode(['status' => 'error', 'error' => 'El cuerpo de la solicitud (raw) llegó totalmente vacío']);
+    exit;
+}
+
 $data = json_decode($raw, true);
 
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode([
+        'status' => 'error', 
+        'error' => 'Error al decodificar JSON: ' . json_last_error_msg(),
+        'debug_raw' => $raw // Esto nos mostrará qué llegó exactamente
+    ]);
+    exit;
+}
+
 if (!$data) {
-    echo json_encode(['status' => 'error', 'error' => 'No se recibieron datos válidos']);
+    echo json_encode(['status' => 'error', 'error' => 'No se recibieron datos validos']);
     exit;
 }
 
