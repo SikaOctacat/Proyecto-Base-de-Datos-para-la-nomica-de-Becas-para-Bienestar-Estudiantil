@@ -396,22 +396,38 @@ if (btnLimpiar) {
      */
     const nextBtnEl = document.getElementById('nextBtn');
     if (nextBtnEl) {
-        nextBtnEl.onclick = async () => {
+        nextBtnEl.onclick = async (e) => {
+            // 1. EL BLOQUEO MECÁNICO: Evita que el navegador recargue la página
+            e.preventDefault(); 
+
             if (currentStep === 1 && typeof validarPaso1 === 'function' && !validarPaso1()) return;
 
             window.saveCurrentData();
 
             if (currentStep === 6) { // Paso de Verificación
                 try {
+                    // Imprimimos en consola para tener control manual de lo que sale
+                    console.log("JSON empaquetado para envío:", window.formDataStorage); 
+
                     const res = await fetch('submit.php', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(window.formDataStorage)
                     });
+                    
                     const obj = await res.json();
-                    if (obj.status !== 'ok') { alert('Error: ' + obj.error); return; }
+                    
+                    if (obj.status !== 'ok') { 
+                        alert('Error del servidor: ' + obj.error); 
+                        return; 
+                    }
+                    
                     window.formSubmitted = true;
-                } catch(e) { alert('Error de red'); return; }
+                } catch(err) { 
+                    alert('Error de red: La conexión fue interrumpida.'); 
+                    console.error("Detalle del fallo:", err);
+                    return; 
+                }
             }
 
             currentStep++;
@@ -421,7 +437,9 @@ if (btnLimpiar) {
 
     const prevBtnEl = document.getElementById('prevBtn');
     if (prevBtnEl) {
-        prevBtnEl.onclick = () => {
+        prevBtnEl.onclick = (e) => {
+            // Bloqueamos la recarga también en el botón de retroceso
+            e.preventDefault(); 
             window.saveCurrentData();
             currentStep--;
             loadStep(currentStep);
@@ -438,7 +456,6 @@ if (btnLimpiar) {
         });
     }
     
-
     window.loadStep = loadStep;
     loadStep(currentStep);
 });
