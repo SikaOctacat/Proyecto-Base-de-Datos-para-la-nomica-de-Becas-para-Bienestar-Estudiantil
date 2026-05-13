@@ -410,24 +410,28 @@ if (btnLimpiar) {
             window.saveCurrentData();
 
             // --- DENTRO DEL nextBtnEl.onclick ---
-            if (currentStep === 6) { 
+            // --- BLOQUE DE ENVÍO CON DEBUG ELABORADO ---
+            if (currentStep === 6) {
                 nextBtnEl.disabled = true;
-                nextBtnEl.textContent = "Enviando...";
+                nextBtnEl.textContent = "Analizando...";
 
-                // 1. Aseguramos que guardamos lo último de la vista de verificación si hubiera algo
-                window.saveCurrentData();
-
-                // 2. Verificación de seguridad: ¿Hay datos realmente?
-                if (Object.keys(window.formDataStorage).length === 0) {
-                    alert("Error: El almacén de datos está vacío. No hay nada que enviar.");
+                // 1. Verificar qué hay en el recolector antes de enviar
+                console.log("DATOS RECOLECTADOS:", window.formDataStorage);
+                
+                if (!window.formDataStorage || Object.keys(window.formDataStorage).length === 0) {
+                    alert("ERROR: El recolector (main.js) no tiene datos. Revisa los pasos anteriores.");
                     nextBtnEl.disabled = false;
-                    nextBtnEl.textContent = "Confirmar";
-                    return false;
+                    return;
                 }
 
                 try {
-                    // Usamos ./submit.php para evitar problemas de rutas relativas en algunos proxies
-                    const res = await fetch('./submit.php', {
+                    // 2. Usar la URL ABSOLUTA para evitar la redirección que borra los datos
+                    // IMPORTANTE: Asegúrate de que sea EXACTAMENTE la URL de tu app en Render
+                    const urlDestino = 'https://proyecto-base-de-datos-para-la-nomica-de.onrender.com/submit.php';
+                    
+                    console.log("Enviando POST a:", urlDestino);
+
+                    const res = await fetch(urlDestino, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -436,30 +440,25 @@ if (btnLimpiar) {
                         body: JSON.stringify(window.formDataStorage)
                     });
 
-                    // Verificamos si la respuesta es JSON antes de intentar parsear
-                    const contentType = res.headers.get("content-type");
-                    if (!contentType || !contentType.includes("application/json")) {
-                        const textoError = await res.text();
-                        console.error("Respuesta no-JSON recibida:", textoError);
-                        throw new Error("El servidor no respondió con JSON. Revisa la consola.");
+                    const textoRespuesta = await res.text(); // Leemos como texto primero para no romper si no es JSON
+                    console.log("RESPUESTA CRUDA DEL SERVIDOR:", textoRespuesta);
+
+                    const obj = JSON.parse(textoRespuesta);
+                    
+                    if (obj.status === 'ok') {
+                        alert("¡Éxito!");
+                        window.location.href = 'success.php'; // O lo que uses
+                    } else {
+                        console.error("Detalle del error del servidor:", obj);
+                        alert("Error del servidor: " + (obj.error || "Desconocido"));
                     }
 
-                    const obj = await res.json();
-                    
-                    if (obj.status !== 'ok') { 
-                        alert('Error del servidor: ' + (obj.error || 'Desconocido')); 
-                        nextBtnEl.disabled = false;
-                        nextBtnEl.textContent = "Confirmar";
-                        return false; 
-                    }
-                    
-                    window.formSubmitted = true;
-                } catch(err) { 
-                    alert('Fallo en el registro: ' + err.message); 
-                    console.error("Detalle del fallo:", err);
+                } catch (err) {
+                    console.error("ERROR CRÍTICO EN EL ENVÍO:", err);
+                    alert("Fallo la comunicación: " + err.message);
+                } finally {
                     nextBtnEl.disabled = false;
                     nextBtnEl.textContent = "Confirmar";
-                    return false; 
                 }
             }
 
