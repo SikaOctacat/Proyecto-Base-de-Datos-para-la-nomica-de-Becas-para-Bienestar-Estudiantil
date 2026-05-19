@@ -1,19 +1,108 @@
 function initFamiliares() {
     const cuerpoTabla = document.getElementById('cuerpo-tabla');
     const btnAgregar = document.getElementById('btn-agregar');
-    const avisoEstado = document.getElementById('aviso-estado'); // ID unificado
+    const avisoEstado = document.getElementById('aviso-estado'); 
     const checkNoFamiliares = document.getElementById('no-familiares');
     const contenedorTabla = document.querySelector('.table-responsive'); 
-    const maxFamiliares = 5;
+    
+    const btnDropdown = document.getElementById('btn-dropdown-grupo');
+    const menuDropdown = document.getElementById('menu-dropdown-grupo');
 
-    if (!btnAgregar || !cuerpoTabla || !checkNoFamiliares) return;
+    if (!btnAgregar || !cuerpoTabla || !checkNoFamiliares || !btnDropdown || !menuDropdown) return;
+
+    // Configuración de paleta de colores con mayor contraste y vivacidad
+    const coloresConfig = {
+        'primaria': {
+            separador: '#c6f6d5', // Verde pastel definido
+            texto: '#22543d',
+            filas: '#f0fff4'      // Fondo de filas bajo este grupo
+        },
+        'secundaria': {
+            separador: '#feebc8', // Naranja/Crema pastel definido
+            texto: '#744210',
+            filas: '#fffaf0'      // Fondo de filas bajo este grupo
+        },
+        'otros': {
+            separador: '#edf2f7', // Gris azulado con presencia
+            texto: '#2d3748',
+            filas: '#f7fafc'      // Fondo de filas bajo este grupo
+        }
+    };
 
     /**
-     * Crea una fila con inputs y oculta el botón eliminar por defecto
+     * Escanea la estructura del DOM y tiñe las filas según el separador que tengan arriba
+     */
+    function actualizarPertenenciaVisual() {
+        const filas = Array.from(cuerpoTabla.querySelectorAll('tr'));
+        let grupoActual = null;
+
+        filas.forEach(fila => {
+            if (fila.classList.contains('fila-separador')) {
+                grupoActual = fila.getAttribute('data-grupo');
+            } else if (fila.classList.contains('fila-datos')) {
+                if (grupoActual && coloresConfig[grupoActual]) {
+                    fila.style.backgroundColor = coloresConfig[grupoActual].filas;
+                } else {
+                    fila.style.backgroundColor = ''; // Blanco limpio si no hay separadores encima
+                }
+            }
+        });
+    }
+
+    /**
+     * Habilita los listeners del Drag and Drop nativo en los elementos TR
+     */
+    function hacerFilaArrastrable(fila) {
+        fila.setAttribute('draggable', 'true');
+
+        fila.addEventListener('dragstart', (e) => {
+            fila.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', '');
+        });
+
+        fila.addEventListener('dragend', () => {
+            fila.classList.remove('dragging');
+            cuerpoTabla.querySelectorAll('tr').forEach(f => f.classList.remove('drag-over'));
+            actualizarPertenenciaVisual(); 
+        });
+
+        fila.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingRow = cuerpoTabla.querySelector('.dragging');
+            if (!draggingRow || draggingRow === fila) return;
+            fila.classList.add('drag-over');
+        });
+
+        fila.addEventListener('dragleave', () => {
+            fila.classList.remove('drag-over');
+        });
+
+        fila.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fila.classList.remove('drag-over');
+            const draggingRow = cuerpoTabla.querySelector('.dragging');
+            if (!draggingRow || draggingRow === fila) return;
+
+            const filas = Array.from(cuerpoTabla.querySelectorAll('tr'));
+            const indexObjetivo = filas.indexOf(fila);
+            const indexArrastrado = filas.indexOf(draggingRow);
+
+            if (indexArrastrado < indexObjetivo) {
+                fila.after(draggingRow);
+            } else {
+                fila.before(draggingRow);
+            }
+        });
+    }
+
+    /**
+     * Inserta una fila de datos estándar
      */
     const crearFilaHTML = (id) => {
         const nuevaFila = cuerpoTabla.insertRow();
         nuevaFila.setAttribute('data-id', id);
+        nuevaFila.classList.add('fila-datos');
         
         nuevaFila.innerHTML = `
             <td><input type="text" name="f_nom_${id}" placeholder="Nombre" style="width:95%"></td>
@@ -35,30 +124,70 @@ function initFamiliares() {
             input.addEventListener('input', () => actualizarEstado());
         });
 
-        
+        hacerFilaArrastrable(nuevaFila);
+        actualizarPertenenciaVisual();
     };
 
     /**
-     * Gestiona:
-     * 1. Visibilidad de la tabla vs Checkbox.
-     * 2. Visibilidad del botón eliminar (solo si hay > 1 fila).
-     * 3. Bloqueo del botón "Siguiente" del formulario principal.
+     * Crea e inyecta dinámicamente el separador basándose en las reglas de posición solicitadas
+     */
+    const crearSeparadorHTML = (valor, texto) => {
+        const nuevaFila = document.createElement('tr');
+        nuevaFila.setAttribute('data-grupo', valor);
+        nuevaFila.classList.add('fila-separador');
+        
+        const estiloColor = coloresConfig[valor] || { separador: '#e2e8f0', texto: '#2d3748' };
+        nuevaFila.style.backgroundColor = estiloColor.separador;
+        nuevaFila.style.userSelect = "none";
+        
+        nuevaFila.innerHTML = `
+            <td colspan="7" style="padding: 10px 14px; border-bottom: 2px solid rgba(0,0,0,0.08); border-top: 1px solid rgba(0,0,0,0.05);">
+                <div style="display: flex; justify-content: space-between; align-items: center; color: ${estiloColor.texto}; font-weight: bold; font-size: 0.85rem; letter-spacing: 0.6px;">
+                    <span>☰ &nbsp; ${texto.toUpperCase()}</span>
+                    <button type="button" class="btn-remove-separador" data-valor="${valor}" title="Quitar grupo"
+                            style="background: none; border: none; color: ${estiloColor.texto}; opacity: 0.6; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 5px;">&times;</button>
+                </div>
+            </td>
+        `;
+
+        // Deshabilitar la opción en el dropdown para evitar duplicación
+        const enlaceMenu = menuDropdown.querySelector(`a[data-valor="${valor}"]`);
+        if (enlaceMenu) enlaceMenu.classList.add('disabled');
+
+        hacerFilaArrastrable(nuevaFila);
+
+        // --- LÓGICA DE INSERCIÓN INTELIGENTE ---
+        const separadoresExistentes = cuerpoTabla.querySelectorAll('.fila-separador');
+        
+        if (separadoresExistentes.length === 0) {
+            // Si es el primer separador de todos, se inyecta ARRIBA de la primera fila
+            cuerpoTabla.insertAdjacentElement('afterbegin', nuevaFila);
+        } else {
+            // Si ya hay al menos uno, los siguientes nacen abajo al fondo de la tabla
+            cuerpoTabla.appendChild(nuevaFila);
+        }
+
+        actualizarPertenenciaVisual();
+    };
+
+    /**
+     * Valida el comportamiento general de botones y campos del formulario
      */
     function actualizarEstado() {
         const estaOmitido = checkNoFamiliares.checked;
-        const filas = cuerpoTabla.querySelectorAll('tr');
-        const numFilas = filas.length;
+        const filasDatos = cuerpoTabla.querySelectorAll('.fila-datos');
+        const numFilas = filasDatos.length;
         const nextBtn = document.getElementById('nextBtn');
 
         if (estaOmitido) {
             contenedorTabla.style.display = 'none';
             btnAgregar.style.display = 'none';
+            btnDropdown.parentElement.style.display = 'none';
             if(avisoEstado) {
                 avisoEstado.textContent = "Sección omitida correctamente.";
                 avisoEstado.style.color = "#888";
             }
             
-            // Forzar habilitación del botón Siguiente
             setTimeout(() => {
                 if(nextBtn) {
                     nextBtn.disabled = false;
@@ -70,17 +199,16 @@ function initFamiliares() {
         } else {
             contenedorTabla.style.display = 'block';
             btnAgregar.style.display = 'inline-block';
+            btnDropdown.parentElement.style.display = 'inline-block';
         }
 
-        // --- Lógica del Botón Eliminar ---
         const botonesEliminar = cuerpoTabla.querySelectorAll('.btn-remove');
         botonesEliminar.forEach(btn => {
             btn.style.display = (numFilas <= 1) ? 'none' : 'block';
         });
 
-        // --- Validación de campos vacíos ---
         let hayCamposVacios = false;
-        const todosLosInputs = cuerpoTabla.querySelectorAll('input');
+        const todosLosInputs = cuerpoTabla.querySelectorAll('.fila-datos input');
         todosLosInputs.forEach(input => {
             if (input.value.trim() === "") {
                 hayCamposVacios = true;
@@ -90,7 +218,6 @@ function initFamiliares() {
             }
         });
 
-        // --- Control de Navegación (Siguiente) ---
         setTimeout(() => {
             if (nextBtn) {
                 const esInvalido = hayCamposVacios;
@@ -105,17 +232,34 @@ function initFamiliares() {
             }
         }, 50);
 
-        // Control del botón de agregar (Límite 5)
-        if (numFilas >= maxFamiliares) {
-            btnAgregar.disabled = true;
-            btnAgregar.innerText = "Límite alcanzado (5)";
-            btnAgregar.style.background = "#888";
-        } else {
-            btnAgregar.disabled = hayCamposVacios;
-            btnAgregar.innerText = "+ Añadir Familiar";
-            btnAgregar.style.background = hayCamposVacios ? "#ccc" : "#00dc0b";
-        }
+        btnAgregar.disabled = hayCamposVacios;
+        btnAgregar.style.background = hayCamposVacios ? "#ccc" : "#00dc0b";
+        btnAgregar.style.cursor = hayCamposVacios ? "not-allowed" : "pointer";
     }
+
+    // Comportamiento del Dropdown
+    btnDropdown.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        menuDropdown.style.display = (menuDropdown.style.display === 'block') ? 'none' : 'block';
+    };
+
+    document.addEventListener('click', () => {
+        menuDropdown.style.display = 'none';
+    });
+
+    menuDropdown.onclick = (e) => {
+        e.preventDefault();
+        const enlace = e.target.closest('a');
+        if (!enlace || enlace.classList.contains('disabled')) return;
+
+        const valor = enlace.getAttribute('data-valor');
+        const texto = enlace.innerText;
+
+        crearSeparadorHTML(valor, texto);
+        menuDropdown.style.display = 'none';
+        actualizarEstado();
+    };
 
     checkNoFamiliares.onchange = (e) => {
         if (e.target.checked) {
@@ -128,7 +272,7 @@ function initFamiliares() {
         actualizarEstado();
     };
 
-    // Reconstrucción y Persistencia
+    // Carga inicial y persistencia
     cuerpoTabla.innerHTML = "";
     const datosCargados = window.formDataStorage || {};
     const idsExistentes = [...new Set(Object.keys(datosCargados).filter(k => k.startsWith('f_nom_')).map(k => k.split('_')[2]))];
@@ -146,15 +290,14 @@ function initFamiliares() {
 
     btnAgregar.onclick = (e) => {
         e.preventDefault();
-        if (cuerpoTabla.querySelectorAll('tr').length < maxFamiliares) {
-            crearFilaHTML(Date.now());
-            actualizarEstado();
-        }
+        crearFilaHTML(Date.now());
+        actualizarEstado();
     };
 
+    // Manejo de eventos click delegados dentro de la tabla
     cuerpoTabla.onclick = (e) => {
         const btnRemove = e.target.closest('.btn-remove');
-        if (btnRemove && cuerpoTabla.querySelectorAll('tr').length > 1) {
+        if (btnRemove && cuerpoTabla.querySelectorAll('.fila-datos').length > 1) {
             const fila = btnRemove.closest('tr');
             if (confirm(`¿Eliminar este familiar?`)) {
                 const idFila = fila.getAttribute('data-id');
@@ -163,7 +306,22 @@ function initFamiliares() {
                 });
                 fila.remove();
                 actualizarEstado();
+                actualizarPertenenciaVisual();
             }
+            return;
+        }
+
+        const btnRemoveSep = e.target.closest('.btn-remove-separador');
+        if (btnRemoveSep) {
+            const filaSep = btnRemoveSep.closest('tr');
+            const valorGrupo = btnRemoveSep.getAttribute('data-valor');
+            
+            const enlaceMenu = menuDropdown.querySelector(`a[data-valor="${valorGrupo}"]`);
+            if (enlaceMenu) enlaceMenu.classList.remove('disabled');
+            
+            filaSep.remove();
+            actualizarEstado();
+            actualizarPertenenciaVisual();
         }
     };
 
