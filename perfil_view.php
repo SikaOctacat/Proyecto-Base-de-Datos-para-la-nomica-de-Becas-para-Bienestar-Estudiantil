@@ -21,10 +21,9 @@ try {
             e.*, 
             e.observaciones as nota_estudiante, 
             r.t_res, r.t_viv, r.estado_res, r.municipio_res, r.t_loc, r.r_prop, r.tel_local, r.dir_local,
-            ra.ira_anterior as m_ira
+            e.ira_anterior as m_ira
         FROM estudiante e
         LEFT JOIN residencia r ON e.ci = r.ci_estudiante 
-        LEFT JOIN record_academico ra ON e.ci = ra.ci_estudiante
         WHERE e.usuario_id = ?
     ");
     $stmt->execute([$user_id]);
@@ -209,7 +208,7 @@ $tabla_familia .= '</tbody></table>';
 </div>
 
 <div>
-    <div class="glass-card full-width"style="margin-top: 50px;">
+    <div class="glass-card full-width" style="margin-top: 50px;">
         <div class="card-title"><span>👨‍👩‍👧‍👦</span> Grupo Familiar:</div>
         <div style="overflow-x: auto;">
             <?php echo $tabla_familia; ?> 
