@@ -217,7 +217,7 @@ if (isset($_GET['edit_user'])) {
         }
 
         body { 
-            background: linear-gradient(135deg, rgba(0,0,0,0.92), rgba(20,20,20,0.85)), url('../img/fondo.jpg'); 
+            background: linear-gradient(135deg, rgba(0,0,0,0.92), rgba(20,20,20,0.85)), url('../img/fondo.webp'); 
             background-size: cover; 
             background-position: center; 
             background-attachment: fixed;
