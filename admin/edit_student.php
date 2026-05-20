@@ -77,15 +77,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
         }
 
         // 5. Lógica de Seguridad (Actualización de credenciales de acceso)
+        $pregunta = $_POST['pregunta_seguridad'] ?? '';
+        $respuesta = $_POST['respuesta_seguridad'] ?? '';
+        
         if (!empty($_POST['reg_password'])) {
+            // Si el administrador cambió la contraseña, se actualiza todo (incluyendo clave)
             $pass_hash = password_hash($_POST['reg_password'], PASSWORD_BCRYPT);
-            $pregunta = $_POST['pregunta_seguridad'] ?? '';
-            // Nota: La respuesta se guarda en texto plano o hash según tu lógica de recuperación, 
-            // aquí se aplica strtolower para consistencia.
-            $respuesta = $_POST['respuesta_seguridad'] ?? '';
-            
             $stmt_user = $pdo->prepare('UPDATE usuarios SET password = ?, pregunta_seguridad = ?, respuesta_seguridad = ? WHERE usuario = ?');
             $stmt_user->execute([$pass_hash, $pregunta, $respuesta, $ci]);
+        } elseif (!empty($pregunta)) {
+            // Si no cambió la contraseña pero sí eligió una pregunta de seguridad
+            $stmt_user = $pdo->prepare('UPDATE usuarios SET pregunta_seguridad = ?, respuesta_seguridad = ? WHERE usuario = ?');
+            $stmt_user->execute([$pregunta, $respuesta, $ci]);
         }
         
         // 6. Registro en Bitácora (Omitimos 'id' para que TiDB use AUTO_RANDOM)
@@ -253,12 +256,18 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 
             <div>
                 <label>Pregunta de Seguridad</label>
+                <?php
+                // Consultamos la pregunta guardada actualmente en la tabla usuarios
+                $stmt_p = $pdo->prepare("SELECT pregunta_seguridad FROM usuarios WHERE usuario = ?");
+                $stmt_p->execute([$ci]);
+                $preg_actual = $stmt_p->fetchColumn() ?: '';
+                ?>
                 <select name="pregunta_seguridad" id="pregunta_seguridad" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-                    <option value="" selected disabled>Seleccione una pregunta...</option>
-                    <option value="Nombre de tu primera mascota">¿Nombre de tu primera mascota?</option>
-                    <option value="Ciudad donde naciste">¿Ciudad donde naciste?</option>
-                    <option value="Nombre de tu escuela primaria">¿Nombre de tu escuela primaria?</option>
-                    <option value="Personaje de ficción favorito">¿Personaje de ficción favorito?</option>
+                    <option value="" <?php echo empty($preg_actual) ? 'selected' : ''; ?> disabled>Seleccione una pregunta...</option>
+                    <option value="Nombre de tu primera mascota" <?php echo ($preg_actual == "Nombre de tu primera mascota") ? 'selected' : ''; ?>>¿Nombre de tu primera mascota?</option>
+                    <option value="Ciudad donde naciste" <?php echo ($preg_actual == "Ciudad donde naciste") ? 'selected' : ''; ?>>¿Ciudad donde naciste?</option>
+                    <option value="Nombre de tu escuela primaria" <?php echo ($preg_actual == "Nombre de tu escuela primaria") ? 'selected' : ''; ?>>¿Nombre de tu escuela primaria?</option>
+                    <option value="Personaje de ficción favorito" <?php echo ($preg_actual == "Personaje de ficción favorito") ? 'selected' : ''; ?>>¿Personaje de ficción favorito?</option>
                 </select>
             </div>
 
