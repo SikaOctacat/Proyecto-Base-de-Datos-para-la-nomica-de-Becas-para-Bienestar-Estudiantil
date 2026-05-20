@@ -16,13 +16,6 @@ $success = '';
 $pregunta = ''; 
 $step = isset($_POST['step']) ? (int)$_POST['step'] : 1; 
 
-// Recuperación de la pregunta para evitar que se pierda al recargar
-if (($step == 2 || $step == 3) && isset($_SESSION['reset_user_id'])) {
-    $stmt = $pdo->prepare("SELECT pregunta_seguridad FROM usuarios WHERE id = ?");
-    $stmt->execute([$_SESSION['reset_user_id']]);
-    $pregunta = $stmt->fetchColumn();
-}
-
 // Lógica para el botón "Regresar"
 if (isset($_POST['go_back'])) {
     if ($step > 1) {
@@ -36,6 +29,7 @@ if (isset($_POST['go_back'])) {
     }
 }
 
+// PROCESAMIENTO DEL FORMULARIO (Solo si no se presionó "Regresar")
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
     
     // PASO 1: Buscar usuario
@@ -54,22 +48,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
         } else {
             $_SESSION['reset_user_id'] = $user_data['id'];
             $_SESSION['reset_user_name'] = $user_data['usuario']; 
-            $_SESSION['db_answer'] = $user_data['respuesta_seguridad']; // Aquí está el HASH
+            // Guardamos la respuesta esperada en minúsculas y sin espacios de los lados
+            $_SESSION['db_answer'] = strtolower(trim($user_data['respuesta_seguridad'])); 
             $pregunta = $user_data['pregunta_seguridad'];
             $step = 2;
         }
     }
 
-    // PASO 2: Verificar respuesta (DECODIFICANDO EL HASH)
+    // PASO 2: Verificar respuesta
     if (isset($_POST['verify_answer'])) {
         $respuesta_user = strtolower(trim($_POST['respuesta']));
-        $hash_en_db = $_SESSION['db_answer'] ?? '';
+        $respuesta_correcta = $_SESSION['db_answer'] ?? '';
 
-        // Usamos password_verify porque la respuesta se guardó con hash
-        if (password_verify($respuesta_user, $hash_en_db)) {
+        // COMPARACIÓN DIRECTA (Ya que en el registro se guarda en texto plano)
+        if (!empty($respuesta_correcta) && $respuesta_user === $respuesta_correcta) {
             $step = 3;
         } else {
-            $error = "La respuesta es incorrecta.";
+            $error = "La respuesta de seguridad es incorrecta.";
             $step = 2;
         }
     }
@@ -79,8 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
         $pass1 = $_POST['pass1'];
         $pass2 = $_POST['pass2'];
 
-        if ($pass1 === $pass2 && !empty($pass1)) {
-            $new_hash = password_hash($pass1, PASSWORD_DEFAULT);
+        if (empty($pass1)) {
+            $error = "La contraseña no puede estar vacía.";
+            $step = 3;
+        } elseif ($pass1 === $pass2) {
+            $new_hash = password_hash($pass1, PASSWORD_BCRYPT); // Usando BCRYPT nativo
             
             try {
                 $pdo->beginTransaction();
@@ -92,25 +90,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
                     $pdo, 
                     $_SESSION['reset_user_id'], 
                     "Recuperación de Cuenta", 
-                    "Usuarios", 
+                    "usuarios", 
                     "El usuario " . $_SESSION['reset_user_name'] . " (" . $_SESSION['reset_user_id'] . ") restableció su contraseña exitosamente."
                 );
 
                 $pdo->commit();
 
+                // Destruimos variables de recuperación por seguridad
                 unset($_SESSION['reset_user_id'], $_SESSION['reset_user_name'], $_SESSION['db_answer']);
                 $success = "Contraseña actualizada exitosamente.";
                 $step = 4;
 
             } catch (Exception $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
-                $error = "Error al procesar la solicitud.";
+                $error = "Error al procesar la solicitud en el servidor.";
+                $step = 3;
             }
         } else {
             $error = "Las contraseñas no coinciden.";
             $step = 3;
         }
     }
+}
+
+// Recuperación de la pregunta si ocurre una recarga de página en el Paso 2
+if ($step == 2 && isset($_SESSION['reset_user_id']) && empty($pregunta)) {
+    $stmt = $pdo->prepare("SELECT pregunta_seguridad FROM usuarios WHERE id = ?");
+    $stmt->execute([$_SESSION['reset_user_id']]);
+    $pregunta = $stmt->fetchColumn();
 }
 ?>
 <!DOCTYPE html>
@@ -126,12 +133,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
             background: rgba(255,255,255,0.9); border-radius: 24px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
             backdrop-filter: blur(10px);
+            font-family: sans-serif;
         }
         .step-title { 
             background: linear-gradient(90deg, #FF6600, #FF9D00);
             -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 800; margin-bottom: 20px; 
+            font-weight: 800; margin-bottom: 20px; text-align: center;
         }
         input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
         
@@ -148,7 +156,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
         }
         .btn-main:hover { background: #e65500; transform: translateY(-2px); }
         
-        /* Estilo para el botón de regresar que parezca link */
         .btn-back {
             background: none; border: none; color: #FF6600; 
             font-weight: 700; font-size: 0.9rem; cursor: pointer;
@@ -157,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
         .btn-back:hover { text-decoration: underline; }
 
         .msg-err { color: #d32f2f; background: #ffcdd2; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; text-align: center; }
-        .msg-ok { color: #2e7d32; background: #c8e6c9; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; }
+        .msg-ok { color: #2e7d32; background: #c8e6c9; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -178,11 +185,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
     <div class="recover-box">
         <h2 class="step-title">Recuperar acceso</h2>
         
-        <?php if($error): ?> <div class="msg-err"><?php echo $error; ?></div> <?php endif; ?>
-        <?php if($success): ?> <div class="msg-ok"><?php echo $success; ?></div> <?php endif; ?>
+        <?php if($error): ?> <div class="msg-err"><?php echo htmlspecialchars($error); ?></div> <?php endif; ?>
+        <?php if($success): ?> <div class="msg-ok"><?php echo htmlspecialchars($success); ?></div> <?php endif; ?>
 
         <form method="POST">
-            <!-- Input oculto para mantener el paso actual -->
+            <!-- Forzamos el paso calculado por el Backend -->
             <input type="hidden" name="step" value="<?php echo $step; ?>">
 
             <?php if($step == 1): ?>
@@ -196,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
                 <p style="color: #555; background: #f9f9f9; padding: 10px; border-radius: 8px; border-left: 4px solid #FF6600;">
                     <?php echo htmlspecialchars($pregunta); ?>
                 </p>
-                <input type="text" name="respuesta" required placeholder="Escriba su respuesta..." autofocus>
+                <input type="text" name="respuesta" required placeholder="Escriba su respuesta..." autofocus autocomplete="off">
                 <button type="submit" name="verify_answer" class="btn-main">Verificar</button>
             <?php endif; ?>
 
@@ -220,10 +227,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['go_back'])) {
             <?php endif; ?>
 
             <?php if($step == 4): ?>
-                <p style="text-align: center; color: #666;">Tu cuenta ha sido recuperada. Ahora puedes volver al sistema con tu nueva clave.</p>
+                <p style="text-align: center; color: #666; margin-bottom: 15px;">Tu cuenta ha sido recuperada de forma segura. Ya puedes iniciar sesión.</p>
                 <a href="login.php" class="btn-main" style="text-decoration:none; display:block; text-align:center;">Ir al Login</a>
             <?php else: ?>
-                <!-- El botón de regresar se envía dentro del form -->
                 <button type="submit" name="go_back" class="btn-back" formnovalidate>← Regresar</button>
             <?php endif; ?>
         </form>
