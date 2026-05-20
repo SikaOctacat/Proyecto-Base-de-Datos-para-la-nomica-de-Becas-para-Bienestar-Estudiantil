@@ -21,7 +21,7 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
     }
 </style>
 
-<div class="step-content">
+<div class="step-content" id="paso-1-contenedor">
     <h2>1. Identificación del Estudiante</h2>
     <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Por favor, complete sus datos personales con precisión.</p>
     
