@@ -30,6 +30,25 @@ function initFamiliares() {
     };
 
     /**
+     * Guarda en el almacenamiento global la disposición exacta de las filas y separadores
+     */
+    function guardarEstructuraEnStorage() {
+        if (!window.formDataStorage) window.formDataStorage = {};
+        
+        const filas = Array.from(cuerpoTabla.querySelectorAll('tr'));
+        const mapaEstructura = filas.map(fila => {
+            if (fila.classList.contains('fila-separador')) {
+                return `separador:${fila.getAttribute('data-grupo')}`;
+            } else if (fila.classList.contains('fila-datos')) {
+                return `fila:${fila.getAttribute('data-id')}`;
+            }
+            return null;
+        }).filter(Boolean);
+
+        window.formDataStorage['estructura_tabla'] = mapaEstructura;
+    }
+
+    /**
      * Escanea la estructura del DOM y tiñe las filas según el separador que tengan arriba
      */
     function actualizarPertenenciaVisual() {
@@ -65,6 +84,7 @@ function initFamiliares() {
             fila.classList.remove('dragging');
             cuerpoTabla.querySelectorAll('tr').forEach(f => f.classList.remove('drag-over'));
             actualizarPertenenciaVisual(); 
+            guardarEstructuraEnStorage(); // Guardar orden tras mover elementos
         });
 
         fila.addEventListener('dragover', (e) => {
@@ -99,8 +119,8 @@ function initFamiliares() {
     /**
      * Inserta una fila de datos estándar
      */
-    const crearFilaHTML = (id) => {
-        const nuevaFila = cuerpoTabla.insertRow();
+    const crearFilaHTML = (id, appendAlFinal = true) => {
+        const nuevaFila = document.createElement('tr');
         nuevaFila.setAttribute('data-id', id);
         nuevaFila.classList.add('fila-datos');
         
@@ -121,17 +141,25 @@ function initFamiliares() {
         `;
 
         nuevaFila.querySelectorAll('input').forEach(input => {
-            input.addEventListener('input', () => actualizarEstado());
+            input.addEventListener('input', () => {
+                actualizarEstado();
+            });
         });
 
         hacerFilaArrastrable(nuevaFila);
+        
+        if (appendAlFinal) {
+            cuerpoTabla.appendChild(nuevaFila);
+        }
+        
         actualizarPertenenciaVisual();
+        return nuevaFila;
     };
 
     /**
      * Crea e inyecta dinámicamente el separador basándose en las reglas de posición solicitadas
      */
-    const crearSeparadorHTML = (valor, texto) => {
+    const crearSeparadorHTML = (valor, texto, forzadoDesdeStorage = false) => {
         const nuevaFila = document.createElement('tr');
         nuevaFila.setAttribute('data-grupo', valor);
         nuevaFila.classList.add('fila-separador');
@@ -156,18 +184,18 @@ function initFamiliares() {
 
         hacerFilaArrastrable(nuevaFila);
 
-        // --- LÓGICA DE INSERCIÓN INTELIGENTE ---
-        const separadoresExistentes = cuerpoTabla.querySelectorAll('.fila-separador');
-        
-        if (separadoresExistentes.length === 0) {
-            // Si es el primer separador de todos, se inyecta ARRIBA de la primera fila
-            cuerpoTabla.insertAdjacentElement('afterbegin', nuevaFila);
-        } else {
-            // Si ya hay al menos uno, los siguientes nacen abajo al fondo de la tabla
-            cuerpoTabla.appendChild(nuevaFila);
+        // Si se está restaurando el storage, no aplicamos la lógica de inserción por defecto al fondo/inicio
+        if (!forzadoDesdeStorage) {
+            const separadoresExistentes = cuerpoTabla.querySelectorAll('.fila-separador');
+            if (separadoresExistentes.length === 0) {
+                cuerpoTabla.insertAdjacentElement('afterbegin', nuevaFila);
+            } else {
+                cuerpoTabla.appendChild(nuevaFila);
+            }
         }
 
         actualizarPertenenciaVisual();
+        return nuevaFila;
     };
 
     /**
@@ -259,6 +287,7 @@ function initFamiliares() {
         crearSeparadorHTML(valor, texto);
         menuDropdown.style.display = 'none';
         actualizarEstado();
+        guardarEstructuraEnStorage(); // Guardar cambios tras inyectar separador
     };
 
     checkNoFamiliares.onchange = (e) => {
@@ -272,16 +301,36 @@ function initFamiliares() {
         actualizarEstado();
     };
 
-    // Carga inicial y persistencia
+    // --- CARGA INICIAL Y PERSISTENCIA AVANZADA ---
     cuerpoTabla.innerHTML = "";
     const datosCargados = window.formDataStorage || {};
-    const idsExistentes = [...new Set(Object.keys(datosCargados).filter(k => k.startsWith('f_nom_')).map(k => k.split('_')[2]))];
-    
-    if (idsExistentes.length > 0) {
-        idsExistentes.forEach(id => crearFilaHTML(id));
+    const estructuraGuardada = datosCargados['estructura_tabla'];
+
+    if (estructuraGuardada && estructuraGuardada.length > 0) {
+        // Reconstrucción en base al mapa exacto guardado
+        estructuraGuardada.forEach(item => {
+            const [tipo, identificador] = item.split(':');
+            if (tipo === 'separador') {
+                const enlace = menuDropdown.querySelector(`a[data-valor="${identificador}"]`);
+                const textoGrupo = enlace ? enlace.innerText : identificador;
+                const nodoSep = crearSeparadorHTML(identificador, textoGrupo, true);
+                cuerpoTabla.appendChild(nodoSep);
+            } else if (tipo === 'fila') {
+                crearFilaHTML(identificador, true);
+            }
+        });
+        
+        // Ejecutar restauración de valores en los inputs de las filas creadas
         if (typeof window.restoreDataGlobal === 'function') window.restoreDataGlobal();
     } else {
-        crearFilaHTML(Date.now());
+        // Fallback clásico si no hay un mapa de estructura guardado previamente
+        const idsExistentes = [...new Set(Object.keys(datosCargados).filter(k => k.startsWith('f_nom_')).map(k => k.split('_')[2]))];
+        if (idsExistentes.length > 0) {
+            idsExistentes.forEach(id => crearFilaHTML(id, true));
+            if (typeof window.restoreDataGlobal === 'function') window.restoreDataGlobal();
+        } else {
+            crearFilaHTML(Date.now(), true);
+        }
     }
 
     if (datosCargados['no_familiares'] === true) {
@@ -290,8 +339,9 @@ function initFamiliares() {
 
     btnAgregar.onclick = (e) => {
         e.preventDefault();
-        crearFilaHTML(Date.now());
+        crearFilaHTML(Date.now(), true);
         actualizarEstado();
+        guardarEstructuraEnStorage(); // Guardar nueva fila en la estructura
     };
 
     // Manejo de eventos click delegados dentro de la tabla
@@ -307,6 +357,7 @@ function initFamiliares() {
                 fila.remove();
                 actualizarEstado();
                 actualizarPertenenciaVisual();
+                guardarEstructuraEnStorage(); // Guardar tras remover fila
             }
             return;
         }
@@ -322,6 +373,7 @@ function initFamiliares() {
             filaSep.remove();
             actualizarEstado();
             actualizarPertenenciaVisual();
+            guardarEstructuraEnStorage(); // Guardar tras remover separador
         }
     };
 

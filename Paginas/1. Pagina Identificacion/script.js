@@ -7,7 +7,7 @@
  * Inicializa los eventos de la página.
  */
 function initIdentificacion() {
-    // 1. ACTIVAR VALIDACIÓN EN TIEMPO REAL AL SALIR DEL ENFOQUE (blur)
+    // 1. ACTIVAR VALIDACIÓN EN TIEMPO REAL AL SALIR DEL ENFOQUE Y AL ESCRIBIR
     // Se pasa el ID del contenedor del Paso 1 para aislar los eventos.
     aplicarValidacionEnTiempoReal('paso-1-contenedor');
 
@@ -89,22 +89,32 @@ function togglePassword(idInput) {
 }
 
 /**
- * Escucha global del evento 'blur' mediante delegación de eventos.
- * Diseñado para ser escalable a cualquier paso del sistema.
+ * Escucha global de eventos de validación mediante delegación.
+ * Maneja 'blur' para evaluar al salir e 'input' para limpiar errores al escribir.
  */
 function aplicarValidacionEnTiempoReal(formContainerId) {
     const contenedor = document.getElementById(formContainerId);
     if (!contenedor) return;
 
-    // El tercer parámetro 'true' activa la fase de captura (esencial para 'blur' ya que no hace burbujeo normal)
+    // 1. Fase de captura para el 'blur' (cuando el usuario sale del input)
     contenedor.addEventListener('blur', function(evento) {
         const campo = evento.target;
-        
-        // Filtrar que sea un input, select o textarea con atributo name asignado
         if (['INPUT', 'SELECT', 'TEXTAREA'].includes(campo.tagName) && campo.name) {
             validarCampoIndividual(campo);
         }
     }, true);
+
+    // 2. Evento 'input' para re-evaluar inmediatamente MIENTRAS escribe
+    contenedor.addEventListener('input', function(evento) {
+        const campo = evento.target;
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(campo.tagName) && campo.name) {
+            // Si el campo ya tiene un error visual previo, re-validamos en tiempo real para quitarlo apenas cumpla
+            const contenedorPadre = campo.id === 'cod_est' ? campo.parentElement.parentElement : campo.parentElement;
+            if (contenedorPadre.querySelector('.error-feedback-inline') || campo.style.borderColor === 'rgb(211, 47, 47)') {
+                validarCampoIndividual(campo);
+            }
+        }
+    });
 }
 
 /**
@@ -132,7 +142,7 @@ function validarCampoIndividual(campo) {
             case 'tel_estudiante':
                 const regexTel = /^(0414|0424|0412|0416|0426|0422|0268)[0-9]{7}$/;
                 if (!regexTel.test(valor)) {
-                    mensajeError = "Formato inválido. Use 11 dígitos (Ej: 04141234567).";
+                    mensajeError = "Formato inválido. Use 11 dígitos y numeros iniciales permitidos.";
                 }
                 break;
 
@@ -163,7 +173,6 @@ function validarCampoIndividual(campo) {
                 break;
 
             case 'trabaja':
-                // Permite lanzar advertencia inline si seleccionan 'si' por error antes de avanzar
                 const trabajaChecked = document.querySelector('input[name="trabaja"]:checked')?.value;
                 if (trabajaChecked === "si") {
                     mensajeError = "No puedes solicitar el beneficio si posees un empleo actualmente.";
@@ -190,6 +199,11 @@ function gestionarMensajeErrorVisual(campo, mensaje) {
     // Ubicar contenedor nativo del input
     let contenedorPadre = campo.parentElement;
     
+    // Si el campo está dentro del nuevo wrapper de contraseña, el papá real donde va el error es el contenedor superior
+    if (campo.type === 'password' && contenedorPadre.classList.contains('input-wrapper')) {
+        contenedorPadre = campo.parentElement.parentElement;
+    }
+    
     // Tratamiento especial de jerarquía para el input decorado de código de estudiante
     if (campo.id === 'cod_est') {
         contenedorPadre = campo.parentElement.parentElement;
@@ -214,7 +228,6 @@ function gestionarMensajeErrorVisual(campo, mensaje) {
         errorSpan.textContent = `⚠️ ${mensaje}`;
     } else {
         // Restauración a estados normales
-        // Si es la cédula, protegemos que el AJAX de duplicados no se pise erróneamente
         if (campo.id === 'cedula' && campo.validationMessage === "Esta cédula ya está registrada.") {
             return; 
         }

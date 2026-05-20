@@ -108,10 +108,15 @@ function llenarMunicipios(estadoNombre, datos, selectElement) {
 function validarPaso2() {
     const estado = document.getElementById('estado_res').value;
     const municipio = document.getElementById('municipio_res').value;
-    const dir = document.querySelector('input[name="dir_local"]').value;
+    const dirActual = document.querySelector('input[name="dir_local"]').value;
+    
+    // Capturamos el nuevo input de procedencia
+    const dirProcedenciaInput = document.querySelector('input[name="dir_procedencia"]');
+    const dirProcedencia = dirProcedenciaInput ? dirProcedenciaInput.value : "";
 
-    if (!estado || !municipio || dir.trim().length < 5) {
-        alert("⚠️ Por favor, complete la ubicación exacta y seleccione estado/municipio.");
+    // Validamos que ambos campos cumplan con el mínimo de caracteres
+    if (!estado || !municipio || dirActual.trim().length < 5 || dirProcedencia.trim().length < 5) {
+        alert("⚠️ Por favor, complete el estado, municipio y ambas las direccción.");
         return false;
     }
     return true; 

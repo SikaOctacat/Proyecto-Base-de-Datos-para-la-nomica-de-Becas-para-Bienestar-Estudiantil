@@ -63,21 +63,29 @@
         </div>
 
         <div class="full-width">
-            <label>Teléfono Local </label>
-            <input type="tel" 
-                   name="tel_local" 
-                   id="tel_local"
-                   placeholder="04121234567"
-                   maxlength="11"
-                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                   pattern="^(02)[0-9]{9}$"
-                   style="width: 100%;">
-        </div>
+                <label>Teléfono Local </label>
+                <input type="tel" 
+                    name="tel_local" 
+                    id="tel_local"
+                    placeholder="02681234567"
+                    maxlength="11"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    pattern="^(02)[0-9]{9}$"
+                    style="width: 100%;">
+            </div>
 
-        <div class="full-width">
-            <label>Dirección Local Exacta</label>
-            <input type="text" name="dir_local" placeholder="Ej: Avenida X, Calle X, Casa Nro X" required>
+            <div class="full-width">
+                <label>Dirección Local Actual</label>
+                <input type="text" name="dir_local" placeholder="Ej: Avenida X, Calle X, Casa Nro X" required>
+            </div>
+
+            <div class="full-width">
+                <label>Dirección de Procedencia</label>
+                <input type="text" name="dir_procedencia" placeholder="Ej: Ciudad de origen, Sector X, Calle X">
+            </div>
+
         </div>
+    </div>
 
     </div>
     </div>

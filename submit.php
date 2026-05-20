@@ -55,6 +55,7 @@ try {
         $stmt->execute([$estudiante_ci, $user_id]);
     }
 
+    // --- B. ACTUALIZACIÓN DEL ESTUDIANTE ---
     $carnet = !empty($data['C_Patria']) ? $data['C_Patria'] : "N/A";
     $obs = !empty($data['observaciones']) ? trim($data['observaciones']) : "Sin observaciones adicionales.";
 
@@ -76,7 +77,7 @@ try {
         $data['correo'] ?? null, 
         $data['edo_civil'] ?? null,
         $data['tipo_beneficio'] ?? null, 
-        $carnet, // Uso de la variable limpia
+        $carnet, 
         $data['viaja'] ?? 'no', 
         $data['estatus_estudio'] ?? 'activo',
         $data['carrera'] ?? null, 
@@ -85,17 +86,18 @@ try {
         $data['trayecto'] ?? null, 
         $data['trimestre'] ?? null,
         $data['ira_anterior'] ?? 0.00, 
-        $obs, // Uso de la variable limpia
+        $obs, 
         $estudiante_ci
     ]);
 
-    // --- C. RESIDENCIA (ID AUTOMÁTICO: AUTO_INCREMENT) ---
-    // Borramos anterior para evitar duplicados si re-envía
+    // --- C. RESIDENCIA (INCLUYENDO DIRECCIÓN DE PROCEDENCIA) ---
     $tel_local = !empty($data['tel_local']) ? $data['tel_local'] : "No posee";
 
     $pdo->prepare("DELETE FROM residencia WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
-    $sql_res = "INSERT INTO residencia (ci_estudiante, t_res, t_viv, t_loc, r_prop, estado_res, municipio_res, dir_local, tel_local) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
+    // Se añade dir_procedencia a la consulta
+    $sql_res = "INSERT INTO residencia (ci_estudiante, t_res, t_viv, t_loc, r_prop, estado_res, municipio_res, dir_local, dir_procedencia, tel_local) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $pdo->prepare($sql_res)->execute([
         $estudiante_ci, 
         $data['t_res'] ?? null, 
@@ -105,31 +107,72 @@ try {
         $data['estado_res'] ?? null, 
         $data['municipio_res'] ?? null, 
         $data['dir_local'] ?? null, 
+        $data['dir_procedencia'] ?? null, // Nuevo parámetro
         $tel_local
     ]);
 
-    // --- D. FAMILIARES (ID MANUAL) ---
+    // --- D. FAMILIARES (CON ATRIBUTO DE CLASIFICACIÓN DINÁMICA) ---
     $pdo->prepare("DELETE FROM familiar WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
-    // Recorremos los datos buscando patrones f_nom_X
-    foreach ($data as $key => $val) {
-        if (strpos($key, 'f_nom_') === 0 && !empty($val)) {
-            $suffix = substr($key, 6);
-            $stmt = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            $stmt->execute([
-                generarIdManual(), 
-                $estudiante_ci, 
-                $val, 
-                $data['f_ape_'.$suffix] ?? null, 
-                $data['f_par_'.$suffix] ?? null, 
-                (int)($data['f_eda_'.$suffix] ?? 0), 
-                $data['f_ins_'.$suffix] ?? null, 
-                $data['f_ocu_'.$suffix] ?? null, 
-                $data['f_ing_'.$suffix] ?? 0.00
-            ]);
+    
+    $estructuraTable = $data['estructura_tabla'] ?? null;
+
+    if (!empty($estructuraTable) && is_array($estructuraTable)) {
+        $grupoClasificacionActual = null;
+
+        foreach ($estructuraTable as $item) {
+            $partes = explode(':', $item);
+            if (count($partes) !== 2) continue;
+
+            list($tipo, $identificador) = $partes;
+
+            if ($tipo === 'separador') {
+                // Cambia el estado del grupo actual al encontrar un separador (primaria, secundaria, otros)
+                $grupoClasificacionActual = $identificador; 
+            } 
+            elseif ($tipo === 'fila') {
+                $id = $identificador;
+                $nombreFamiliar = $data['f_nom_' . $id] ?? null;
+
+                if (!empty($nombreFamiliar)) {
+                    // Se agrega la columna f_clasificacion al INSERT
+                    $stmt = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                    $stmt->execute([
+                        generarIdManual(), 
+                        $estudiante_ci, 
+                        $nombreFamiliar, 
+                        $data['f_ape_' . $id] ?? null, 
+                        $data['f_par_' . $id] ?? null, 
+                        (int)($data['f_eda_' . $id] ?? 0), 
+                        $data['f_ins_' . $id] ?? null, 
+                        $data['f_ocu_' . $id] ?? null, 
+                        (float)($data['f_ing_' . $id] ?? 0.00),
+                        $grupoClasificacionActual // Guarda la clasificación correspondiente
+                    ]);
+                }
+            }
+        }
+    } else {
+        // Fallback preventivo por si no viene el mapa estructurado
+        foreach ($data as $key => $val) {
+            if (strpos($key, 'f_nom_') === 0 && !empty($val)) {
+                $suffix = substr($key, 6);
+                $stmt = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)');
+                $stmt->execute([
+                    generarIdManual(), 
+                    $estudiante_ci, 
+                    $val, 
+                    $data['f_ape_'.$suffix] ?? null, 
+                    $data['f_par_'.$suffix] ?? null, 
+                    (int)($data['f_eda_'.$suffix] ?? 0), 
+                    $data['f_ins_'.$suffix] ?? null, 
+                    $data['f_ocu_'.$suffix] ?? null, 
+                    (float)($data['f_ing_'.$suffix] ?? 0.00)
+                ]);
+            }
         }
     }
 
-    // --- E. BITÁCORA (ID AUTOMÁTICO: AUTO_RANDOM) ---
+    // --- E. BITÁCORA (ID AUTOMÁTICO) ---
     $sql_bit = "INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)";
     $pdo->prepare($sql_bit)->execute([
         $user_id, 

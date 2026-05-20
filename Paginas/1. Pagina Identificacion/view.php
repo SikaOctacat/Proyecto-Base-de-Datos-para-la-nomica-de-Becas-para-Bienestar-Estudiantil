@@ -8,16 +8,29 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 ?>
 
 <style>
-    .password-container { position: relative; }
+    .password-container { 
+        position: relative; 
+    }
+    .input-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
     .btn-view-pass {
         position: absolute;
-        right: 10px;
-        top: 32px;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%); /* Centrado vertical perfecto respecto al input */
         background: none;
         border: none;
         cursor: pointer;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         padding: 0;
+        color: #555;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 </style>
 
@@ -88,8 +101,8 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
         
         <div>
             <label>Edad</label>
-            <input  type="number" id="edad" name="edad" placeholder="00" readonly tabindex="-1"
-                    style="background-color: #f0f0f0; cursor: not-allowed; font-weight: bold;" required>
+            <input type="number" id="edad" name="edad" placeholder="00" readonly tabindex="-1"
+                   style="background-color: #f0f0f0; cursor: not-allowed; font-weight: bold;" required>
         </div>
 
         <div>
@@ -103,48 +116,55 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
         </div>
 
         <div style="display: flex; flex-direction: column;">
-        <label>Código de Estudiante</label>
-        <div style="position: relative; width: 100%; background: #fff; border-radius: 8px; border: 1px solid #ddd; overflow: hidden;">
-            <input type="text" 
-                name="cod_est"
-                placeholder="Ej: INT1234567"
-                id="cod_est"  
-                maxlength="10" 
-                style="background: transparent; border: none; width: 100%; padding: 10px; position: relative; z-index: 2; outline: none; font-size: 1rem;"
-                required>
+            <label>Código de Estudiante</label>
+            <div style="position: relative; width: 100%; background: #fff; border-radius: 8px; border: 1px solid #ddd; overflow: hidden;">
+                <input type="text" 
+                    name="cod_est"
+                    placeholder="Ej: INT1234567"
+                    id="cod_est"  
+                    maxlength="10" 
+                    style="background: transparent; border: none; width: 100%; padding: 10px; position: relative; z-index: 2; outline: none; font-size: 1rem;"
+                    required>
+            </div>
         </div>
-    </div>
 
-        <div style="grid-column: span 1;">
-            <label>Código del Carnet de la Patria</label>
-            <input type="text" name="C_Patria" placeholder="Ej: 0012345678" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        <div style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; margin-top: 10px;">
+            <div style="width: 100%; max-width: 500px; display: flex; flex-direction: column;">
+                <label style="text-align: left; width: 100%;">Código del Carnet de la Patria (Opcional)</label>
+                <input type="text" name="C_Patria" placeholder="Ej: 0012345678" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box;">
+            </div>
         </div>
     </div>
 
     <?php if(!isset($_SESSION['user']) || (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin')): ?>
-    <div style="margin-top: 25px; padding: 20px; border: 1px dashed #ccc; border-radius: 8px; background-color: #f9f9f9;">
-        <h3 style="color: #FF6600; font-size: 1rem; margin-bottom: 10px;">🔐 Seguridad de la Cuenta</h3>
-        <div class="grid-container">
+    <div style="margin-top: 30px; padding: 25px; border: 1px dashed #ccc; border-radius: 8px; background-color: #f9f9f9;">
+        <h3 style="color: #FF6600; font-size: 1.1rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">🔐 Seguridad de la Cuenta</h3>
+        
+        <div class="grid-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 25px;">
             
-            <div class="password-container">
-                <label>Contraseña</label>
-                <input type="password" name="password" id="reg_password" placeholder="Mínimo 4 caracteres" required minlength="4">
-                <button type="button" class="btn-view-pass" onclick="togglePassword('reg_password')">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
+            <div class="password-container" style="display: flex; flex-direction: column;">
+                <label style="margin-bottom: 5px;">Contraseña</label>
+                <div class="input-wrapper" style="position: relative; width: 100%;">
+                    <input type="password" name="password" id="reg_password" placeholder="Mínimo 4 caracteres" required minlength="4" style="width: 100%; padding: 10px; padding-right: 40px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
+                    <button type="button" class="btn-view-pass" onclick="togglePassword('reg_password')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                </div>
             
-            <div class="password-container">
-                <label>Confirmar Contraseña</label>
-                <input type="password" id="reg_password_confirm" placeholder="Repita su contraseña" required minlength="4">
-                <button type="button" class="btn-view-pass" onclick="togglePassword('reg_password_confirm')">
-                    <i class="fas fa-eye"></i>
-                </button>
-            </div>
+            <div class="password-container" style="display: flex; flex-direction: column;">
+                <label style="margin-bottom: 5px;">Confirmar Contraseña</label>
+                <div class="input-wrapper" style="position: relative; width: 100%;">
+                    <input type="password" id="reg_password_confirm" placeholder="Repita su contraseña" required minlength="4" style="width: 100%; padding: 10px; padding-right: 40px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
+                    <button type="button" class="btn-view-pass" onclick="togglePassword('reg_password_confirm')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                </div>
 
-            <div>
-                <label>Pregunta de Seguridad</label>
-                <select name="pregunta_seguridad" id="pregunta_seguridad" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column;">
+                <label style="margin-bottom: 5px;">Pregunta de Seguridad</label>
+                <select name="pregunta_seguridad" id="pregunta_seguridad" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; background-color: #fff;">
                     <option value="" disabled selected>Seleccione una pregunta...</option>
                     <option value="Nombre de tu primera mascota">¿Nombre de tu primera mascota?</option>
                     <option value="Ciudad donde naciste">¿Ciudad donde naciste?</option>
@@ -153,9 +173,9 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
                 </select>
             </div>
             
-            <div>
-                <label>Respuesta de Seguridad</label>
-                <input type="text" name="respuesta_seguridad" id="respuesta_seguridad" placeholder="Tu respuesta secreta" required>
+            <div style="display: flex; flex-direction: column;">
+                <label style="margin-bottom: 5px;">Respuesta de Seguridad</label>
+                <input type="text" name="respuesta_seguridad" id="respuesta_seguridad" placeholder="Tu respuesta secreta" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box;">
             </div>
         </div>
     </div>
@@ -189,8 +209,8 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 </div>
 
 <script>
-// Función para mostrar/ocultar contraseña
-function togglePass(id) {
+// Función unificada para mostrar/ocultar contraseña (cambiada de togglePass a togglePassword)
+function togglePassword(id) {
     const input = document.getElementById(id);
     input.type = input.type === 'password' ? 'text' : 'password';
 }
@@ -237,12 +257,10 @@ document.getElementById('cedula').addEventListener('input', function() {
                 if (data.existe) {
                     warning.style.display = 'block';
                     inputCedula.style.borderColor = '#d32f2f';
-                    // ESTO DETIENE EL PROCESO:
                     inputCedula.setCustomValidity("Esta cédula ya está registrada.");
                 } else {
                     warning.style.display = 'none';
                     inputCedula.style.borderColor = '#ddd';
-                    // ESTO HABILITA EL PROCESO:
                     inputCedula.setCustomValidity("");
                 }
             })
