@@ -588,7 +588,8 @@ if (isset($_GET['edit_user'])) {
                     <h4 style="color:var(--primary); margin-top:0; border-bottom: 1px solid #ddd;">🏠 Vivienda</h4>
                     <p><strong>Tipo:</strong> <?php echo ucfirst($details['residencia']['t_viv'] ?? 'N/P'); ?></p>
                     <p><strong>Ubicación:</strong> <?php echo ucfirst($details['residencia']['t_loc'] ?? 'N/P'); ?></p>
-                    <p><strong>Municipio:</strong> <?php echo $details['residencia']['municipio_res'] ?? 'N/P'; ?></p>
+                    <p><strong>Municipio:</strong> <?php echo htmlspecialchars($details['municipio_res'] ?? ''); ?></p>
+                    <p><strong>Dirección de Procedencia (Liceo):</strong> <?php echo htmlspecialchars($details['dir_procedencia'] ?? 'No especificada'); ?></p>
                     <p><strong>Dirección:</strong> <?php echo $details['residencia']['dir_local'] ?? 'N/P'; ?></p>
                 </div>
             </div>
@@ -603,20 +604,64 @@ if (isset($_GET['edit_user'])) {
                             <th>Edad</th>
                             <th>Instrucción</th>
                             <th>Ocupación</th>
-                            <th>Ingresos</th>
+                            <th style="text-align: right; padding-right: 10px;">Ingresos</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($details['familiares'] as $f): ?>
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 10px;"><?php echo htmlspecialchars($f['f_nom'] . ' ' . $f['f_ape']); ?></td>
-                            <td><?php echo htmlspecialchars($f['f_par']); ?></td>
-                            <td><?php echo htmlspecialchars($f['f_eda']); ?> años</td>
-                            <td><?php echo htmlspecialchars($f['f_ins']); ?></td>
-                            <td><?php echo htmlspecialchars($f['f_ocu']); ?></td>
-                            <td style="font-weight: bold; color: #2e7d32;"><?php echo number_format($f['f_ing'], 2); ?> Bs</td>
-                        </tr>
-                        <?php endforeach; ?>
+                        <?php 
+                        // Configuración de colores y títulos idéntica a los formularios de carga
+                        $coloresConfig = [
+                            'primaria'   => ['separador' => '#c6f6d5', 'texto' => '#22543d', 'titulo' => '👨‍👩‍👧‍👦 Familia Primaria'],
+                            'secundaria' => ['separador' => '#feebc8', 'texto' => '#744210', 'titulo' => '🏡 Carga Secundaria'],
+                            'otros'      => ['separador' => '#edf2f7', 'texto' => '#2d3748', 'titulo' => '🔗 Otros Parientes']
+                        ];
+
+                        $grupoActual = null;
+
+                        if (!empty($details['familiares']) && count($details['familiares']) > 0):
+                            foreach ($details['familiares'] as $f):
+                                // Si el registro no tiene clasificación, por defecto pertenece a primaria
+                                $clasificacion = !empty($f['clasificacion']) ? $f['clasificacion'] : 'primaria';
+
+                                // Si cambia la clasificación, inyectamos la fila separadora correspondiente
+                                if ($grupoActual !== $clasificacion):
+                                    $grupoActual = $clasificacion;
+                                    $config = $coloresConfig[$grupoActual] ?? $coloresConfig['primaria'];
+                                    ?>
+                                    <tr style="background-color: <?php echo $config['separador']; ?>; color: <?php echo $config['texto']; ?>; font-weight: bold;">
+                                        <td colspan="6" style="padding: 8px 10px; font-size: 0.85rem; border-bottom: 1px solid #cbd5e0;">
+                                            <?php echo $config['titulo']; ?>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                endif;
+
+                                // Asignamos fondos tenues en concordancia con el grupo actual para que se vea limpio
+                                $fondoFila = '#ffffff';
+                                if ($grupoActual === 'primaria') $fondoFila = '#f0fff4';
+                                if ($grupoActual === 'secundaria') $fondoFila = '#fffaf0';
+                                if ($grupoActual === 'otros') $fondoFila = '#f7fafc';
+                                ?>
+                                <tr style="background-color: <?php echo $fondoFila; ?>; border-bottom: 1px solid #eee;">
+                                    <td style="padding: 10px;"><?php echo htmlspecialchars(($f['f_nom'] ?? '') . ' ' . ($f['f_ape'] ?? '')); ?></td>
+                                    <td><?php echo htmlspecialchars($f['f_par'] ?? ''); ?></td>
+                                    <td><?php echo htmlspecialchars($f['f_eda'] ?? '0'); ?> años</td>
+                                    <td><?php echo htmlspecialchars(!empty($f['f_ins']) ? $f['f_ins'] : 'Ninguna'); ?></td>
+                                    <td><?php echo htmlspecialchars(!empty($f['f_ocu']) ? $f['f_ocu'] : 'Ninguna'); ?></td>
+                                    <td style="font-weight: bold; color: #2e7d32; text-align: right; padding-right: 10px;">
+                                        <?php echo number_format($f['f_ing'] ?? 0.00, 2, ',', '.'); ?> Bs
+                                    </td>
+                                </tr>
+                            <?php 
+                            endforeach; 
+                        else: 
+                            ?>
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #e53e3e; padding: 20px; font-weight: bold;">
+                                    🚫 El estudiante declaró que vive solo / Sin carga familiar registrada.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

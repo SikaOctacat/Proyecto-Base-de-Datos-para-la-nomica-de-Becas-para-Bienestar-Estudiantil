@@ -239,7 +239,7 @@ $tabla_familia .= '</tbody></table>';
 </div>
 
 <div>
-    <div class="glass-card full-width" style="margin-top: 30px;">
+    <div class="glass-card full-width" style="margin-top: 60px;">
         <div class="card-title"><span>👨‍👩‍👧‍👦</span> Grupo Familiar Integrado:</div>
         <div style="overflow-x: auto;">
             <?php echo $tabla_familia; ?> 
