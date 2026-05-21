@@ -88,6 +88,8 @@ if (!$logged) {
             .btn-cta { background: #FF6600; padding: 14px 28px; color:#fff; text-decoration:none; font-weight: 700; border-radius: 12px; transition: all 0.3s; margin: 10px; display:inline-block; border:none; cursor:pointer;}
             .btn-sec { border: 2px solid #fff; color: #fff; padding: 14px 28px; text-decoration:none; font-weight: 700; border-radius: 12px; transition: all 0.3s; margin: 10px; display:inline-block; }
             .modal.oculto { display: none !important; }
+
+            
         </style>
     </head>
     <body>
