@@ -419,15 +419,104 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 
             
             <div class="seccion-titulo">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                    <span style="font-size: 1.1rem; font-weight: bold; color: #2d3748;">👨‍👩‍👧‍👦 Carga Familiar</span>
+                <div style="margin-bottom: 15px;">
+                    <span style="display: block; font-size: 1.1rem; font-weight: bold; color: #2d3748; margin-bottom: 12px;">
+                        👨‍👩‍👧‍👦 Carga Familiar Regente
+                    </span>
                     
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="background: rgba(255,102,0,0.03); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #FF6600;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #444;">
+                            <input type="checkbox" id="no-familiares" name="no_familiares" style="width: 18px; height: 18px;">
+                            <span>El estudiante no convive con familiares / Vive solo</span>
+                        </label>
+                    </div>
+
+                    <div id="aviso-estado" style="margin-bottom: 10px; font-weight: 600; font-size: 0.85rem;"></div>
+
+                    <div class="table-responsive" style="border: 1px solid #ddd; border-radius: 8px; background: white; padding: 5px; overflow-x: auto; margin-bottom: 15px;">
+                        <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Nombre</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Apellido</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Vínculo</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem; width: 80px;">Edad</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Instrucción</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Ocupación</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem; width: 120px;">Ingreso</th>
+                                    <th style="padding: 10px; border-bottom: 2px solid #FF6600; width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpo-tabla">
+                                <?php 
+                                if (!empty($lista_familiares)) {
+                                    // Ordenar de forma que respete la prioridad posicional visual
+                                    usort($lista_familiares, function($a, $b) {
+                                        $p = ['primaria' => 1, 'secundaria' => 2, 'otros' => 3];
+                                        return ($p[$a['f_clasificacion']??'otros']??3) <=> ($p[$b['f_clasificacion']??'otros']??3);
+                                    });
+
+                                    $grupo_actual = null;
+                                    $titulos = ['primaria' => '👨‍👩‍👧‍👦 Familia Primaria', 'secundaria' => '🏡 Carga Secundaria', 'otros' => '🔗 Otros Parientes'];
+                                    $colores = [
+                                        'primaria' => ['bg'=>'#c6f6d5','txt'=>'#22543d','fila'=>'#f0fff4'],
+                                        'secundaria' => ['bg'=>'#feebc8','txt'=>'#744210','fila'=>'#fffaf0'],
+                                        'otros' => ['bg'=>'#edf2f7','txt'=>'#2d3748','fila'=>'#f7fafc']
+                                    ];
+
+                                    foreach ($lista_familiares as $k => $f) {
+                                        $clasif = !empty($f['f_clasificacion']) ? $f['f_clasificacion'] : 'otros';
+                                        
+                                        if ($grupo_actual !== $clasif) {
+                                            $grupo_actual = $clasif;
+                                            echo "<tr class='fila-separador' data-grupo='{$grupo_actual}' style='background:{$colores[$grupo_actual]['bg']}; color:{$colores[$grupo_actual]['txt']}; font-weight:bold;'>";
+                                            echo "  <td colspan='7' style='padding:10px 12px;'>{$titulos[$grupo_actual]}<input type='hidden' name='estructura_tabla[]' value='separador:{$grupo_actual}'></td>";
+                                            echo "  <td style='text-align:center;'><button type='button' class='btn-remove-separador' data-valor='{$grupo_actual}' title='Remover Clasificación' style='background:#fff; border:1px solid #cbd5e0; color:#e53e3e; font-size:1.1rem; font-weight:bold; width:28px; height:28px; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition: all 0.2s;'>&times;</button></td>";
+                                            echo "</tr>";
+                                        }
+
+                                        $id_f = $f['id'] ?? $k;
+                                        ?>
+                                        <tr class="fila-datos" data-id="<?php echo $id_f; ?>" style="background: <?php echo $colores[$grupo_actual]['fila']; ?>;">
+                                            <input type="hidden" name="estructura_tabla[]" value="fila:<?php echo $id_f; ?>">
+                                            <td><input type="text" name="f_nom_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_nom']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                            <td><input type="text" name="f_ape_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ape']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                            <td><input type="text" name="f_par_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_par']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                            <td><input type="number" name="f_eda_<?php echo $id_f; ?>" value="<?php echo $f['f_eda']; ?>" min="0" max="120" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                            <td><input type="text" name="f_ins_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ins']); ?>" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                            <td><input type="text" name="f_ocu_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ocu']); ?>" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                            <td><input type="number" name="f_ing_<?php echo $id_f; ?>" value="<?php echo $f['f_ing']; ?>" step="0.01" min="0" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                            <td style="text-align:center;"><button type="button" class="btn-remove" title="Remover fila" style="background:#fff; border:1px solid #cbd5e0; color:#e53e3e; font-size:1.1rem; font-weight:bold; width:28px; height:28px; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition: all 0.2s;">&times;</button></td>
+                                        </tr>
+                                        <?php
+                                    }
+                                } else { ?>
+                                    <tr class="fila-separador" data-grupo="primaria" style="background: #c6f6d5; color: #22543d; font-weight: bold;">
+                                        <td colspan="7" style="padding: 10px 12px;">👨‍👩‍👧‍👦 Familia Primaria<input type="hidden" name="estructura_tabla[]" value="separador:primaria"></td>
+                                        <td style="text-align:center;"><button type="button" class="btn-remove-separador" data-valor="primaria" style="background:#fff; border:1px solid #cbd5e0; color:#e53e3e; font-size:1.1rem; font-weight:bold; width:28px; height:28px; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition: all 0.2s;">&times;</button></td>
+                                    </tr>
+                                    <tr class="fila-datos" data-id="101" style="background: #f0fff4;">
+                                        <input type="hidden" name="estructura_tabla[]" value="fila:101">
+                                        <td><input type="text" name="f_nom_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_ape_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_par_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="number" name="f_eda_101" min="0" max="120" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_ins_101" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_ocu_101" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="number" name="f_ing_101" step="0.01" min="0" value="0.00" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td style="text-align:center;"><button type="button" class="btn-remove" style="background:#fff; border:1px solid #cbd5e0; color:#e53e3e; font-size:1.1rem; font-weight:bold; width:28px; height:28px; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition: all 0.2s;">&times;</button></td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
                         <div style="position: relative; display: inline-block;">
                             <button type="button" id="btn-dropdown-grupo" class="btn" style="background: #edf2f7; color: #2d3748; font-weight: 600; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer;">
                                 ➕ Agregar Clasificación ▾
                             </button>
-                            <div id="menu-dropdown-grupo" style="display: none; position: absolute; right: 0; top: 110%; background: white; min-width: 200px; border: 1px solid #cbd5e0; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; padding: 6px 0;">
+                            <div id="menu-dropdown-grupo" style="display: none; position: absolute; right: 0; bottom: 110%; background: white; min-width: 200px; border: 1px solid #cbd5e0; border-radius: 6px; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); z-index: 100; padding: 6px 0; margin-bottom: 5px;">
                                 <a href="#" data-valor="primaria" style="display: block; padding: 10px 14px; color: #2d3748; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 4px solid #48bb78;">👨‍👩‍👧‍👦 Familia Primaria</a>
                                 <a href="#" data-valor="secundaria" style="display: block; padding: 10px 14px; color: #2d3748; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 4px solid #ed8936;">🏡 Carga Secundaria</a>
                                 <a href="#" data-valor="otros" style="display: block; padding: 10px 14px; color: #2d3748; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 4px solid #a0aec0;">🔗 Otros Parientes</a>
@@ -438,102 +527,14 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
                     </div>
                 </div>
 
-                <div style="background: rgba(255,102,0,0.03); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #FF6600;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #444;">
-                        <input type="checkbox" id="no-familiares" name="no_familiares" style="width: 18px; height: 18px;">
-                        <span>El estudiante no convive con familiares / Vive solo</span>
-                    </label>
-                </div>
-
-                <div id="aviso-estado" style="margin-bottom: 10px; font-weight: 600; font-size: 0.85rem;"></div>
-
-                <div class="table-responsive" style="border: 1px solid #ddd; border-radius: 8px; background: white; padding: 5px; overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
-                        <thead>
-                            <tr style="background: #f8f9fa;">
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Nombre</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Apellido</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Vínculo</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem; width: 80px;">Edad</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Instrucción</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Ocupación</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem; width: 120px;">Ingreso</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; width: 50px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="cuerpo-tabla">
-                            <?php 
-                            if (!empty($lista_familiares)) {
-                                // Ordenar de forma que respete la prioridad posicional visual
-                                usort($lista_familiares, function($a, $b) {
-                                    $p = ['primaria' => 1, 'secundaria' => 2, 'otros' => 3];
-                                    return ($p[$a['f_clasificacion']??'otros']??3) <=> ($p[$b['f_clasificacion']??'otros']??3);
-                                });
-
-                                $grupo_actual = null;
-                                $titulos = ['primaria' => '👨‍👩‍👧‍👦 Familia Primaria', 'secundaria' => '🏡 Carga Secundaria', 'otros' => '🔗 Otros Parientes'];
-                                $colores = [
-                                    'primaria' => ['bg'=>'#c6f6d5','txt'=>'#22543d','fila'=>'#f0fff4'],
-                                    'secundaria' => ['bg'=>'#feebc8','txt'=>'#744210','fila'=>'#fffaf0'],
-                                    'otros' => ['bg'=>'#edf2f7','txt'=>'#2d3748','fila'=>'#f7fafc']
-                                ];
-
-                                foreach ($lista_familiares as $k => $f) {
-                                    $clasif = !empty($f['f_clasificacion']) ? $f['f_clasificacion'] : 'otros';
-                                    
-                                    if ($grupo_actual !== $clasif) {
-                                        $grupo_actual = $clasif;
-                                        echo "<tr class='fila-separador' data-grupo='{$grupo_actual}' style='background:{$colores[$grupo_actual]['bg']}; color:{$colores[$grupo_actual]['txt']}; font-weight:bold;'>";
-                                        echo "  <td colspan='7' style='padding:10px 12px;'>{$titulos[$grupo_actual]}<input type='hidden' name='estructura_tabla[]' value='separador:{$grupo_actual}'></td>";
-                                        echo "  <td style='text-align:center;'><button type='button' class='btn-remove-separador' data-valor='{$grupo_actual}' style='background:none; border:none; cursor:pointer;'>❌</button></td>";
-                                        echo "</tr>";
-                                    }
-
-                                    $id_f = $f['id'] ?? $k;
-                                    ?>
-                                    <tr class="fila-datos" data-id="<?php echo $id_f; ?>" style="background: <?php echo $colores[$grupo_actual]['fila']; ?>;">
-                                        <input type="hidden" name="estructura_tabla[]" value="fila:<?php echo $id_f; ?>">
-                                        <td><input type="text" name="f_nom_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_nom']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                        <td><input type="text" name="f_ape_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ape']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                        <td><input type="text" name="f_par_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_par']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                        <td><input type="number" name="f_eda_<?php echo $id_f; ?>" value="<?php echo $f['f_eda']; ?>" min="0" max="120" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                        <td><input type="text" name="f_ins_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ins']); ?>" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                        <td><input type="text" name="f_ocu_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ocu']); ?>" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                        <td><input type="number" name="f_ing_<?php echo $id_f; ?>" value="<?php echo $f['f_ing']; ?>" step="0.01" min="0" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                        <td style="text-align:center;"><button type="button" class="btn-remove" style="background:none; border:none; cursor:pointer;">❌</button></td>
-                                    </tr>
-                                    <?php
-                                }
-                            } else { ?>
-                                <tr class="fila-separador" data-grupo="primaria" style="background: #c6f6d5; color: #22543d; font-weight: bold;">
-                                    <td colspan="7" style="padding: 10px 12px;">👨‍👩‍👧‍👦 Familia Primaria<input type="hidden" name="estructura_tabla[]" value="separador:primaria"></td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove-separador" data-valor="primaria" style="background:none; border:none; cursor:pointer;">❌</button></td>
-                                </tr>
-                                <tr class="fila-datos" data-id="101" style="background: #f0fff4;">
-                                    <input type="hidden" name="estructura_tabla[]" value="fila:101">
-                                    <td><input type="text" name="f_nom_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                    <td><input type="text" name="f_ape_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                    <td><input type="text" name="f_par_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                    <td><input type="number" name="f_eda_101" min="0" max="120" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                    <td><input type="text" name="f_ins_101" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                    <td><input type="text" name="f_ocu_101" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                    <td><input type="number" name="f_ing_101" step="0.01" min="0" value="0.00" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-                                    <td style="text-align:center;"><button type="button" class="btn-remove" style="background:none; border:none; cursor:pointer;">❌</button></td>
-                                </tr>
-                            <?php } ?>
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 15px;">
-                    <button type="button" id="btn-agregar" class="btn" style="background: #00dc0b; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold;">
-                        + Añadir Familiar
-                    </button>
-                </div>
+                <style>
+                    .btn-remove:hover, .btn-remove-separador:hover {
+                        background-color: #e53e3e !important;
+                        color: white !important;
+                        border-color: #e53e3e !important;
+                    }
+                </style>
             
-
-            
-
-
         <div class="grid-container" style="margin-top:20px;">
             <div class="seccion-titulo">📝 Observaciones y Estatus</div>
             <div style="grid-column: span 2;">
