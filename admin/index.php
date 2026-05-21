@@ -50,7 +50,7 @@ if (isset($_GET['delete_student'])) {
             $pdo->prepare('DELETE FROM usuarios WHERE id = ?')->execute([$usuario_id]);
         }
         
-        // Registro en Bitácora[cite: 2]
+        // Registro en Bitácora
         registrarMovimiento(
             $pdo, 
             $_SESSION['user_id'], 
@@ -75,7 +75,7 @@ if (isset($_GET['delete_user'])) {
         $stmt->execute([$id]);
         
         if ($stmt->rowCount() > 0) {
-            // Registro en Bitácora[cite: 2]
+            // Registro en Bitácora
             registrarMovimiento(
                 $pdo, 
                 $_SESSION['user_id'], 
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
             $stmt->execute([$username, $id]);
         }
         
-        // Registro en Bitácora[cite: 2]
+        // Registro en Bitácora
         registrarMovimiento(
             $pdo, 
             $_SESSION['user_id'], 
@@ -167,7 +167,7 @@ $query_bitacora = "SELECT b.id, b.usuario_id, u.usuario, b.accion, b.tabla_afect
 $stmt_bitacora = $pdo->query($query_bitacora);
 $registros_bitacora = $stmt_bitacora->fetchAll(PDO::FETCH_ASSOC);
 
-// --- LÓGICA DE DETALLES Y EDICIÓN ---
+// --- LÓGICA DE DETALLES Y EDICIÓN (CORREGIDA CON EL ORDEN DE CLASIFICACIÓN) ---
 if (isset($_GET['view_details'])) {
     $ci = $_GET['view_details'];
     $stmt = $pdo->prepare("SELECT * FROM estudiante WHERE ci = ?");
@@ -178,7 +178,8 @@ if (isset($_GET['view_details'])) {
     $stmt->execute([$ci]);
     $residencia = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $stmt = $pdo->prepare("SELECT * FROM familiar WHERE ci_estudiante = ?");
+    // Mantenemos el orden posicional estricto por clasificación para el renderizado
+    $stmt = $pdo->prepare("SELECT * FROM familiar WHERE ci_estudiante = ? ORDER BY FIELD(f_clasificacion, 'primaria', 'secundaria', 'otros'), id ASC");
     $stmt->execute([$ci]);
     $familiares = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -609,7 +610,7 @@ if (isset($_GET['edit_user'])) {
                     </thead>
                     <tbody>
                         <?php 
-                        // Configuración de colores y títulos idéntica a los formularios de carga
+                        // Configuración estética de colores y títulos idéntica a los formularios de carga
                         $coloresConfig = [
                             'primaria'   => ['separador' => '#c6f6d5', 'texto' => '#22543d', 'titulo' => '👨‍👩‍👧‍👦 Familia Primaria'],
                             'secundaria' => ['separador' => '#feebc8', 'texto' => '#744210', 'titulo' => '🏡 Carga Secundaria'],
@@ -620,8 +621,8 @@ if (isset($_GET['edit_user'])) {
 
                         if (!empty($details['familiares']) && count($details['familiares']) > 0):
                             foreach ($details['familiares'] as $f):
-                                // Si el registro no tiene clasificación, por defecto pertenece a primaria
-                                $clasificacion = !empty($f['clasificacion']) ? $f['clasificacion'] : 'primaria';
+                                // CORRECCIÓN CLAVE: Leemos 'f_clasificacion' directamente desde la base de datos
+                                $clasificacion = !empty($f['f_clasificacion']) ? $f['f_clasificacion'] : 'primaria';
 
                                 // Si cambia la clasificación, inyectamos la fila separadora correspondiente
                                 if ($grupoActual !== $clasificacion):
@@ -636,7 +637,7 @@ if (isset($_GET['edit_user'])) {
                                     <?php
                                 endif;
 
-                                // Asignamos fondos tenues en concordancia con el grupo actual para que se vea limpio
+                                // Asignamos fondos tenues en concordancia con el grupo actual para mantener orden visual
                                 $fondoFila = '#ffffff';
                                 if ($grupoActual === 'primaria') $fondoFila = '#f0fff4';
                                 if ($grupoActual === 'secundaria') $fondoFila = '#fffaf0';
