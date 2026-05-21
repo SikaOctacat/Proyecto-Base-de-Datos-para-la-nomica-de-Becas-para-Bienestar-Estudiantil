@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * LÓGICA DE CARGA FAMILIAR INTERACTIVA (Con Drag & Drop nativo integrado)
+ * LÓGICA DE CARGA FAMILIAR INTERACTIVA (Con Drag & Drop nativo y consistencia visual)
  */
 function initFamiliaresAdmin() {
     const cuerpoTabla = document.getElementById('cuerpo-tabla');
@@ -675,7 +675,6 @@ function initFamiliaresAdmin() {
         tr.addEventListener('dragend', () => {
             filaArrastrada = null;
             tr.style.opacity = '1';
-            // Remover estilos temporales de feedback visual a todas las filas
             Array.from(cuerpoTabla.children).forEach(el => {
                 el.style.borderTop = '';
                 el.style.borderBottom = '';
@@ -690,7 +689,6 @@ function initFamiliaresAdmin() {
             const rect = tr.getBoundingClientRect();
             const relacionAltura = (e.clientY - rect.top) / rect.height;
 
-            // Feedback visual sutil indicando inserción superior o inferior
             if (relacionAltura < 0.5) {
                 tr.style.borderTop = '2px dashed #FF6600';
                 tr.style.borderBottom = '';
@@ -724,7 +722,7 @@ function initFamiliaresAdmin() {
         });
     }
 
-    // Inyección de una nueva Fila de Datos
+    // Inyección de una nueva Fila de Datos (Corregida con la X estilizada)
     function crearFilaHTML(id) {
         const tr = document.createElement('tr');
         tr.className = 'fila-datos';
@@ -738,14 +736,14 @@ function initFamiliaresAdmin() {
             <td><input type="text" name="f_ins_${id}" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
             <td><input type="text" name="f_ocu_${id}" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
             <td><input type="number" name="f_ing_${id}" step="0.01" min="0" value="0.00" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
-            <td style="text-align:center;"><button type="button" class="btn-remove" style="background:none; border:none; cursor:pointer;">❌</button></td>
+            <td style="text-align:center;"><button type="button" class="btn-remove" title="Remover fila" style="background:#fff; border:1px solid #cbd5e0; color:#e53e3e; font-size:1.1rem; font-weight:bold; width:28px; height:28px; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition: all 0.2s;">&times;</button></td>
         `;
         cuerpoTabla.appendChild(tr);
-        hacerElementoArrastrable(tr); // Habilitar arrastre al crear dinámicamente
+        hacerElementoArrastrable(tr);
         return tr;
     }
 
-    // Evento de inserción manual de clasificaciones
+    // Evento de inserción manual de clasificaciones (Ya NO crea fila vacía abajo y usa la X estilizada)
     menuDropdown.querySelectorAll('a').forEach(enlace => {
         enlace.onclick = (e) => {
             e.preventDefault();
@@ -759,11 +757,10 @@ function initFamiliaresAdmin() {
             trSep.style.fontWeight = 'bold';
             trSep.innerHTML = `
                 <td colspan="7" style="padding: 10px 12px;">${titulosConfig[valor]}<input type="hidden" name="estructura_tabla[]" value="separador:${valor}"></td>
-                <td style="text-align:center;"><button type="button" class="btn-remove-separador" data-valor="${valor}" style="background:none; border:none; cursor:pointer;">❌</button></td>
+                <td style="text-align:center;"><button type="button" class="btn-remove-separador" data-valor="${valor}" title="Remover Clasificación" style="background:#fff; border:1px solid #cbd5e0; color:#e53e3e; font-size:1.1rem; font-weight:bold; width:28px; height:28px; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition: all 0.2s;">&times;</button></td>
             `;
             cuerpoTabla.appendChild(trSep);
-            hacerElementoArrastrable(trSep); // Habilitar arrastre en separadores
-            crearFilaHTML(Date.now());
+            hacerElementoArrastrable(trSep);
             actualizarPertenenciaVisual();
         };
     });
