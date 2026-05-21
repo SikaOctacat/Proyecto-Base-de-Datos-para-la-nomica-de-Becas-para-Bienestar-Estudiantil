@@ -57,7 +57,10 @@ try {
 
     // --- B. ACTUALIZACIÓN DEL ESTUDIANTE ---
     $carnet = !empty($data['C_Patria']) ? $data['C_Patria'] : "N/A";
-    $obs = !empty($data['observaciones']) ? trim($data['observaciones']) : "Sin observaciones adicionales.";
+    
+    // Cambiamos 'observaciones' por 'comentarios' para capturar el valor real del formulario
+    $observacionesRaw = isset($data['comentarios']) ? trim($data['comentarios']) : '';
+    $obs = ($observacionesRaw !== '') ? $observacionesRaw : "Sin observaciones adicionales.";
 
     $sql_est = "UPDATE estudiante SET 
                 nombre1=?, nombre2=?, apellido_paterno=?, apellido_materno=?, 

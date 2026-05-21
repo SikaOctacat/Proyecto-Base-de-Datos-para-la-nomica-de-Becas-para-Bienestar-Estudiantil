@@ -20,7 +20,7 @@ try {
         SELECT 
             e.*, 
             e.observaciones as nota_estudiante, 
-            r.t_res, r.t_viv, r.estado_res, r.municipio_res, r.t_loc, r.r_prop, r.tel_local, r.dir_local,
+            r.t_res, r.t_viv, r.estado_res, r.municipio_res, r.t_loc, r.r_prop, r.tel_local, r.dir_local, r.dir_procedencia,
             e.ira_anterior as m_ira
         FROM estudiante e
         LEFT JOIN residencia r ON e.ci = r.ci_estudiante 
@@ -38,20 +38,28 @@ try {
     exit;
 }
 
-// --- LÓGICA PARA LA TABLA DE FAMILIARES ---
-$stmtFam = $pdo->prepare("SELECT * FROM familiar WHERE ci_estudiante = ?");
+// --- LÓGICA PARA LA TABLA DE FAMILIARES CON CLASIFICACIÓN ---
+// Ordenamos por clasificación para agruparlos correctamente en el renderizado
+$stmtFam = $pdo->prepare("SELECT * FROM familiar WHERE ci_estudiante = ? ORDER BY FIELD(f_clasificacion, 'primaria', 'secundaria', 'otros'), id ASC");
 $stmtFam->execute([$estudiante['ci']]);
 $familiares = $stmtFam->fetchAll(PDO::FETCH_ASSOC);
+
+// Mapeo estético de las clasificaciones para los subtítulos divisores
+$subtitulos_grupos = [
+    'primaria'   => ['titulo' => '👨‍👩‍👧‍👦 Familia Primaria', 'bg' => '#f0fff4', 'texto' => '#22543d', 'border' => '#48bb78'],
+    'secundaria' => ['titulo' => '🏡 Carga Secundaria', 'bg' => '#fffaf0', 'texto' => '#744210', 'border' => '#ed8936'],
+    'otros'      => ['titulo' => '🔗 Otros Parientes', 'bg' => '#f7fafc', 'texto' => '#2d3748', 'border' => '#a0aec0']
+];
 
 $tabla_familia = '<table style="width:100%; border-collapse: collapse; font-size:0.85rem; min-width: 600px;">
     <thead>
         <tr style="background:#f8f9fa; text-align:left; border-bottom: 2px solid #eee;">
-            <th style="padding:12px;">Nombre y Apellido</th>
-            <th style="padding:12px;">Parentesco</th>
-            <th style="padding:12px; text-align:center;">Edad</th>
-            <th style="padding:12px;">Instrucción</th>
-            <th style="padding:12px;">Ocupación</th>
-            <th style="padding:12px; text-align:right;">Ingresos</th>
+            <th style="padding:12px; width: 25%;">Nombre y Apellido</th>
+            <th style="padding:12px; width: 15%;">Parentesco</th>
+            <th style="padding:12px; text-align:center; width: 10%;">Edad</th>
+            <th style="padding:12px; width: 20%;">Instrucción</th>
+            <th style="padding:12px; width: 20%;">Ocupación</th>
+            <th style="padding:12px; text-align:right; width: 10%;">Ingresos</th>
         </tr>
     </thead>
     <tbody>';
@@ -59,7 +67,23 @@ $tabla_familia = '<table style="width:100%; border-collapse: collapse; font-size
 if (empty($familiares)) {
     $tabla_familia .= '<tr><td colspan="6" style="padding:20px; text-align:center; color:#999; font-style:italic;">No hay familiares registrados.</td></tr>';
 } else {
+    $ultimo_grupo = null;
+
     foreach ($familiares as $f) {
+        $grupo_actual = $f['f_clasificacion'] ?? 'otros'; 
+
+        // Si cambia el grupo o es el primero, renderizamos un separador visual descriptivo
+        if ($grupo_actual !== $ultimo_grupo) {
+            $conf = $subtitulos_grupos[$grupo_actual] ?? $subtitulos_grupos['otros'];
+            $tabla_familia .= "
+            <tr class='row-separador-grupo'>
+                <td colspan='6' style='background: {$conf['bg']}; color: {$conf['texto']}; padding: 10px 12px; font-weight: 700; font-size: 0.85rem; border-left: 5px solid {$conf['border']}; text-transform: uppercase; letter-spacing: 0.5px;'>
+                    {$conf['titulo']}
+                </td>
+            </tr>";
+            $ultimo_grupo = $grupo_actual;
+        }
+
         $ingreso = number_format($f['f_ing'] ?? 0, 2, ',', '.');
         $tabla_familia .= "
         <tr style='border-bottom:1px solid #f0f0f0;'>
@@ -94,20 +118,18 @@ $tabla_familia .= '</tbody></table>';
         border: 1px solid #f0f0f0; 
         display: flex; 
         flex-direction: column;
-        height: 100%; /* Obliga a todas a tener la misma altura */
+        height: 100%; 
     }
 
-    /* Contenedor de items: Se expande para llenar la tarjeta */
     .card-content { 
         flex-grow: 1; 
         display: flex; 
         flex-direction: column; 
-        justify-content: space-between; /* Distribuye los items equitativamente */
+        justify-content: space-between; 
     }
 
     .card-title { color: #FF6600; font-weight: 700; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #fff5f0; display: flex; align-items: center; gap: 8px; }
     
-    /* Cada item ahora tiene flex-grow para ayudar a la distribución */
     .data-item { 
         display: flex; 
         justify-content: space-between; 
@@ -115,23 +137,27 @@ $tabla_familia .= '</tbody></table>';
         padding: 10px 0; 
         border-bottom: 1px dashed #f5f5f5; 
         font-size: 0.9rem;
-        flex-grow: 1; /* Hace que cada fila aporte al llenado del espacio */
+        flex-grow: 1; 
     }
     
     .label { color: #888; font-weight: 500; }
     .value { color: #333; font-weight: 600; text-align: right; }
     
-    /* Footer: Se mantiene al fondo y se ajusta al contenido */
     .card-footer {
         margin-top: 15px;
         padding-top: 15px;
         border-top: 1px solid #f0f0f0;
     }
 
-    .address-box { background: #f9f9f9; padding: 10px; border-radius: 8px; border-left: 4px solid #FF6600; font-size: 0.8rem; color: #555; line-height: 1.3; }
+    .address-box { background: #f9f9f9; padding: 10px; border-radius: 8px; border-left: 4px solid #FF6600; font-size: 0.8rem; color: #555; line-height: 1.3; margin-bottom: 10px; }
+    .address-box.procedencia { border-left-color: #ed8936; background: #fffaf5; }
     .full-width { grid-column: 1 / -1; }
     .status-badge { background: #e8f5e9; color: #2e7d32; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; display: inline-block; margin-top: 10px; }
     
+    /* Pequeño retoque para que las filas divisoras del grupo no queden pegadas */
+    .row-separador-grupo td { font-family: inherit; }
+    .row-separador-grupo:not(:first-child) td { padding-top: 20px; }
+
     @media (max-width: 992px) { .profile-container { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .profile-container { grid-template-columns: 1fr; } }
 </style>
@@ -199,27 +225,31 @@ $tabla_familia .= '</tbody></table>';
             <div class="data-item" style="border:none;"><span class="label">Municipio:</span><span class="value"><?php echo normalizar($estudiante['municipio_res']); ?></span></div>
         </div>
         <div class="card-footer">
-            <span class="label" style="font-size:0.85rem;">Dirección Exacta:</span>
+            <span class="label" style="font-size:0.85rem; display:block; margin-bottom:4px;">Dirección Actual:</span>
             <div class="address-box">
                 <?php echo htmlspecialchars($estudiante['dir_local'] ?? 'Sin dirección registrada'); ?>
+            </div>
+            
+            <span class="label" style="font-size:0.85rem; display:block; margin-bottom:4px;">Dirección de Procedencia:</span>
+            <div class="address-box procedencia">
+                <?php echo htmlspecialchars($estudiante['dir_procedencia'] ?? 'Misma que la dirección actual / No especificada'); ?>
             </div>
         </div>
     </div>
 </div>
 
 <div>
-    <div class="glass-card full-width" style="margin-top: 50px;">
-        <div class="card-title"><span>👨‍👩‍👧‍👦</span> Grupo Familiar:</div>
+    <div class="glass-card full-width" style="margin-top: 30px;">
+        <div class="card-title"><span>👨‍👩‍👧‍👦</span> Grupo Familiar Integrado:</div>
         <div style="overflow-x: auto;">
             <?php echo $tabla_familia; ?> 
         </div>
     </div>
 
-    <div class="glass-card full-width" style="margin-top: 10px;">
+    <div class="glass-card full-width" style="margin-top: 20px;">
         <div class="card-title"><span>📝</span> Observaciones del Sistema:</div>
         <div style="background: #fffcf5; padding: 15px; border-radius: 12px; border: 1px solid #ffeeba; color: #856404; font-size: 0.9rem; line-height: 1.5;">
             <?php 
-                // Priorizamos el alias nota_estudiante, luego el campo normal, luego vacío
                 $obs = $estudiante['nota_estudiante'] ?? $estudiante['observaciones'] ?? ''; 
                 
                 if (!empty($obs) && $obs !== 'Sin observaciones adicionales.') {
