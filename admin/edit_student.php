@@ -45,22 +45,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
             $ira, $ci
         ]);
         
-        // 3. Actualización de Residencia
+        // 3. Actualización de Residencia (Se añade dir_procedencia)
         $pdo->prepare('UPDATE residencia SET 
-            t_res=?, t_viv=?, t_loc=?, r_prop=?, estado_res=?, municipio_res=?, dir_local=?, tel_local=? 
+            t_res=?, t_viv=?, t_loc=?, r_prop=?, estado_res=?, municipio_res=?, dir_local=?, dir_procedencia=?, tel_local=? 
             WHERE ci_estudiante=?')
             ->execute([
                 $_POST['t_res'], $_POST['t_viv'], $_POST['t_loc'], $_POST['r_prop'], 
-                $_POST['estado_res'], $_POST['municipio_res'], $_POST['direccion_res'], $_POST['telefono_res'], $ci
+                $_POST['estado_res'], $_POST['municipio_res'], $_POST['direccion_res'], 
+                $_POST['dir_procedencia'] ?? null, $_POST['telefono_res'], $ci
             ]);
         
-        // 4. Familiares (Corrección error 1364: Insertamos ID manual)
+        // 4. Familiares (Corrección error 1364 + Clasificación Inteligente Automática)
         $pdo->prepare('DELETE FROM familiar WHERE ci_estudiante = ?')->execute([$ci]);
         if (!empty($_POST['f_nom'])) {
-            $stmt_fam = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing) VALUES (?,?,?,?,?,?,?,?,?)');
+            $stmt_fam = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?,?,?,?,?,?,?,?,?,?)');
             foreach ($_POST['f_nom'] as $k => $nom) {
                 if (!empty(trim($nom))) {
                     $id_fam = generarIdManual();
+                    
+                    // Deducción automática de la clasificación según el parentesco (f_par)
+                    $parentesco = mb_strtolower(trim($_POST['f_par'][$k] ?? ''), 'UTF-8');
+                    if (in_array($parentesco, ['madre', 'padre', 'mamá', 'papá', 'hermano', 'hermana', 'hijo', 'hija'])) {
+                        $clasificacion = 'primaria';
+                    } elseif (in_array($parentesco, ['abuelo', 'abuela', 'tío', 'tía', 'primo', 'prima', 'sobrino', 'sobrina'])) {
+                        $clasificacion = 'secundaria';
+                    } else {
+                        $clasificacion = 'otros';
+                    }
+
                     $stmt_fam->execute([
                         $id_fam,
                         $ci, 
@@ -70,7 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
                         (int)($_POST['f_eda'][$k] ?? 0), 
                         $_POST['f_ins'][$k] ?? '', 
                         $_POST['f_ocu'][$k] ?? '', 
-                        (float)($_POST['f_ing'][$k] ?? 0)
+                        (float)($_POST['f_ing'][$k] ?? 0),
+                        $clasificacion // Nueva columna guardada con éxito
                     ]);
                 }
             }
@@ -94,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
         // 6. Registro en Bitácora (Omitimos 'id' para que TiDB use AUTO_RANDOM)
         $admin_id = $_SESSION['user_id'] ?? null; 
         if ($admin_id) {
-            $detalles = "Se editó el expediente del estudiante C.I. $ci. Se actualizaron datos personales, familiares y observaciones.";
+            $detalles = "Se editó el expediente del estudiante C.I. $ci. Se actualizaron datos personales, familiares (con clasificación) y dirección de procedencia.";
             $stmt_bit = $pdo->prepare('INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)');
             $stmt_bit->execute([$admin_id, 'Actualización de Expediente', 'Múltiples Tablas', $detalles]);
         }
@@ -110,8 +123,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
 }
 
 // --- CARGA DE DATOS PARA EL FORMULARIO ---
-// Leemos ira_anterior directamente de 'estudiante'
-$stmt = $pdo->prepare('SELECT e.*, r.t_res, r.t_viv, r.t_loc, r.r_prop, r.estado_res, r.municipio_res, r.dir_local, r.tel_local 
+// Se añade r.dir_procedencia a la consulta de selección inicial
+$stmt = $pdo->prepare('SELECT e.*, r.t_res, r.t_viv, r.t_loc, r.r_prop, r.estado_res, r.municipio_res, r.dir_local, r.dir_procedencia, r.tel_local 
                        FROM estudiante e 
                        LEFT JOIN residencia r ON e.ci = r.ci_estudiante 
                        WHERE e.ci = ?');
@@ -343,6 +356,11 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
             <div style="grid-column: span 2;">
                 <label>Dirección Local Exacta</label>
                 <input type="text" name="direccion_res" value="<?php echo htmlspecialchars($std['dir_local']); ?>" required>
+            </div>
+
+            <div style="grid-column: span 2;">
+                <label>Dirección de Procedencia</label>
+                <input type="text" name="dir_procedencia" value="<?php echo htmlspecialchars($std['dir_procedencia'] ?? ''); ?>" placeholder="Ej: Calle Principal Sector Centro, Coro, Falcón">
             </div>
 
             <div class="seccion-titulo">🎓 Información Académica</div>

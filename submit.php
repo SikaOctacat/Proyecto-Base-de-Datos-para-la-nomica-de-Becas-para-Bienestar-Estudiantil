@@ -114,13 +114,14 @@ try {
         $tel_local
     ]);
 
-    // --- D. FAMILIARES (CON ATRIBUTO DE CLASIFICACIÓN DINÁMICA) ---
+    // --- D. FAMILIARES (CON ATRIBUTO DE CLASIFICACIÓN DINÁMICA CORREGIDO) ---
     $pdo->prepare("DELETE FROM familiar WHERE ci_estudiante = ?")->execute([$estudiante_ci]);
     
     $estructuraTable = $data['estructura_tabla'] ?? null;
 
     if (!empty($estructuraTable) && is_array($estructuraTable)) {
-        $grupoClasificacionActual = null;
+        // Inicializamos en 'otros' por prevención si hay filas antes del primer separador
+        $grupoClasificacionActual = 'otros'; 
 
         foreach ($estructuraTable as $item) {
             $partes = explode(':', $item);
@@ -129,15 +130,14 @@ try {
             list($tipo, $identificador) = $partes;
 
             if ($tipo === 'separador') {
-                // Cambia el estado del grupo actual al encontrar un separador (primaria, secundaria, otros)
-                $grupoClasificacionActual = $identificador; 
+                // Captura: primaria, secundaria o otros
+                $grupoClasificacionActual = !empty($identificador) ? $identificador : 'otros'; 
             } 
             elseif ($tipo === 'fila') {
                 $id = $identificador;
                 $nombreFamiliar = $data['f_nom_' . $id] ?? null;
 
                 if (!empty($nombreFamiliar)) {
-                    // Se agrega la columna f_clasificacion al INSERT
                     $stmt = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                     $stmt->execute([
                         generarIdManual(), 
@@ -149,17 +149,28 @@ try {
                         $data['f_ins_' . $id] ?? null, 
                         $data['f_ocu_' . $id] ?? null, 
                         (float)($data['f_ing_' . $id] ?? 0.00),
-                        $grupoClasificacionActual // Guarda la clasificación correspondiente
+                        $grupoClasificacionActual // Guarda de forma segura la clasificación actual
                     ]);
                 }
             }
         }
     } else {
-        // Fallback preventivo por si no viene el mapa estructurado
+        // Fallback preventivo: Si no viene el mapa estructurado, deduce inteligentemente en vez de clavar NULL
         foreach ($data as $key => $val) {
             if (strpos($key, 'f_nom_') === 0 && !empty($val)) {
                 $suffix = substr($key, 6);
-                $stmt = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)');
+                $parentesco = strtolower(trim($data['f_par_'.$suffix] ?? ''));
+                
+                // Deducción básica basada en palabras clave comunes
+                if (in_array($parentesco, ['madre', 'padre', 'mamá', 'papá', 'hermano', 'hermana', 'hijo', 'hija'])) {
+                    $clasificacionDeducida = 'primaria';
+                } elseif (in_array($parentesco, ['abuelo', 'abuela', 'tío', 'tía', 'primo', 'prima', 'sobrino', 'sobrina'])) {
+                    $clasificacionDeducida = 'secundaria';
+                } else {
+                    $clasificacionDeducida = 'otros';
+                }
+
+                $stmt = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                 $stmt->execute([
                     generarIdManual(), 
                     $estudiante_ci, 
@@ -169,7 +180,8 @@ try {
                     (int)($data['f_eda_'.$suffix] ?? 0), 
                     $data['f_ins_'.$suffix] ?? null, 
                     $data['f_ocu_'.$suffix] ?? null, 
-                    (float)($data['f_ing_'.$suffix] ?? 0.00)
+                    (float)($data['f_ing_'.$suffix] ?? 0.00),
+                    $clasificacionDeducida // Inserción segura de clasificación deducida
                 ]);
             }
         }
