@@ -590,8 +590,8 @@ if (isset($_GET['edit_user'])) {
                     <p><strong>Tipo:</strong> <?php echo ucfirst($details['residencia']['t_viv'] ?? 'N/P'); ?></p>
                     <p><strong>Ubicación:</strong> <?php echo ucfirst($details['residencia']['t_loc'] ?? 'N/P'); ?></p>
                     <p><strong>Municipio:</strong> <?php echo htmlspecialchars($details['municipio_res'] ?? ''); ?></p>
-                    <p><strong>Dirección de Procedencia (Liceo):</strong> <?php echo htmlspecialchars($details['dir_procedencia'] ?? 'No especificada'); ?></p>
-                    <p><strong>Dirección:</strong> <?php echo $details['residencia']['dir_local'] ?? 'N/P'; ?></p>
+                    <p><strong>Dirección de Procedencia:</strong> <?php echo htmlspecialchars($details['residencia']['dir_procedencia'] ?? 'No especificada'); ?></p>
+                    <p><strong>Dirección local:</strong> <?php echo $details['residencia']['dir_local'] ?? 'N/P'; ?></p>
                 </div>
             </div>
 
