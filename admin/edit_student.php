@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * LÓGICA DE CARGA FAMILIAR INTERACTIVA (Idéntica a la vista pública)
+ * LÓGICA DE CARGA FAMILIAR INTERACTIVA (Con Drag & Drop nativo integrado)
  */
 function initFamiliaresAdmin() {
     const cuerpoTabla = document.getElementById('cuerpo-tabla');
@@ -653,6 +653,77 @@ function initFamiliaresAdmin() {
         actualizarOpcionesDropdown();
     }
 
+    /**
+     * ASIGNACIÓN DE MANEJADORES DRAG & DROP NATIVOS
+     */
+    let filaArrastrada = null;
+
+    function hacerElementoArrastrable(tr) {
+        tr.setAttribute('draggable', 'true');
+        tr.style.cursor = 'move';
+
+        tr.addEventListener('dragstart', (e) => {
+            if (checkNoFamiliares.checked) {
+                e.preventDefault();
+                return;
+            }
+            filaArrastrada = tr;
+            tr.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        tr.addEventListener('dragend', () => {
+            filaArrastrada = null;
+            tr.style.opacity = '1';
+            // Remover estilos temporales de feedback visual a todas las filas
+            Array.from(cuerpoTabla.children).forEach(el => {
+                el.style.borderTop = '';
+                el.style.borderBottom = '';
+            });
+        });
+
+        tr.addEventListener('dragover', (e) => {
+            if (!filaArrastrada || filaArrastrada === tr) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            const rect = tr.getBoundingClientRect();
+            const relacionAltura = (e.clientY - rect.top) / rect.height;
+
+            // Feedback visual sutil indicando inserción superior o inferior
+            if (relacionAltura < 0.5) {
+                tr.style.borderTop = '2px dashed #FF6600';
+                tr.style.borderBottom = '';
+            } else {
+                tr.style.borderBottom = '2px dashed #FF6600';
+                tr.style.borderTop = '';
+            }
+        });
+
+        tr.addEventListener('dragleave', () => {
+            tr.style.borderTop = '';
+            tr.style.borderBottom = '';
+        });
+
+        tr.addEventListener('drop', (e) => {
+            if (!filaArrastrada || filaArrastrada === tr) return;
+            e.preventDefault();
+
+            const rect = tr.getBoundingClientRect();
+            const relacionAltura = (e.clientY - rect.top) / rect.height;
+
+            if (relacionAltura < 0.5) {
+                cuerpoTabla.insertBefore(filaArrastrada, tr);
+            } else {
+                cuerpoTabla.insertBefore(filaArrastrada, tr.nextSibling);
+            }
+
+            tr.style.borderTop = '';
+            tr.style.borderBottom = '';
+            actualizarPertenenciaVisual();
+        });
+    }
+
     // Inyección de una nueva Fila de Datos
     function crearFilaHTML(id) {
         const tr = document.createElement('tr');
@@ -670,6 +741,7 @@ function initFamiliaresAdmin() {
             <td style="text-align:center;"><button type="button" class="btn-remove" style="background:none; border:none; cursor:pointer;">❌</button></td>
         `;
         cuerpoTabla.appendChild(tr);
+        hacerElementoArrastrable(tr); // Habilitar arrastre al crear dinámicamente
         return tr;
     }
 
@@ -690,6 +762,7 @@ function initFamiliaresAdmin() {
                 <td style="text-align:center;"><button type="button" class="btn-remove-separador" data-valor="${valor}" style="background:none; border:none; cursor:pointer;">❌</button></td>
             `;
             cuerpoTabla.appendChild(trSep);
+            hacerElementoArrastrable(trSep); // Habilitar arrastre en separadores
             crearFilaHTML(Date.now());
             actualizarPertenenciaVisual();
         };
@@ -732,6 +805,16 @@ function initFamiliaresAdmin() {
         btnAgregar.disabled = inactivo;
         btnDropdown.disabled = inactivo;
 
+        Array.from(cuerpoTabla.children).forEach(tr => {
+            if (inactivo) {
+                tr.removeAttribute('draggable');
+                tr.style.cursor = 'default';
+            } else {
+                tr.setAttribute('draggable', 'true');
+                tr.style.cursor = 'move';
+            }
+        });
+
         if (inactivo) {
             cuerpoTabla.style.opacity = '0.5';
             avisoEstado.textContent = '🚫 Carga familiar omitida (El estudiante vive solo / Sin familiares registrados).';
@@ -747,13 +830,19 @@ function initFamiliaresAdmin() {
 
     checkNoFamiliares.addEventListener('change', gestionarEstadoNoFamiliares);
 
+    // Inicializar elementos preexistentes renderizados por PHP en la carga inicial
+    Array.from(cuerpoTabla.children).forEach(tr => {
+        if (tr.classList.contains('fila-datos') || tr.classList.contains('fila-separador')) {
+            hacerElementoArrastrable(tr);
+        }
+    });
+
     // Carga de datos iniciales provenientes de Base de Datos
     if (window.familiaresExistentes && window.familiaresExistentes.length > 0) {
         checkNoFamiliares.checked = false;
         actualizarPertenenciaVisual();
         gestionarEstadoNoFamiliares();
     } else {
-        // Si la base de datos está vacía, marcamos el check como "vive solo" automáticamente para no forzar inputs vacíos
         checkNoFamiliares.checked = true;
         gestionarEstadoNoFamiliares();
     }
@@ -774,7 +863,7 @@ async function initAcademicoEdicion() {
             const carreras = await response.json();
             
             carreraSelect.innerHTML = '<option value="" disabled>Seleccione PNF</option>';
-            carreras.forEach(c => {
+            crawlers = carreras.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id; 
                 opt.textContent = c.nombre;
@@ -902,7 +991,6 @@ function initSeguridadEventos() {
     }
 }
 
-// Alternar visualización de contraseñas con cambio dinámico de icono FontAwesome
 function togglePassword(idInput, btn) {
     const input = document.getElementById(idInput);
     const icon = btn.querySelector('i');
