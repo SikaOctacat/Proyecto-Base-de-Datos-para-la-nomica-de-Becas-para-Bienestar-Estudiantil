@@ -55,36 +55,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_all'])) {
                 $_POST['dir_procedencia'] ?? null, $_POST['telefono_res'], $ci
             ]);
         
-        // 4. Familiares (Corrección error 1364 + Clasificación Inteligente Automática)
+        // 4. Familiares (Estructura Dinámica idéntica a la vista del Estudiante)
         $pdo->prepare('DELETE FROM familiar WHERE ci_estudiante = ?')->execute([$ci]);
-        if (!empty($_POST['f_nom'])) {
-            $stmt_fam = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?,?,?,?,?,?,?,?,?,?)');
-            foreach ($_POST['f_nom'] as $k => $nom) {
-                if (!empty(trim($nom))) {
-                    $id_fam = generarIdManual();
-                    
-                    // Deducción automática de la clasificación según el parentesco (f_par)
-                    $parentesco = mb_strtolower(trim($_POST['f_par'][$k] ?? ''), 'UTF-8');
-                    if (in_array($parentesco, ['madre', 'padre', 'mamá', 'papá', 'hermano', 'hermana', 'hijo', 'hija'])) {
-                        $clasificacion = 'primaria';
-                    } elseif (in_array($parentesco, ['abuelo', 'abuela', 'tío', 'tía', 'primo', 'prima', 'sobrino', 'sobrina'])) {
-                        $clasificacion = 'secundaria';
-                    } else {
-                        $clasificacion = 'otros';
-                    }
+        
+        $estructuraTable = $_POST['estructura_tabla'] ?? null;
 
-                    $stmt_fam->execute([
-                        $id_fam,
-                        $ci, 
-                        $nom, 
-                        $_POST['f_ape'][$k] ?? '', 
-                        $_POST['f_par'][$k] ?? '', 
-                        (int)($_POST['f_eda'][$k] ?? 0), 
-                        $_POST['f_ins'][$k] ?? '', 
-                        $_POST['f_ocu'][$k] ?? '', 
-                        (float)($_POST['f_ing'][$k] ?? 0),
-                        $clasificacion // Nueva columna guardada con éxito
-                    ]);
+        if (!empty($estructuraTable) && is_array($estructuraTable)) {
+            $grupoClasificacionActual = 'otros'; // Por defecto
+
+            $stmt_fam = $pdo->prepare('INSERT INTO familiar (id, ci_estudiante, f_nom, f_ape, f_par, f_eda, f_ins, f_ocu, f_ing, f_clasificacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+
+            foreach ($estructuraTable as $item) {
+                $partes = explode(':', $item);
+                if (count($partes) !== 2) continue;
+
+                list($tipo, $identificador) = $partes;
+
+                if ($tipo === 'separador') {
+                    $grupoClasificacionActual = $identificador; 
+                } 
+                elseif ($tipo === 'fila') {
+                    $id = $identificador;
+                    $nombreFamiliar = $_POST['f_nom_' . $id] ?? null;
+
+                    if (!empty(trim($nombreFamiliar))) {
+                        $stmt_fam->execute([
+                            generarIdManual(), 
+                            $ci, 
+                            trim($nombreFamiliar), 
+                            $_POST['f_ape_' . $id] ?? '', 
+                            $_POST['f_par_' . $id] ?? '', 
+                            (int)($_POST['f_eda_' . $id] ?? 0), 
+                            $_POST['f_ins_' . $id] ?? '', 
+                            $_POST['f_ocu_' . $id] ?? '', 
+                            (float)($_POST['f_ing_' . $id] ?? 0.00),
+                            $grupoClasificacionActual
+                        ]);
+                    }
                 }
             }
         }
@@ -412,29 +419,111 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 
             
             <div class="seccion-titulo">
-                    <span>👨‍👩‍👧‍👦 Carga Familiar</span>
-                    <div id="aviso-estado" style="margin: 10px 0; font-weight: bold; font-size: 0.9rem;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-size: 1.1rem; font-weight: bold; color: #2d3748;">👨‍👩‍👧‍👦 Carga Familiar</span>
+                    
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="position: relative; display: inline-block;">
+                            <button type="button" id="btn-dropdown-grupo" class="btn" style="background: #edf2f7; color: #2d3748; font-weight: 600; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; cursor: pointer;">
+                                ➕ Agregar Clasificación ▾
+                            </button>
+                            <div id="menu-dropdown-grupo" style="display: none; position: absolute; right: 0; top: 110%; background: white; min-width: 200px; border: 1px solid #cbd5e0; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; padding: 6px 0;">
+                                <a href="#" data-valor="primaria" style="display: block; padding: 10px 14px; color: #2d3748; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 4px solid #48bb78;">👨‍👩‍👧‍👦 Familia Primaria</a>
+                                <a href="#" data-valor="secundaria" style="display: block; padding: 10px 14px; color: #2d3748; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 4px solid #ed8936;">🏡 Carga Secundaria</a>
+                                <a href="#" data-valor="otros" style="display: block; padding: 10px 14px; color: #2d3748; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-left: 4px solid #a0aec0;">🔗 Otros Parientes</a>
+                            </div>
+                        </div>
 
-                    <div class="table-responsive" style="border: 1px solid #ddd; border-radius: 8px; background: white; padding: 5px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #f8f9fa;">
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;">Nombre</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;">Apellido</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;">Vínculo</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;">Edad</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;">Instrucción</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;">Ocupación</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;">Ingreso</th>
-                                <th style="padding: 10px; border-bottom: 2px solid #FF6600;"></th> </tr>
-                        </thead>
-                        <tbody id="cuerpo-tabla"></tbody>
-                    </table>
+                        <button type="button" id="btn-agregar" class="btn" style="background: var(--primary, #FF6600); color: white; padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer;">➕ Añadir Familiar</button>
+                    </div>
                 </div>
 
-                <label style="font-size: 0.8rem; color: #666; cursor: pointer;">
-                    <input type="checkbox" id="no-familiares" style="margin-top: 15px;"> No tengo familiares
-                </label>
+                <div style="background: rgba(255,102,0,0.03); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #FF6600;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #444;">
+                        <input type="checkbox" id="no-familiares" name="no_familiares" style="width: 18px; height: 18px;">
+                        <span>El estudiante no convive con familiares / Vive solo</span>
+                    </label>
+                </div>
+
+                <div id="aviso-estado" style="margin-bottom: 10px; font-weight: 600; font-size: 0.85rem;"></div>
+
+                <div class="table-responsive" style="border: 1px solid #ddd; border-radius: 8px; background: white; padding: 5px; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Nombre</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Apellido</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Vínculo</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem; width: 80px;">Edad</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Instrucción</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem;">Ocupación</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; text-align: left; font-size:0.9rem; width: 120px;">Ingreso</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #FF6600; width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpo-tabla">
+                            <?php 
+                            if (!empty($lista_familiares)) {
+                                // Ordenar de forma que respete la prioridad posicional visual
+                                usort($lista_familiares, function($a, $b) {
+                                    $p = ['primaria' => 1, 'secundaria' => 2, 'otros' => 3];
+                                    return ($p[$a['f_clasificacion']??'otros']??3) <=> ($p[$b['f_clasificacion']??'otros']??3);
+                                });
+
+                                $grupo_actual = null;
+                                $titulos = ['primaria' => '👨‍👩‍👧‍👦 Familia Primaria', 'secundaria' => '🏡 Carga Secundaria', 'otros' => '🔗 Otros Parientes'];
+                                $colores = [
+                                    'primaria' => ['bg'=>'#c6f6d5','txt'=>'#22543d','fila'=>'#f0fff4'],
+                                    'secundaria' => ['bg'=>'#feebc8','txt'=>'#744210','fila'=>'#fffaf0'],
+                                    'otros' => ['bg'=>'#edf2f7','txt'=>'#2d3748','fila'=>'#f7fafc']
+                                ];
+
+                                foreach ($lista_familiares as $k => $f) {
+                                    $clasif = !empty($f['f_clasificacion']) ? $f['f_clasificacion'] : 'otros';
+                                    
+                                    if ($grupo_actual !== $clasif) {
+                                        $grupo_actual = $clasif;
+                                        echo "<tr class='fila-separador' data-grupo='{$grupo_actual}' style='background:{$colores[$grupo_actual]['bg']}; color:{$colores[$grupo_actual]['txt']}; font-weight:bold;'>";
+                                        echo "  <td colspan='7' style='padding:10px 12px;'>{$titulos[$grupo_actual]}<input type='hidden' name='estructura_tabla[]' value='separador:{$grupo_actual}'></td>";
+                                        echo "  <td style='text-align:center;'><button type='button' class='btn-remove-separador' data-valor='{$grupo_actual}' style='background:none; border:none; cursor:pointer;'>❌</button></td>";
+                                        echo "</tr>";
+                                    }
+
+                                    $id_f = $f['id'] ?? $k;
+                                    ?>
+                                    <tr class="fila-datos" data-id="<?php echo $id_f; ?>" style="background: <?php echo $colores[$grupo_actual]['fila']; ?>;">
+                                        <input type="hidden" name="estructura_tabla[]" value="fila:<?php echo $id_f; ?>">
+                                        <td><input type="text" name="f_nom_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_nom']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_ape_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ape']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_par_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_par']); ?>" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="number" name="f_eda_<?php echo $id_f; ?>" value="<?php echo $f['f_eda']; ?>" min="0" max="120" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_ins_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ins']); ?>" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="text" name="f_ocu_<?php echo $id_f; ?>" value="<?php echo htmlspecialchars($f['f_ocu']); ?>" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td><input type="number" name="f_ing_<?php echo $id_f; ?>" value="<?php echo $f['f_ing']; ?>" step="0.01" min="0" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                        <td style="text-align:center;"><button type="button" class="btn-remove" style="background:none; border:none; cursor:pointer;">❌</button></td>
+                                    </tr>
+                                    <?php
+                                }
+                            } else { ?>
+                                <tr class="fila-separador" data-grupo="primaria" style="background: #c6f6d5; color: #22543d; font-weight: bold;">
+                                    <td colspan="7" style="padding: 10px 12px;">👨‍👩‍👧‍👦 Familia Primaria<input type="hidden" name="estructura_tabla[]" value="separador:primaria"></td>
+                                    <td style="text-align:center;"><button type="button" class="btn-remove-separador" data-valor="primaria" style="background:none; border:none; cursor:pointer;">❌</button></td>
+                                </tr>
+                                <tr class="fila-datos" data-id="101" style="background: #f0fff4;">
+                                    <input type="hidden" name="estructura_tabla[]" value="fila:101">
+                                    <td><input type="text" name="f_nom_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                    <td><input type="text" name="f_ape_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                    <td><input type="text" name="f_par_101" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                    <td><input type="number" name="f_eda_101" min="0" max="120" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                    <td><input type="text" name="f_ins_101" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                    <td><input type="text" name="f_ocu_101" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                    <td><input type="number" name="f_ing_101" step="0.01" min="0" value="0.00" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+                                    <td style="text-align:center;"><button type="button" class="btn-remove" style="background:none; border:none; cursor:pointer;">❌</button></td>
+                                </tr>
+                            <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
                 <div style="margin-top: 15px;">
                     <button type="button" id="btn-agregar" class="btn" style="background: #00dc0b; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold;">
                         + Añadir Familiar
@@ -486,135 +575,251 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 </div>
 
 <script>
-
 window.formDataStorage = {};
-
 window.familiaresExistentes = <?php echo json_encode($lista_familiares ?: []); ?>;
-
-// Declaramos la variable de la tabla en el scope global para acceder a ella
-let tablaFamiliares;
+const carreraGuardada = "<?php echo $std['carrera'] ?? ''; ?>";
+const currentEstado = "<?php echo $std['estado_res'] ?? ''; ?>";
+const currentMunicipio = "<?php echo $std['municipio_res'] ?? ''; ?>";
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 2. Instancia ÚNICA de la tabla
-    tablaFamiliares = new TablaDinamica({
-        cuerpoId: 'cuerpo-tabla',
-        btnAgregarId: 'btn-agregar',
-        checkOmitirId: 'no-familiares',
-        contenedorClass: '.table-responsive',
-        avisoId: 'aviso-estado',
-        prefijoKey: 'f',
-        maxFilas: 5,
-        columnas: [
-            { name: 'nom', placeholder: 'Nombre' },
-            { name: 'ape', placeholder: 'Apellido' },
-            { name: 'par', placeholder: 'Vínculo' },
-            { name: 'eda', placeholder: '0', type: 'number', style: 'width:60px' },
-            { name: 'ins', placeholder: 'Nivel educativo' },
-            { name: 'ocu', placeholder: 'Trabajo' },
-            { name: 'ing', placeholder: '0.00', type: 'number', step: '0.01', style: 'width:90px' }
-        ]
-    });
-
-    // 3. CARGA DE DATOS REALES (Inyección de BD a la Tabla)
-    if (window.familiaresExistentes && window.familiaresExistentes.length > 0) {
-        // Limpiamos la fila vacía que la tabla crea por defecto al iniciar
-        const cuerpo = document.getElementById('cuerpo-tabla');
-        cuerpo.innerHTML = "";
-
-        window.familiaresExistentes.forEach(fam => {
-            // Usamos un método para agregar fila con datos pre-cargados
-            // Si tu clase no tiene "agregarFila", usamos "crearFila" y luego asignamos valores
-            const idUnico = Date.now() + Math.random();
-            tablaFamiliares.crearFila(idUnico);
-            
-            // Buscamos la última fila insertada para llenarla
-            const filas = cuerpo.querySelectorAll('tr');
-            const ultimaFila = filas[filas.length - 1];
-            
-            // Llenamos los inputs de esa fila
-            const inputs = ultimaFila.querySelectorAll('input');
-            inputs[0].value = fam.f_nom || "";
-            inputs[1].value = fam.f_ape || "";
-            inputs[2].value = fam.f_par || "";
-            inputs[3].value = fam.f_eda || 0;
-            inputs[4].value = fam.f_ins || "";
-            inputs[5].value = fam.f_ocu || "";
-            inputs[6].value = fam.f_ing || 0.00;
-        });
-        
-        tablaFamiliares.actualizar();
-    } else {
-        // Si no hay datos, mostramos el checkbox de "No tengo familiares" desactivado
-        // o dejamos la fila vacía inicial.
-    }
+    // Inicialización de módulos del Administrador
+    initFamiliaresAdmin();
+    initAcademicoEdicion();
+    initResidencia();
+    initSeguridadEventos();
 });
 
-const carreraGuardada = "<?php echo $std['carrera']; ?>";
+/**
+ * LÓGICA DE CARGA FAMILIAR INTERACTIVA (Idéntica a la vista pública)
+ */
+function initFamiliaresAdmin() {
+    const cuerpoTabla = document.getElementById('cuerpo-tabla');
+    const btnAgregar = document.getElementById('btn-agregar');
+    const avisoEstado = document.getElementById('aviso-estado');
+    const checkNoFamiliares = document.getElementById('no-familiares');
+    const btnDropdown = document.getElementById('btn-dropdown-grupo');
+    const menuDropdown = document.getElementById('menu-dropdown-grupo');
 
+    if (!cuerpoTabla || !btnAgregar || !checkNoFamiliares || !btnDropdown || !menuDropdown) return;
+
+    const coloresConfig = {
+        'primaria': { separador: '#c6f6d5', texto: '#22543d', filas: '#f0fff4' },
+        'secundaria': { separador: '#feebc8', texto: '#744210', filas: '#fffaf0' },
+        'otros': { separador: '#edf2f7', texto: '#2d3748', filas: '#f7fafc' }
+    };
+
+    const titulosConfig = {
+        'primaria': '👨‍👩‍👧‍👦 Familia Primaria',
+        'secundaria': '🏡 Carga Secundaria',
+        'otros': '🔗 Otros Parientes'
+    };
+
+    // Control de visibilidad del Dropdown de Clasificaciones
+    btnDropdown.onclick = (e) => {
+        e.stopPropagation();
+        menuDropdown.style.display = menuDropdown.style.display === 'block' ? 'none' : 'block';
+    };
+
+    document.addEventListener('click', () => { menuDropdown.style.display = 'none'; });
+
+    // Deshabilita del menú contextual las clasificaciones ya impresas
+    function actualizarOpcionesDropdown() {
+        const existentes = Array.from(cuerpoTabla.querySelectorAll('.fila-separador')).map(tr => tr.getAttribute('data-grupo'));
+        menuDropdown.querySelectorAll('a').forEach(enlace => {
+            const valor = enlace.getAttribute('data-valor');
+            if (existentes.includes(valor)) {
+                enlace.style.pointerEvents = 'none';
+                enlace.style.opacity = '0.4';
+                enlace.classList.add('disabled');
+            } else {
+                enlace.style.pointerEvents = 'auto';
+                enlace.style.opacity = '1';
+                enlace.classList.remove('disabled');
+            }
+        });
+    }
+
+    // Pinta las filas de datos con el color del grupo correspondiente según herencia posicional
+    function actualizarPertenenciaVisual() {
+        let grupoActive = 'primaria';
+        Array.from(cuerpoTabla.children).forEach(tr => {
+            if (tr.classList.contains('fila-separador')) {
+                grupoActive = tr.getAttribute('data-grupo');
+            } else if (tr.classList.contains('fila-datos')) {
+                tr.style.backgroundColor = coloresConfig[grupoActive] ? coloresConfig[grupoActive].filas : '#ffffff';
+            }
+        });
+        actualizarOpcionesDropdown();
+    }
+
+    // Inyección de una nueva Fila de Datos
+    function crearFilaHTML(id) {
+        const tr = document.createElement('tr');
+        tr.className = 'fila-datos';
+        tr.setAttribute('data-id', id);
+        tr.innerHTML = `
+            <input type="hidden" name="estructura_tabla[]" value="fila:${id}">
+            <td><input type="text" name="f_nom_${id}" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+            <td><input type="text" name="f_ape_${id}" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+            <td><input type="text" name="f_par_${id}" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+            <td><input type="number" name="f_eda_${id}" min="0" max="120" required style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+            <td><input type="text" name="f_ins_${id}" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+            <td><input type="text" name="f_ocu_${id}" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+            <td><input type="number" name="f_ing_${id}" step="0.01" min="0" value="0.00" style="width:100%; padding:5px; border:1px solid #ccc; border-radius:4px;"></td>
+            <td style="text-align:center;"><button type="button" class="btn-remove" style="background:none; border:none; cursor:pointer;">❌</button></td>
+        `;
+        cuerpoTabla.appendChild(tr);
+        return tr;
+    }
+
+    // Evento de inserción manual de clasificaciones
+    menuDropdown.querySelectorAll('a').forEach(enlace => {
+        enlace.onclick = (e) => {
+            e.preventDefault();
+            const valor = e.target.closest('a').getAttribute('data-valor');
+            
+            const trSep = document.createElement('tr');
+            trSep.className = 'fila-separador';
+            trSep.setAttribute('data-grupo', valor);
+            trSep.style.backgroundColor = coloresConfig[valor].separador;
+            trSep.style.color = coloresConfig[valor].texto;
+            trSep.style.fontWeight = 'bold';
+            trSep.innerHTML = `
+                <td colspan="7" style="padding: 10px 12px;">${titulosConfig[valor]}<input type="hidden" name="estructura_tabla[]" value="separador:${valor}"></td>
+                <td style="text-align:center;"><button type="button" class="btn-remove-separador" data-valor="${valor}" style="background:none; border:none; cursor:pointer;">❌</button></td>
+            `;
+            cuerpoTabla.appendChild(trSep);
+            crearFilaHTML(Date.now());
+            actualizarPertenenciaVisual();
+        };
+    });
+
+    btnAgregar.onclick = (e) => {
+        e.preventDefault();
+        crearFilaHTML(Date.now());
+        actualizarPertenenciaVisual();
+    };
+
+    // Delegación de eventos para Remover filas y separadores
+    cuerpoTabla.onclick = (e) => {
+        const btnRemove = e.target.closest('.btn-remove');
+        if (btnRemove) {
+            if (cuerpoTabla.querySelectorAll('.fila-datos').length > 1) {
+                if (confirm('¿Desea remover este familiar de la lista?')) {
+                    btnRemove.closest('tr').remove();
+                    actualizarPertenenciaVisual();
+                }
+            } else {
+                alert('⚠️ Debe haber al menos un familiar en tabla, o marcar la opción de que el estudiante vive solo.');
+            }
+            return;
+        }
+
+        const btnRemoveSep = e.target.closest('.btn-remove-separador');
+        if (btnRemoveSep) {
+            if (confirm('¿Remover este grupo clasificado por completo?')) {
+                btnRemoveSep.closest('tr').remove();
+                actualizarPertenenciaVisual();
+            }
+        }
+    };
+
+    // Comportamiento del interruptor "El estudiante vive solo"
+    function gestionarEstadoNoFamiliares() {
+        const inactivo = checkNoFamiliares.checked;
+        cuerpoTabla.querySelectorAll('input, button').forEach(el => { el.disabled = inactivo; });
+        btnAgregar.disabled = inactivo;
+        btnDropdown.disabled = inactivo;
+
+        if (inactivo) {
+            cuerpoTabla.style.opacity = '0.5';
+            avisoEstado.textContent = '🚫 Carga familiar omitida (El estudiante vive solo / Sin familiares registrados).';
+            avisoEstado.style.color = '#e53e3e';
+            cuerpoTabla.querySelectorAll('input[required]').forEach(input => input.removeAttribute('required'));
+        } else {
+            cuerpoTabla.style.opacity = '1';
+            avisoEstado.textContent = '✅ Listado familiar activo y estructurado posicionalmente.';
+            avisoEstado.style.color = '#38a169';
+            cuerpoTabla.querySelectorAll('.fila-datos input:not([name*="f_ins"]):not([name*="f_ocu"]):not([name*="f_ing"])').forEach(input => input.setAttribute('required', 'required'));
+        }
+    }
+
+    checkNoFamiliares.addEventListener('change', gestionarEstadoNoFamiliares);
+
+    // Carga de datos iniciales provenientes de Base de Datos
+    if (window.familiaresExistentes && window.familiaresExistentes.length > 0) {
+        checkNoFamiliares.checked = false;
+        actualizarPertenenciaVisual();
+        gestionarEstadoNoFamiliares();
+    } else {
+        // Si la base de datos está vacía, marcamos el check como "vive solo" automáticamente para no forzar inputs vacíos
+        checkNoFamiliares.checked = true;
+        gestionarEstadoNoFamiliares();
+    }
+}
+
+/**
+ * GESTIÓN ACADÉMICA (Carreras PNF e Incidencias del Trayecto Inicial)
+ */
 async function initAcademicoEdicion() {
     const carreraSelect = document.getElementById('carreraSelect');
     const trayectoSelect = document.getElementById('trayectoSelect');
     const trimestreSelect = document.getElementById('trimestreSelect');
-
-    // 1. Cargar Carreras desde JSON
-    try {
-        const response = await fetch('../carreras.json'); // Ajusta la ruta si es necesario
-        const carreras = await response.json();
-        
-        carreraSelect.innerHTML = '<option value="" disabled>Seleccione PNF</option>';
-        carreras.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id; // o c.nombre, según cómo guardes en BD
-            opt.textContent = c.nombre;
-            if(c.id === carreraGuardada || c.nombre === carreraGuardada) opt.selected = true;
-            carreraSelect.appendChild(opt);
-        });
-    } catch (e) { console.error("Error cargando carreras:", e); }
-
-    // 2. Lógica de Trayecto Inicial
-    const gestionarTrayecto = () => {
-        if (trayectoSelect.value === 'inicial') {
-            trimestreSelect.disabled = true;
-            trimestreSelect.style.backgroundColor = "#f0f0f0";
-            // Nota: En edición admin no bloqueamos el botón de guardar, 
-            // pero podrías mostrar un alert si lo deseas.
-        } else {
-            trimestreSelect.disabled = false;
-            trimestreSelect.style.backgroundColor = "";
-        }
-    };
-
-    trayectoSelect.addEventListener('change', gestionarTrayecto);
-    gestionarTrayecto(); // Ejecutar al cargar
-    
-    // 3. Validación de rango del IRA (0-20)
     const iraInput = document.getElementById('ira_anterior');
-    iraInput.addEventListener('input', () => {
-        let v = parseFloat(iraInput.value);
-        if (v > 20) iraInput.value = 20;
-        if (v < 0) iraInput.value = 0;
-    });
+
+    if (carreraSelect) {
+        try {
+            const response = await fetch('../carreras.json');
+            const carreras = await response.json();
+            
+            carreraSelect.innerHTML = '<option value="" disabled>Seleccione PNF</option>';
+            carreras.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id; 
+                opt.textContent = c.nombre;
+                if(c.id === carreraGuardada || c.nombre === carreraGuardada) opt.selected = true;
+                carreraSelect.appendChild(opt);
+            });
+        } catch (e) { console.error("Error cargando carreras.json:", e); }
+    }
+
+    if (trayectoSelect && trimestreSelect) {
+        const gestionarTrayecto = () => {
+            if (trayectoSelect.value === 'inicial') {
+                trimestreSelect.disabled = true;
+                trimestreSelect.style.backgroundColor = "#f0f0f0";
+                trimestreSelect.value = ""; 
+            } else {
+                trimestreSelect.disabled = false;
+                trimestreSelect.style.backgroundColor = "";
+            }
+        };
+        trayectoSelect.addEventListener('change', gestionarTrayecto);
+        gestionarTrayecto();
+    }
+
+    if (iraInput) {
+        iraInput.addEventListener('input', () => {
+            let v = parseFloat(iraInput.value);
+            if (v > 20) iraInput.value = 20;
+            if (v < 0) iraInput.value = 0;
+        });
+    }
 }
 
-// Agregar a tu DOMContentLoaded existente
-document.addEventListener('DOMContentLoaded', () => {
-    initResidencia(); // La de la respuesta anterior
-    initAcademicoEdicion(); 
-});
-
-// --- LÓGICA DE UBICACIÓN DINÁMICA ---
-const currentEstado = "<?php echo $std['estado_res']; ?>";
-const currentMunicipio = "<?php echo $std['municipio_res']; ?>";
-
+/**
+ * CONTROL DE RESIDENCIA (Estados y Municipios Dinámicos de Venezuela)
+ */
 async function initResidencia() {
     const estadoSelect = document.getElementById('estado_res');
     const municipioSelect = document.getElementById('municipio_res');
+
+    if (!estadoSelect || !municipioSelect) return;
 
     try {
         const response = await fetch('../venezuela.json');
         const datos = await response.json();
 
-        // Llenar estados
         estadoSelect.innerHTML = '<option value="" disabled>Seleccione Estado</option>';
         datos.forEach(item => {
             const opt = document.createElement('option');
@@ -624,17 +829,15 @@ async function initResidencia() {
             estadoSelect.appendChild(opt);
         });
 
-        // Llenar municipios si ya hay un estado cargado
         if (currentEstado) {
             actualizarMunicipios(currentEstado, datos, currentMunicipio);
         }
 
-        // Cambio de estado
         estadoSelect.addEventListener('change', () => {
             actualizarMunicipios(estadoSelect.value, datos, null);
         });
 
-    } catch (e) { console.error("Error cargando JSON", e); }
+    } catch (e) { console.error("Error cargando venezuela.json:", e); }
 }
 
 function actualizarMunicipios(nombreEstado, datos, seleccionado) {
@@ -654,16 +857,56 @@ function actualizarMunicipios(nombreEstado, datos, seleccionado) {
     }
 }
 
-// Iniciar al cargar
-document.addEventListener('DOMContentLoaded', () => {
-    initResidencia();
-    // También asegúrate de que la función togglePassword maneje el icono:
-});
+/**
+ * CÁLCULO DE EDAD AUTOMÁTICO Y SEGURIDAD CREDECIALES
+ */
+function initSeguridadEventos() {
+    const fNacInput = document.getElementById('f_nac');
+    const passInput = document.getElementById('reg_password');
+    const passConfirm = document.getElementById('reg_password_confirm');
+    const pregunta = document.getElementById('pregunta_seguridad');
+    const respuesta = document.getElementById('respuesta_seguridad');
 
-// Actualiza tu función togglePassword para que sea igual a la del login:
+    if (fNacInput) {
+        fNacInput.addEventListener('input', function() {
+            const hoy = new Date();
+            const fechaNac = new Date(this.value);
+            if(!isNaN(fechaNac.getTime())){
+                let edad = hoy.getFullYear() - fechaNac.getFullYear();
+                const m = hoy.getMonth() - fechaNac.getMonth();
+                if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
+                const campoEdad = document.getElementById('edad');
+                if (campoEdad) campoEdad.value = edad;
+            }
+        });
+    }
+
+    if (passInput && passConfirm) {
+        function validarCamposSeguridad() {
+            const hasValue = passInput.value.length > 0;
+            passConfirm.required = hasValue;
+            if (pregunta) pregunta.required = hasValue;
+            if (respuesta) respuesta.required = hasValue;
+
+            if (hasValue && passInput.value !== passConfirm.value) {
+                passConfirm.setCustomValidity("Las contraseñas no coinciden");
+                passConfirm.style.borderColor = "#d32f2f";
+            } else {
+                passConfirm.setCustomValidity("");
+                passConfirm.style.borderColor = hasValue ? "#4CAF50" : "#ddd";
+            }
+        }
+        passInput.addEventListener('input', validarCamposSeguridad);
+        passConfirm.addEventListener('input', validarCamposSeguridad);
+    }
+}
+
+// Alternar visualización de contraseñas con cambio dinámico de icono FontAwesome
 function togglePassword(idInput, btn) {
     const input = document.getElementById(idInput);
     const icon = btn.querySelector('i');
+    if (!input || !icon) return;
+    
     if (input.type === "password") {
         input.type = "text";
         icon.classList.replace('fa-eye', 'fa-eye-slash');
@@ -672,51 +915,6 @@ function togglePassword(idInput, btn) {
         icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
-
-// 1. Visibilidad de Contraseña
-function togglePassword(id) {
-    const input = document.getElementById(id);
-    input.type = input.type === 'password' ? 'text' : 'password';
-}
-
-// 2. Cálculo de Edad Automático
-document.getElementById('f_nac').addEventListener('input', function() {
-    const hoy = new Date();
-    const fechaNac = new Date(this.value);
-    if(!isNaN(fechaNac.getTime())){
-        let edad = hoy.getFullYear() - fechaNac.getFullYear();
-        const m = hoy.getMonth() - fechaNac.getMonth();
-        if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
-        document.getElementById('edad').value = edad;
-    }
-});
-
-// 3. Validación Condicional de Seguridad
-const passInput = document.getElementById('reg_password');
-const passConfirm = document.getElementById('reg_password_confirm');
-const pregunta = document.getElementById('pregunta_seguridad');
-const respuesta = document.getElementById('respuesta_seguridad');
-
-function validarCamposSeguridad() {
-    const hasValue = passInput.value.length > 0;
-    
-    // Si hay texto en password, los demás campos de seguridad son obligatorios
-    passConfirm.required = hasValue;
-    pregunta.required = hasValue;
-    respuesta.required = hasValue;
-
-    // Validación de coincidencia
-    if (hasValue && passInput.value !== passConfirm.value) {
-        passConfirm.setCustomValidity("Las contraseñas no coinciden");
-        passConfirm.style.borderColor = "#d32f2f";
-    } else {
-        passConfirm.setCustomValidity("");
-        passConfirm.style.borderColor = hasValue ? "#4CAF50" : "#ddd";
-    }
-}
-
-passInput.addEventListener('input', validarCamposSeguridad);
-passConfirm.addEventListener('input', validarCamposSeguridad);
 </script>
 
 </body>
