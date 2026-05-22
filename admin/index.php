@@ -588,10 +588,10 @@ if (isset($_GET['edit_user'])) {
                 <div style="background:#f8f9fa; padding:15px; border-radius:12px; border: 1px solid #eee;">
                     <h4 style="color:var(--primary); margin-top:0; border-bottom: 1px solid #ddd;">🏠 Vivienda</h4>
                     <p><strong>Tipo:</strong> <?php echo ucfirst($details['residencia']['t_viv'] ?? 'N/P'); ?></p>
-                    <p><strong>Ubicación:</strong> <?php echo ucfirst($details['residencia']['t_loc'] ?? 'N/P'); ?></p>
+                    <p><strong>Localidad:</strong> <?php echo ucfirst($details['residencia']['t_loc'] ?? 'N/P'); ?></p>
                     <p><strong>Municipio:</strong> <?php echo htmlspecialchars($details['municipio_res'] ?? ''); ?></p>
                     <p><strong>Dirección de Procedencia:</strong> <?php echo htmlspecialchars($details['residencia']['dir_procedencia'] ?? 'No especificada'); ?></p>
-                    <p><strong>Dirección local:</strong> <?php echo $details['residencia']['dir_local'] ?? 'N/P'; ?></p>
+                    <p><strong>Dirección Local:</strong> <?php echo $details['residencia']['dir_local'] ?? 'N/P'; ?></p>
                 </div>
             </div>
 

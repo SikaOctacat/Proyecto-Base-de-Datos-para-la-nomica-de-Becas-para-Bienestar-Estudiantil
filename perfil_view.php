@@ -222,17 +222,18 @@ $tabla_familia .= '</tbody></table>';
             <div class="data-item"><span class="label">Residencia:</span><span class="value"><?php echo normalizar($estudiante['t_res']); ?></span></div>
             <div class="data-item"><span class="label">Vivienda:</span><span class="value"><?php echo normalizar($estudiante['t_viv']); ?></span></div>
             <div class="data-item"><span class="label">Localidad:</span><span class="value"><?php echo normalizar($estudiante['t_loc']); ?></span></div>
+            <div class="data-item"><span class="label">Estado:</span><span class="value"><?php echo normalizar($estudiante['estado_res']); ?></span></div>
             <div class="data-item" style="border:none;"><span class="label">Municipio:</span><span class="value"><?php echo normalizar($estudiante['municipio_res']); ?></span></div>
         </div>
         <div class="card-footer">
             <span class="label" style="font-size:0.85rem; display:block; margin-bottom:4px;">Dirección Actual:</span>
             <div class="address-box">
-                <?php echo htmlspecialchars($estudiante['dir_local'] ?? 'Sin dirección registrada'); ?>
+                <?php echo !empty($estudiante['dir_local']) ? htmlspecialchars($estudiante['dir_local']) : 'No suministrado'; ?>
             </div>
             
             <span class="label" style="font-size:0.85rem; display:block; margin-bottom:4px;">Dirección de Procedencia:</span>
             <div class="address-box procedencia">
-                <?php echo htmlspecialchars($estudiante['dir_procedencia'] ?? 'Misma que la dirección actual / No especificada'); ?>
+                <?php echo !empty($estudiante['dir_procedencia']) ? htmlspecialchars($estudiante['dir_procedencia']) : 'No suministrado'; ?>
             </div>
         </div>
     </div>
