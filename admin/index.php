@@ -594,6 +594,7 @@ if (isset($_GET['edit_user'])) {
                     <p><strong>Dirección de Procedencia:</strong> <?php echo !empty($details['residencia']['dir_procedencia']) ? htmlspecialchars($details['residencia']['dir_procedencia']) : 'No suministrado'; ?></p>
                     <p><strong>Dirección Actual:</strong> <?php echo !empty($details['residencia']['dir_local']) ? htmlspecialchars($details['residencia']['dir_local']) : 'No suministrado'; ?></p>
                 </div>
+            </div>
 
             <h3 style="margin-top:30px; border-bottom: 2px solid var(--primary); padding-bottom: 5px;">👥 Carga Familiar Detallada</h3>
             <div style="overflow-x: auto;">
