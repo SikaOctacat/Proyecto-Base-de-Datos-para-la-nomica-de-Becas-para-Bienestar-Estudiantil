@@ -552,7 +552,7 @@ if (isset($_GET['edit_user'])) {
     </div> <?php if ($details): ?>
     <div class="modal-overlay">
         <div class="modal-box">
-            <a href="javascript:void(0);" onclick="document.querySelector('.modal-overlay').style.display='none';" style="position:absolute; top:20px; right:20px; font-size:24px; color:#999; text-decoration:none; z-index: 9999;">&times;</a>
+            <a href="javascript:void(0);" onclick="document.querySelector('.modal-overlay').style.display='none';" style="position:absolute; top:20px; right:20px; font-size:24px; color:#999; text-decoration:none; z-index: 99999; display: inline-block;">&times;</a>
             <h2 style="margin-bottom:25px; color: #333;">
                 Perfil: <?php 
                     $nombre_completo = htmlspecialchars($details['base']['nombre1']);
