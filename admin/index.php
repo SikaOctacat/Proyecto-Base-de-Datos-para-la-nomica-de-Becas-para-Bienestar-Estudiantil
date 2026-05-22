@@ -587,13 +587,13 @@ if (isset($_GET['edit_user'])) {
 
                 <div style="background:#f8f9fa; padding:15px; border-radius:12px; border: 1px solid #eee;">
                     <h4 style="color:var(--primary); margin-top:0; border-bottom: 1px solid #ddd;">🏠 Vivienda</h4>
-                    <p><strong>Tipo:</strong> <?php echo ucfirst($details['residencia']['t_viv'] ?? 'N/P'); ?></p>
-                    <p><strong>Localidad:</strong> <?php echo ucfirst($details['residencia']['t_loc'] ?? 'N/P'); ?></p>
-                    <p><strong>Municipio:</strong> <?php echo htmlspecialchars($details['municipio_res'] ?? ''); ?></p>
-                    <p><strong>Dirección de Procedencia:</strong> <?php echo htmlspecialchars($details['residencia']['dir_procedencia'] ?? 'No especificada'); ?></p>
-                    <p><strong>Dirección Local:</strong> <?php echo $details['residencia']['dir_local'] ?? 'N/P'; ?></p>
+                    <p><strong>Tipo:</strong> <?php echo ucfirst($details['residencia']['t_viv'] ?? 'No suministrado'); ?></p>
+                    <p><strong>Localidad:</strong> <?php echo ucfirst($details['residencia']['t_loc'] ?? 'No suministrado'); ?></p>
+                    <p><strong>Estado:</strong> <?php echo htmlspecialchars(!empty($details['residencia']['estado_res']) ? $details['residencia']['estado_res'] : 'No suministrado'); ?></p>
+                    <p><strong>Municipio:</strong> <?php echo htmlspecialchars(!empty($details['residencia']['municipio_res']) ? $details['residencia']['municipio_res'] : 'No suministrado'); ?></p>
+                    <p><strong>Dirección de Procedencia:</strong> <?php echo !empty($details['residencia']['dir_procedencia']) ? htmlspecialchars($details['residencia']['dir_procedencia']) : 'No suministrado'; ?></p>
+                    <p><strong>Dirección Actual:</strong> <?php echo !empty($details['residencia']['dir_local']) ? htmlspecialchars($details['residencia']['dir_local']) : 'No suministrado'; ?></p>
                 </div>
-            </div>
 
             <h3 style="margin-top:30px; border-bottom: 2px solid var(--primary); padding-bottom: 5px;">👥 Carga Familiar Detallada</h3>
             <div style="overflow-x: auto;">
