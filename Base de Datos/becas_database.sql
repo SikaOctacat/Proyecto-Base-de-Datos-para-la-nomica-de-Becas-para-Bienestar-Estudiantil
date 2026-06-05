@@ -28,28 +28,30 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `estudiante` (
-  `ci` int(11) NOT NULL,
-  `usuario_id` int(11) DEFAULT NULL,
-  `nombre1` varchar(50) DEFAULT NULL,
-  `nombre2` varchar(50) DEFAULT NULL,
-  `apellido_paterno` varchar(50) DEFAULT NULL,
-  `apellido_materno` varchar(50) DEFAULT NULL,
+  `ci` int NOT NULL,
+  `usuario_id` int DEFAULT NULL,
+  `nombre1` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `nombre2` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `apellido_paterno` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `apellido_materno` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `f_nac` date DEFAULT NULL,
-  `edad` int(3) DEFAULT NULL,
-  `tel_estudiante` varchar(20) DEFAULT NULL,
-  `correo` varchar(60) DEFAULT NULL,
-  `edo_civil` varchar(30) DEFAULT NULL,
-  `tipo_beneficio` varchar(50) DEFAULT NULL,
-  `C_Patria` varchar(50) DEFAULT NULL,
-  `viaja` varchar(10) DEFAULT NULL,
-  `estatus_estudio` varchar(20) DEFAULT NULL,
-  `carrera` varchar(100) DEFAULT NULL,
-  `cod_est` varchar(50) DEFAULT NULL,
+  `edad` int DEFAULT NULL,
+  `tel_estudiante` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `correo` varchar(60) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `edo_civil` varchar(30) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `tipo_beneficio` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `C_Patria` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `viaja` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `estatus_estudio` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `carrera` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `cod_est` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `f_ingreso` date DEFAULT NULL,
-  `trayecto` varchar(10) DEFAULT NULL,
-  `trimestre` varchar(10) DEFAULT NULL,
+  `trayecto` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `trimestre` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `ira_anterior` decimal(4,2) DEFAULT NULL,
-  `observaciones` text DEFAULT NULL
+  `observaciones` text COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`ci`) /*T![clustered_index] NONCLUSTERED */,
+  KEY `usuario_id` (`usuario_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -66,15 +68,18 @@ INSERT INTO `estudiante` (`ci`, `usuario_id`, `nombre1`, `nombre2`, `apellido_pa
 --
 
 CREATE TABLE `familiar` (
-  `id` int(11) NOT NULL,
-  `ci_estudiante` int(11) DEFAULT NULL,
-  `f_nom` varchar(100) DEFAULT NULL,
-  `f_ape` varchar(100) DEFAULT NULL,
-  `f_par` varchar(50) DEFAULT NULL,
-  `f_eda` int(3) DEFAULT NULL,
-  `f_ins` varchar(50) DEFAULT NULL,
-  `f_ocu` varchar(100) DEFAULT NULL,
-  `f_ing` decimal(12,2) DEFAULT NULL
+  `id` int NOT NULL,
+  `ci_estudiante` int DEFAULT NULL,
+  `f_nom` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `f_ape` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `f_par` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `f_eda` int DEFAULT NULL,
+  `f_ins` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `f_ocu` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `f_ing` decimal(12,2) DEFAULT NULL,
+  `f_clasificacion` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`) /*T![clustered_index] NONCLUSTERED */,
+  KEY `ci_estudiante` (`ci_estudiante`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -91,10 +96,12 @@ INSERT INTO `familiar` (`id`, `ci_estudiante`, `f_nom`, `f_ape`, `f_par`, `f_eda
 --
 
 CREATE TABLE `record_academico` (
-  `id` int(11) NOT NULL,
-  `ci_estudiante` int(11) DEFAULT NULL,
+  `id` int NOT NULL,
+  `ci_estudiante` int DEFAULT NULL,
   `indice_trimestre` decimal(4,2) DEFAULT NULL,
-  `ira_anterior` decimal(4,2) DEFAULT NULL
+  `ira_anterior` decimal(4,2) DEFAULT NULL,
+  PRIMARY KEY (`id`) /*T![clustered_index] NONCLUSTERED */,
+  KEY `ci_estudiante` (`ci_estudiante`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -111,8 +118,8 @@ INSERT INTO `record_academico` (`id`, `ci_estudiante`, `indice_trimestre`, `ira_
 --
 
 CREATE TABLE `residencia` (
-  `id` int(11) NOT NULL,
-  `ci_estudiante` int(11) DEFAULT NULL,
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `ci_estudiante` int DEFAULT NULL,
   `t_res` varchar(50) DEFAULT NULL,
   `t_viv` varchar(50) DEFAULT NULL,
   `t_loc` varchar(50) DEFAULT NULL,
@@ -120,8 +127,10 @@ CREATE TABLE `residencia` (
   `estado_res` varchar(50) DEFAULT NULL,
   `municipio_res` varchar(50) DEFAULT NULL,
   `dir_local` text DEFAULT NULL,
-  `tel_local` varchar(20) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `dir_procedencia` text NOT NULL,
+  `tel_local` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=660001;
 
 --
 -- Volcado de datos para la tabla `residencia`
@@ -137,13 +146,13 @@ INSERT INTO `residencia` (`id`, `ci_estudiante`, `t_res`, `t_viv`, `t_loc`, `r_p
 --
 
 CREATE TABLE `usuarios` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `usuario` varchar(50) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `pregunta_seguridad` varchar(255) DEFAULT NULL,
-  `respuesta_seguridad` varchar(255) DEFAULT NULL,
-  `rol` varchar(20) DEFAULT 'estudiante',
-  PRIMARY KEY (`id`),
+  `id` int NOT NULL,
+  `usuario` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `pregunta_seguridad` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `respuesta_seguridad` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `rol` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'estudiante',
+  PRIMARY KEY (`id`) /*T![clustered_index] NONCLUSTERED */,
   UNIQUE KEY `usuario` (`usuario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -154,82 +163,26 @@ CREATE TABLE `usuarios` (
 INSERT INTO `usuarios` (`id`, `usuario`, `password`, `pregunta_seguridad`, `respuesta_seguridad`, `rol`) VALUES
 (1, '32546208', '$2y$10$z.xixekm1AVnscpufBAVj.hREeJ7ivfGqWZnRBHnZdnBHFgcN0tVu', NULL, NULL, 'estudiante');
 
+-- --------------------------------------------------------
+
 --
 -- Estructura de tabla para la tabla `bitacora`
 --
 
 CREATE TABLE `bitacora` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `usuario_id` int(11) DEFAULT NULL,
+  `id` bigint NOT NULL /*T![auto_rand] AUTO_RANDOM(5) */,
+  `usuario_id` int DEFAULT NULL,
   `accion` varchar(255) NOT NULL,
   `tabla_afectada` varchar(50) DEFAULT NULL,
   `detalles` text DEFAULT NULL,
-  `fecha` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `usuario_id` (`usuario_id`),
-  CONSTRAINT `bitacora_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `fecha` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin /*T![auto_rand_base] AUTO_RANDOM_BASE=1710001 */;
 
 
 --
--- Índices para tablas volcadas
+-- Índices para tablas volcadas y AUTO_INCREMENT se manejan en la declaración de las tablas para cumplir el estándar de TiDB.
 --
-
---
--- Indices de la tabla `estudiante`
---
-ALTER TABLE `estudiante`
-  ADD PRIMARY KEY (`ci`),
-  ADD KEY `usuario_id` (`usuario_id`);
-
---
--- Indices de la tabla `familiar`
---
-ALTER TABLE `familiar`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `ci_estudiante` (`ci_estudiante`);
-
---
--- Indices de la tabla `record_academico`
---
-ALTER TABLE `record_academico`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `ci_estudiante` (`ci_estudiante`);
-
---
--- Indices de la tabla `residencia`
---
-ALTER TABLE `residencia`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `ci_estudiante` (`ci_estudiante`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `familiar`
---
-ALTER TABLE `familiar`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT de la tabla `record_academico`
---
-ALTER TABLE `record_academico`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT de la tabla `residencia`
---
-ALTER TABLE `residencia`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Restricciones para tablas volcadas
