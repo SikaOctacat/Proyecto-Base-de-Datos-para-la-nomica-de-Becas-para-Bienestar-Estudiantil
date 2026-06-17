@@ -1,5 +1,5 @@
 <?php
-require 'db.php';
+require '../base_de_datos/db.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -125,7 +125,7 @@ if ($step == 2 && isset($_SESSION['reset_user_id']) && empty($pregunta)) {
 <head>
     <meta charset="UTF-8">
     <title>Recuperar Acceso - Sistema de Becas</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .recover-box { 

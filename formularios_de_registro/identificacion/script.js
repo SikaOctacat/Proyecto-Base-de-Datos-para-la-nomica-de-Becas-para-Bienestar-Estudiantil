@@ -1,6 +1,6 @@
 /**
  * FUNCIONES DEL PASO 1 (Ámbito global)
- * Ubicación: Paginas/1. Pagina Identificacion/script.js
+ * Ubicación: formularios_de_registro/identificacion/script.js
  */
 
 /**

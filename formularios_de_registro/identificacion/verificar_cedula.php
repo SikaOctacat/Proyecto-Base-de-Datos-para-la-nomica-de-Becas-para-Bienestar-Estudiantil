@@ -1,5 +1,5 @@
 <?php
-require 'db.php';
+require 'base_de_datos/db.php';
 header('Content-Type: application/json'); // Indicar que la respuesta es JSON
 
 $ci = isset($_GET['ci']) ? trim($_GET['ci']) : '';

@@ -1,14 +1,15 @@
 <?php
-require 'db.php';
-$url_inicio = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin') ? 'admin/index.php' : 'index.php';
+require '../base_de_datos/db.php';
+$url_inicio = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin') ? '../admin/index.php' : '../index.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Postulación de Beca - Sistema de Becas</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="img/logo.png" type="image/png">
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <link rel="icon" href="../img/logo.png" type="image/png">
     <style>
         #main-container { margin-top: 60px; }
         .page-header h2 { font-size: 1.8rem; }
@@ -19,32 +20,30 @@ $url_inicio = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin') ? 'admin
 
     <div id="loadingOverlay" class="loading-overlay"><div class="spinner"></div></div>
     <script>
-        window.studentProfile = null; // No hay perfil previo para nuevos postulantes
+        window.studentProfile = null; 
         document.addEventListener('DOMContentLoaded',function(){document.body.classList.add('page-visible');});
     </script>
 
     <div id="main-container">
         <div class="page-header">
-        <h2>FORMULARIO DE POSTULACIÓN</h2>
-        <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
-            Complete todos los pasos para registrar su solicitud de beca.
-        </div>
-        
-        <div style="position: absolute; top: 25px; right: 25px; display: flex; gap: 10px;">
+            <h2>FORMULARIO DE POSTULACIÓN</h2>
+            <div style="color: #666; font-size: 0.9rem; margin-top: 5px;">
+                Complete todos los pasos para registrar su solicitud de beca.
+            </div>
             
+            <div style="position: absolute; top: 25px; right: 25px; display: flex; gap: 10px;">
+                <button type="button" id="btnLimpiarRegistro" class="btn-clear-data" 
+                        style="background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    Borrar Formulario
+                </button>
 
-            <button type="button" id="btnLimpiarRegistro" class="btn-clear-data" 
-                    style="background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                Borrar Formulario
-            </button>
-
-            <a href="<?php echo $url_inicio; ?>" id="btnVolverInicio" 
-            style="background: #ececec; color: #333; border: 1px solid #ccc; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;">
-            <i class="fa fa-home" style="margin-right: 5px;"></i> Inicio
-            </a>
+                <a href="<?php echo $url_inicio; ?>" id="btnVolverInicio" 
+                   style="background: #ececec; color: #333; border: 1px solid #ccc; padding: 8px 15px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: bold; text-decoration: none; transition: all 0.3s; display: flex; align-items: center;">
+                    <i class="fa fa-home" style="margin-right: 5px;"></i> Inicio
+                </a>
+            </div>
         </div>
-    </div>
-        
+            
         <div class="progress-wrapper">
             <div id="progressBar" class="progress-bar"></div>
         </div>
@@ -63,15 +62,15 @@ $url_inicio = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin') ? 'admin
         </div>
     </div>
 
-    <script src="main.js?v=<?php echo time(); ?>"></script>
+    <script src="../main.js?v=<?php echo time(); ?>"></script>
     <script>
-        // Asegurar que las flechas de volver funcionen y se limpie la navegación
         window.addEventListener('pageshow', function(event) {
             document.body.classList.remove('fade-out');
             var overlay = document.getElementById('loadingOverlay');
             if(overlay) overlay.classList.remove('active');
         });
     </script>
-    <?php include 'footer.php'; ?>
+    
+    <?php include '../componentes/footer.php'; ?>
 </body>
 </html>

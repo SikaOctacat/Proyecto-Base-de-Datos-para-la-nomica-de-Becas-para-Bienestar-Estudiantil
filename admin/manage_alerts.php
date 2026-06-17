@@ -1,10 +1,10 @@
 <?php
 session_start();
-require '../db.php';
+require '../base_de_datos/db.php';
 
 // Verificar sesión de administrador (simple check based on usual patterns in this app)
 if (!isset($_SESSION['user']) || $_SESSION['user'] !== 'admin') {
-    header("Location: ../login.php");
+    header("Location: ../autenticacion/login.php");
     exit();
 }
 
@@ -51,7 +51,7 @@ $alertas = $pdo->query("SELECT * FROM alertas ORDER BY created_at DESC")->fetchA
 <head>
     <meta charset="UTF-8">
     <title>Gestionar Alertas - Admin</title>
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <style>
         .admin-container { max-width: 1000px; margin: 40px auto; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .alert-form { background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #eee; }
@@ -132,6 +132,6 @@ $alertas = $pdo->query("SELECT * FROM alertas ORDER BY created_at DESC")->fetchA
         </section>
     </div>
 
-    <?php include 'footer.php'; ?>
+    <?php include 'componentes/footer.php'; ?>
 </body>
 </html>

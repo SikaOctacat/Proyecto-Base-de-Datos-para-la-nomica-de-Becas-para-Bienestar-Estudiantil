@@ -1,5 +1,5 @@
 <?php
-require 'db.php';
+require 'base_de_datos/db.php';
 header('Content-Type: text/plain');
 
 $tablas = ['usuarios', 'estudiante', 'bitacora', 'residencia', 'familiar'];

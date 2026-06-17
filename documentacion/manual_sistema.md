@@ -14,10 +14,10 @@ Este documento detalla la estructura técnica, lógica de programación y diseñ
 
 ## 📂 2. Estructura de Archivos
 - [index.php](file:///c:/xampp/htdocs/proyecto-elias/index.php): Punto de entrada único. Maneja el portal de inicio y el contenedor de la aplicación.
-- [db.php](file:///c:/xampp/htdocs/proyecto-elias/db.php): Singleton para la conexión a la base de datos y gestión de sesiones.
+- [base_de_datos/db.php](file:///c:/xampp/htdocs/proyecto-elias/base_de_datos/db.php): Singleton para la conexión a la base de datos y gestión de sesiones.
 - [main.js](file:///c:/xampp/htdocs/proyecto-elias/main.js): Lógica central. Maneja el estado global (`formDataStorage`), navegación ([loadStep](file:///c:/xampp/htdocs/proyecto-elias/main.js#114-199)) e inyección de HTML.
 - [submit.php](file:///c:/xampp/htdocs/proyecto-elias/submit.php): Endpoint API que procesa los envíos mediante transacciones SQL.
-- `Paginas/`: Directorio modular con las vistas (PHP) y scripts (JS) de cada paso del formulario.
+- `formularios_de_registro/`: Directorio modular con las vistas (PHP) y scripts (JS) de cada paso del formulario.
 - `admin/`: Módulo de gestión para usuarios con rol 'admin'.
 
 ---

@@ -1,6 +1,6 @@
 <?php
 // index.php unificado
-require 'db.php';
+require 'base_de_datos/db.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -77,7 +77,7 @@ if (!$logged) {
     <head>
         <meta charset="UTF-8">
         <title>Inicio - Sistema de Becas</title>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="css/style.css">
         <link rel="icon" href="img/logo.png" type="image/png">
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>
@@ -102,8 +102,8 @@ if (!$logged) {
                 <h1>SISTEMA <span class="highlight">INTEGRADO</span> DE BECAS</h1>
                 <p>Postúlate hoy y asegura tu futuro académico.</p>
                 <div class="hero-actions">
-                    <a class="btn-cta" href="login.php">Inicar sesion</a>
-                    <a class="btn-sec" href="register.php">Postularse Ahora</a>
+                    <a class="btn-cta" href="autenticacion/login.php">Inicar sesion</a>
+                    <a class="btn-sec" href="formularios_de_registro/register.php">Postularse Ahora</a>
                 </div>
             </div>
         </main>
@@ -114,7 +114,7 @@ if (!$logged) {
             document.getElementById('closeLogin').onclick = () => modal.classList.add('oculto');
             window.onclick = (event) => { if (event.target == modal) modal.classList.add('oculto'); }
         </script>
-        <?php include 'footer.php'; ?>
+        <?php include 'componentes/footer.php'; ?>
     </body>
     </html>
 <?php
@@ -126,7 +126,7 @@ if (!$logged) {
 <head>
     <meta charset="UTF-8">
     <title>Sistema de Becas - Panel</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     <meta name="viewport" content="width=device-width,initial-scale=1">
 </head>
 <body data-rol="<?php echo $_SESSION['rol'] ?? 'publico'; ?>">
@@ -169,7 +169,7 @@ if (!$logged) {
         
         document.addEventListener('DOMContentLoaded', function() {
             if (window.studentProfile) {
-                fetch('perfil_view.php')
+                fetch('usuario/perfil.php')
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('dynamic-content').innerHTML = html;
@@ -180,6 +180,6 @@ if (!$logged) {
     </script>
     <script src="main.js"></script>
     <script src="script.js"></script>
-    <?php include 'footer.php'; ?>
+    <?php include 'componentes/footer.php'; ?>
 </body>
 </html>

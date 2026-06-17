@@ -1,12 +1,12 @@
 <?php
-require 'db.php';
+require '../base_de_datos/db.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // 1. FUNCIÓN DE BITÁCORA (Reutilizada de tu lógica anterior)
-// Modifica la línea 11 de login.php con esto:
+// Modifica la línea 11 de autenticacion/login.php con esto:
 function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
     // Ya no mandamos ID, TiDB lo generará por nosotros gracias a AUTO_RANDOM
     $sql = 'INSERT INTO bitacora (usuario_id, accion, tabla_afectada, detalles) VALUES (?, ?, ?, ?)';
@@ -54,14 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         : "Ingreso estándar al panel administrativo.";
                     registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Admin", $detalle);
                     
-                    header('Location: admin/index.php');
+                    header('Location: ../admin/index.php');
                 } else {
                     $_SESSION['rol'] = $row['rol'];
                     
                     // Registro para el Estudiante/Usuario
                     registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Perfil", "El usuario accedió a su panel de estudiante.");
                     
-                    header('Location: index.php');
+                    header('Location: ../index.php');
                 }
                 exit;
                 // --- FIN BITÁCORA ---
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Ingreso - Sistema de Becas</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="img/logo.png" type="image/png">
     <style>
@@ -179,12 +179,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div style="margin-top:15px; text-align:center; display: flex; flex-direction: column; gap: 10px;">
                 <a href="recuperar.php" style="text-decoration:none; color:#666; font-weight: bold; font-size:0.85rem;">¿Olvidaste tu contraseña?</a>
-                <a href="index.php" style="text-decoration:none; color:#FF6600; font-weight:700; font-size:0.9rem;">← Volver al Inicio</a>
+                <a href="../index.php" style="text-decoration:none; color:#FF6600; font-weight:700; font-size:0.9rem;">← Volver al Inicio</a>
             </div>
         </form>
         
     </div>
 
-    <?php include 'footer.php'; ?>
+    <?php include '../componentes/footer.php'; ?>
 </body>
 </html>

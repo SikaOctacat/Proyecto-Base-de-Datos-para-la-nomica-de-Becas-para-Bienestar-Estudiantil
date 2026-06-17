@@ -1,5 +1,5 @@
 /**
- * ARCHIVO: Paginas/6. Datos Adicionales/script.js
+ * ARCHIVO: formularios_de_registro/6. Datos Adicionales/script.js
  */
 function initDatosExtra() {
     const textarea = document.getElementById('comentarios');

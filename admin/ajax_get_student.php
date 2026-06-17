@@ -1,5 +1,5 @@
 <?php
-require '../db.php';
+require '../base_de_datos/db.php';
 
 // Session check to ensure only admins can use this
 if (!isset($_SESSION['user']) || (isset($_SESSION['rol']) && $_SESSION['rol'] !== 'admin')) {

@@ -2,7 +2,7 @@
 // 1. Incluir la base de datos con una ruta dinámica para que funcione desde cualquier carpeta
 // Esto evita que falle si el admin y el estudiante están en niveles distintos
 $root = $_SERVER['DOCUMENT_ROOT'] . '/Proyecto-Base-de-Datos-para-la-nomica-de-Becas-para-Bienestar-Estudiantil/'; 
-require_once __DIR__ . '/db.php'; // Usa __DIR__ para asegurar que busca en la misma carpeta del archivo
+require '../base_de_datos/db.php';
 
 if (session_status() === PHP_SESSION_NONE) { 
     session_start(); 
@@ -46,5 +46,5 @@ if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) || empty($_SERVER['REQUEST_METHOD']
 }
 
 // Redirigir al login principal
-header("Location: ../login.php");
+header("Location: login.php");
 exit;

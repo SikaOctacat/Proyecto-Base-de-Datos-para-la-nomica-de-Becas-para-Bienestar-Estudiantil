@@ -1,10 +1,5 @@
-/**
- * ARCHIVO: main.js (Raíz) - Lógica de Navegación e Integración
- * Versión simplificada: 8 pasos (Se eliminó Laboral y Materias)
- */
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ESTADO INICIAL ---
-    let currentStep = 1;
+    let currentStep = 3;
     let maxStepReached = 1; 
     window.formSubmitted = false; 
     const totalSteps = 7;
@@ -12,39 +7,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewPort = document.getElementById('dynamic-content'); 
     const progressBar = document.getElementById('progressBar'); 
     
-    // --- PRIORIDAD: PERFIL DE ESTUDIANTE ---
     const userRole = document.body.getAttribute('data-rol');
     if (userRole === 'estudiante') {
-        // 1. Ocultamos los contenedores que no pertenecen al perfil
+        // Ocultamos los contenedores que no pertenecen al perfil
         const navContainer = document.getElementById('nav-buttons');
         const progContainer = document.getElementById('progress-wrapper');
         if(navContainer) navContainer.style.display = 'none';
         if(progContainer) progContainer.style.display = 'none';
         
-        // 2. Cargamos el perfil
         showRegistrationSummary();
-        return; // <--- CRÍTICO: Detiene la carga del formulario (Paso 1)
+        return;
     }
     
     window.formDataStorage = {}; 
 
-    // Mapeo reestructurado (8 pasos seguidos)
     const folderMap = {
-        1: "1. Pagina Identificacion",
-        2: "2. Pagina Residencia",
-        3: "3. Pagina PNF",
-        4: "4. Pagina Familiares",
-        5: "5. Pagina Datos extra",
-        6: "6. Verificacion",
-        7: "7. Pantalla final"
+        1: "identificacion",
+        2: "residencia",
+        3: "PNF",
+        4: "familiares",
+        5: "datos_extra",
+        6: "verificacion",
+        7: "pantalla_de_exito"
     };
-
-    /**
-     * Guarda los valores actuales en memoria
-     */
-    /**
-     * Guarda los valores actuales en memoria y limpia guiones bajos de los valores
-     */
     window.saveCurrentData = () => {
         const viewPort = document.getElementById('dynamic-content');
         const inputs = viewPort.querySelectorAll('input, select, textarea');
@@ -109,8 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
             viewPort.innerHTML = '<div style="text-align:center; padding:50px; color:#666;">Cargando paso...</div>';
         }
         
-        const htmlPath = `Paginas/${folder}/view.php`; 
-        const scriptPath = `Paginas/${folder}/script.js`;
+        const htmlPath = `${folder}/view.php`; 
+        const scriptPath = `${folder}/script.js`;
 
         try {
             const response = await fetch(htmlPath);
@@ -177,10 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Lógica para el botón "Borrar formulario"
-     * Ahora solo limpia la vista actual y remueve esos datos específicos del storage
-     */
+    // Lógica para el botón "Borrar formulario"
     const btnLimpiar = document.getElementById('btnLimpiarRegistro');
 if (btnLimpiar) {
         btnLimpiar.onclick = (e) => {
@@ -188,7 +170,6 @@ if (btnLimpiar) {
 
             if (confirm("¿Deseas limpiar los campos de esta página actual?")) {
                 const viewPort = document.getElementById('dynamic-content');
-                // Seleccionamos todos los inputs, tengan 'name' o no
                 const inputs = viewPort.querySelectorAll('input, select, textarea');
                 const errorText = document.getElementById('error-pass'); // El texto de advertencia
 
@@ -250,7 +231,7 @@ if (btnLimpiar) {
         if (!sp || !viewPort) return;
 
         try {
-            const response = await fetch('perfil_view.php');
+            const response = await fetch('usuario/perfil.php');
             if (!response.ok) throw new Error("No se pudo cargar la vista");
             let html = await response.text();
 
@@ -423,7 +404,7 @@ if (btnLimpiar) {
                 }
 
                 try {
-                    const urlDestino = 'submit.php'; // Usa ruta relativa para evitar líos de CORS
+                    const urlDestino = 'submit.php';
                     
                     const res = await fetch(urlDestino, {
                         method: 'POST',

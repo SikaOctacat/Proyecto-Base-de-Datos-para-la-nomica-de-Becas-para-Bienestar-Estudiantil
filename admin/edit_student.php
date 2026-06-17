@@ -1,11 +1,11 @@
 <?php
 ob_start();
 session_start();
-require '../db.php'; 
+require '../base_de_datos/db.php'; 
 
 // Verificación de sesión y rol
 if (!isset($_SESSION['user']) || (isset($_SESSION['rol']) && $_SESSION['rol'] !== 'admin')) {
-    header('Location: ../login.php');
+    header('Location: ../autenticacion/login.php');
     exit;
 }
 
@@ -158,7 +158,7 @@ $min_date = (clone $fecha_hoy)->modify('-50 years')->format('Y-m-d');
 <head>
     <meta charset="UTF-8">
     <title>Editar Expediente - <?php echo htmlspecialchars($std['nombre1']); ?></title>
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="TablaDinamica.js"></script>
     <style>
@@ -856,7 +856,7 @@ async function initAcademicoEdicion() {
 
     if (carreraSelect) {
         try {
-            const response = await fetch('../carreras.json');
+            const response = await fetch('../extras/carreras.json');
             const carreras = await response.json();
             
             carreraSelect.innerHTML = '<option value="" disabled>Seleccione PNF</option>';
@@ -904,7 +904,7 @@ async function initResidencia() {
     if (!estadoSelect || !municipioSelect) return;
 
     try {
-        const response = await fetch('../venezuela.json');
+        const response = await fetch('../extras/venezuela.json');
         const datos = await response.json();
 
         estadoSelect.innerHTML = '<option value="" disabled>Seleccione Estado</option>';
@@ -924,7 +924,7 @@ async function initResidencia() {
             actualizarMunicipios(estadoSelect.value, datos, null);
         });
 
-    } catch (e) { console.error("Error cargando venezuela.json:", e); }
+    } catch (e) { console.error("Error cargando extras/venezuela.json:", e); }
 }
 
 function actualizarMunicipios(nombreEstado, datos, seleccionado) {

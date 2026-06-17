@@ -1,7 +1,7 @@
 <?php
 ob_start();
 session_start();
-require '../db.php';
+require '../base_de_datos/db.php';
 
 // 1. Verificación de sesión
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'admin') {

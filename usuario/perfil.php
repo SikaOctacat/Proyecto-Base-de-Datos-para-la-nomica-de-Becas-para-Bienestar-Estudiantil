@@ -1,5 +1,5 @@
 <?php
-require 'db.php';
+require '../base_de_datos/db.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 $user_id = $_SESSION['user_id'] ?? null;

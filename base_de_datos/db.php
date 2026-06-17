@@ -1,34 +1,34 @@
 <?php
-// db.php: establish database connection and start session
+
 if(session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Intentamos leer las variables de Render, si no existen, usa los valores locales
+// Carga de variables de entorno para producción o valores por defecto para desarrollo local
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $dbname = getenv('DB_NAME') ?: 'becas_database';
 $dbuser = getenv('DB_USER') ?: 'root';
 $dbpass = getenv('DB_PASS') ?: '';
 $port = getenv('DB_PORT') ?: '3306';
 
+// Definición de la cadena de conexión de origen de datos para MySQL
 $dsn = "mysql:host=$host;dbname=$dbname;port=$port;charset=utf8mb4";
 
 try {
+    // Configuración general de atributos para el manejo de errores y formato de datos
     $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ];
 
-    // Configuración para TiDB Cloud en Render
     if (getenv('DB_HOST')) {
-        // Activamos SSL
         $options[PDO::MYSQL_ATTR_SSL_CA] = true;
-        // Deshabilitamos la verificación estricta del certificado para evitar el error [2002]
         $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
     }
 
+    // Creación de la instancia PDO para establecer la conexión definitiva
     $pdo = new PDO($dsn, $dbuser, $dbpass, $options);
 } catch (PDOException $e) {
-    // En producción, es mejor no mostrar detalles sensibles, pero para desarrollo:
+    // Captura del error y detención del script en caso de fallo en la conexión
     die("Error de conexión a la base de datos: " . $e->getMessage());
 }

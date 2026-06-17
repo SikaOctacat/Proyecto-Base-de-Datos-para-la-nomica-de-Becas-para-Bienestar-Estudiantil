@@ -1,7 +1,7 @@
 <?php
 ob_start();
 session_start(); // Asegúrate de iniciar sesión antes de cualquier chequeo
-require '../db.php';
+require '../base_de_datos/db.php';
 
 // --- FUNCIÓN DE BITÁCORA ---
 function registrarMovimiento($pdo, $usuario_id, $accion, $tabla, $detalles = null) {
@@ -21,7 +21,7 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
 
 // Verificación de sesión y rol de administrador
 if (!isset($_SESSION['user']) || (isset($_SESSION['rol']) && $_SESSION['rol'] !== 'admin')) {
-    header('Location: ../login.php');
+    header('Location: ../autenticacion/login.php');
     exit;
 }
 
@@ -205,7 +205,7 @@ if (isset($_GET['edit_user'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrativo - Sistema de Becas</title>
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <style>
         :root {
             --primary: #FF6600;
@@ -390,7 +390,7 @@ if (isset($_GET['edit_user'])) {
             <h2>🎓 <span>Panel de Control</span></h2>
             <div style="display: flex; gap: 12px;">
                 <a href="export_excel.php" class="btn-action" style="background: var(--success); color:#fff; padding: 12px 20px;">📥 Excel</a>
-                <a href="../logout.php" class="btn-logout" onclick="return confirm('¿Cerrar sesión?')">Cerrar Sesión</a>
+                <a href="../autenticacion/logout.php" class="btn-logout" onclick="return confirm('¿Cerrar sesión?')">Cerrar Sesión</a>
             </div>
         </header>
 
@@ -410,7 +410,7 @@ if (isset($_GET['edit_user'])) {
         <div id="tab-estudiantes" class="tab-content active">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin:0; border:none;">Registros Actuales</h3>
-                <a href="../register.php" class="btn-action" style="background: var(--primary); color:white; padding: 10px 20px; border-radius: 12px;">
+                <a href="../formularios_de_registro/register.php" class="btn-action" style="background: var(--primary); color:white; padding: 10px 20px; border-radius: 12px;">
                     <i class="fas fa-user-plus"></i> Nuevo Estudiante
                 </a>
             </div>
@@ -733,6 +733,6 @@ if (isset($_GET['edit_user'])) {
             form.style.display = (form.style.display === 'none') ? 'block' : 'none';
         }
     </script>
-    <?php include '../footer.php'; ?>
+    <?php include '../componentes/footer.php'; ?>
 </body>
 </html>

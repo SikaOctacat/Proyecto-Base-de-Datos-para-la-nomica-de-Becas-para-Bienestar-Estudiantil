@@ -2,7 +2,7 @@
 if(session_status() == PHP_SESSION_NONE) session_start(); 
 
 // Leer el archivo JSON
-$json_path = '../../carreras.json';
+$json_path = '../../extras/carreras.json';
 $carreras = [];
 
 if (file_exists($json_path)) {
