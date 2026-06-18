@@ -2,14 +2,12 @@ window.renderFinalStatus = function() {
     const container = document.getElementById('status-container');
     if (!container) return;
 
-    // window.formSubmitted = true; // Forzado para pruebas
-
     // 1. Detectar el rol (Prioridad: Variable global -> Atributo Body -> Por defecto estudiante)
     const userRol = window.userRol || document.body.getAttribute('data-rol') || 'estudiante'; 
     
     // 2. Definir la URL de destino según la lógica del código anterior
     // Si es admin va a 'admin/index.php', de lo contrario a 'index.php'
-    const urlDestino = (userRol === 'admin') ? 'admin/index.php' : 'index.php?completado=1';
+    const urlDestino = (userRol === 'admin') ? '../admin/index.php' : '../index.php?completado=1';
 
     console.log("Rol detectado:", userRol, "Redirigiendo a:", urlDestino);
 
