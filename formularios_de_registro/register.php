@@ -61,7 +61,11 @@ $url_inicio = (isset($_SESSION['rol']) && $_SESSION['rol'] === 'admin') ? '../ad
             <button type="button" id="nextBtn" class="btn-next">Siguiente</button>
         </div>
     </div>
-
+    
+    <script>
+        // Le indicamos al JS que suba un nivel para encontrar el procesador
+        window.urlSubmit = '../submit.php'; 
+    </script>
     <script src="../main.js?v=<?php echo time(); ?>"></script>
     <script>
         window.addEventListener('pageshow', function(event) {
