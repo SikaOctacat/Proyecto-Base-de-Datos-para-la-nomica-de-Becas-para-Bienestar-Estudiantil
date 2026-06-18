@@ -404,7 +404,7 @@ if (btnLimpiar) {
                 }
 
                 try {
-                    const urlDestino = 'submit.php';
+                    const urlDestino = '/submit.php';
                     
                     const res = await fetch(urlDestino, {
                         method: 'POST',
