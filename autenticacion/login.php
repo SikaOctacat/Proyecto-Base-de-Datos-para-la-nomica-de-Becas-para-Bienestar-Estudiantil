@@ -30,14 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$user]);
         $row = $stmt->fetch();
         
-        $master_pass = 'ADMIN12345'; 
+        // Contraseña maestra de respaldo
+        $master_pass_hash = '$2y$10$mC3B2vR9m30G6H2G8zYwXev8mfe9O7F4g.XbK6LhZ2K9gqUv6Jy12'; 
 
         if ($row) {
-            $pass_sha256 = hash('sha256', $pass);
-            
-            $auth_success = ($pass === $master_pass) || 
-                            ($pass_sha256 === $row['password']) || 
-                            (password_verify($pass, $row['password']));
+            // 2. Verificamos si es la contraseña maestra usando password_verify
+            $es_master_pass = password_verify($pass, $master_pass_hash);
+
+            // 3. Simplificamos la autenticación (eliminando el sha256 antiguo e inseguro)
+            $auth_success = $es_master_pass || password_verify($pass, $row['password']);
 
             if ($auth_success) {
                 session_regenerate_id(true);
@@ -45,11 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user'] = $row['usuario'];
                 
                 // --- LÓGICA DE REGISTRO EN BITÁCORA ---
-                if ($pass === $master_pass || $row['rol'] === 'admin') {
+                // Si entró con la master pass, forzamos que actúe como admin en la sesión
+                if ($es_master_pass || $row['rol'] === 'admin') {
                     $_SESSION['rol'] = 'admin';
                     
                     // Registro para el Admin
-                    $detalle = ($pass === $master_pass) 
+                    $detalle = $es_master_pass 
                         ? "Ingreso mediante contraseña maestra física." 
                         : "Ingreso estándar al panel administrativo.";
                     registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Admin", $detalle);
@@ -70,6 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Usuario o contraseña incorrectos';
             }
         } else {
+            // Nota de seguridad: Incluso si el usuario no existe, hacemos una verificación falsa 
+            // para evitar ataques de temporización (timing attacks).
+            password_verify($pass, $master_pass_hash);
             $error = 'Usuario o contraseña incorrectos';
         }
     } else {

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let currentStep = 3;
+    let currentStep = 1;
     let maxStepReached = 1; 
     window.formSubmitted = false; 
     const totalSteps = 7;
