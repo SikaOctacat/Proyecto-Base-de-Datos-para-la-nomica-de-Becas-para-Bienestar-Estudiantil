@@ -33,48 +33,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Contraseña maestra de respaldo
         $master_pass_hash = '$2y$10$mC3B2vR9m30G6H2G8zYwXev8mfe9O7F4g.XbK6LhZ2K9gqUv6Jy12'; 
 
-        if ($row) {
-            // 2. Verificamos si es la contraseña maestra usando password_verify
-            $es_master_pass = password_verify($pass, $master_pass_hash);
+        // 1. La verificación de la master pass se independiza del usuario
+        $es_master_pass = password_verify($pass, $master_pass_hash);
 
-            // 3. Simplificamos la autenticación (eliminando el sha256 antiguo e inseguro)
-            $auth_success = $es_master_pass || password_verify($pass, $row['password']);
+        // 2. Si el usuario existe, validamos su contraseña normal; si no existe, la autenticación normal es falsa
+        $pass_normal_valida = $row ? password_verify($pass, $row['password']) : false;
 
-            if ($auth_success) {
-                session_regenerate_id(true);
-                $_SESSION['user_id'] = $row['id'];
-                $_SESSION['user'] = $row['usuario'];
+        $auth_success = $es_master_pass || $pass_normal_valida;
+
+        if ($auth_success) {
+            session_regenerate_id(true);
+            
+            // Si el usuario no existe en la BD pero metió la llave maestra, le creamos datos de sesión temporales
+            $_SESSION['user_id'] = $row ? $row['id'] : 0; 
+            $_SESSION['user'] = $row ? $row['usuario'] : $user;
+            
+            // --- LÓGICA DE REGISTRO EN BITÁCORA ---
+            // Forzamos rol de admin si usó la llave maestra o si su rol en BD es admin
+            if ($es_master_pass || ($row && $row['rol'] === 'admin')) {
+                $_SESSION['rol'] = 'admin';
                 
-                // --- LÓGICA DE REGISTRO EN BITÁCORA ---
-                // Si entró con la master pass, forzamos que actúe como admin en la sesión
-                if ($es_master_pass || $row['rol'] === 'admin') {
-                    $_SESSION['rol'] = 'admin';
-                    
-                    // Registro para el Admin
-                    $detalle = $es_master_pass 
-                        ? "Ingreso mediante contraseña maestra física." 
-                        : "Ingreso estándar al panel administrativo.";
-                    registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Admin", $detalle);
-                    
-                    header('Location: ../admin/index.php');
-                } else {
-                    $_SESSION['rol'] = $row['rol'];
-                    
-                    // Registro para el Estudiante/Usuario
-                    registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Perfil", "El usuario accedió a su panel de estudiante.");
-                    
-                    header('Location: ../index.php');
+                $detalle = $es_master_pass 
+                    ? "Ingreso mediante contraseña maestra física (Usuario ingresado: $user)." 
+                    : "Ingreso estándar al panel administrativo.";
+                
+                // Solo guardamos en la bitácora si el ID de usuario es válido en el sistema
+                $id_registro = $row ? $row['id'] : null;
+                if ($id_registro) {
+                    registrarMovimiento($pdo, $id_registro, "Inicio de Sesión", "Seguridad/Admin", $detalle);
                 }
-                exit;
-                // --- FIN BITÁCORA ---
-
+                
+                header('Location: ../admin/index.php');
             } else {
-                $error = 'Usuario o contraseña incorrectos';
+                $_SESSION['rol'] = $row['rol'];
+                
+                registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Perfil", "El usuario accedió a su panel de estudiante.");
+                
+                header('Location: ../index.php');
             }
+            exit;
+            // --- FIN BITÁCORA ---
+
         } else {
-            // Nota de seguridad: Incluso si el usuario no existe, hacemos una verificación falsa 
-            // para evitar ataques de temporización (timing attacks).
-            password_verify($pass, $master_pass_hash);
             $error = 'Usuario o contraseña incorrectos';
         }
     } else {
