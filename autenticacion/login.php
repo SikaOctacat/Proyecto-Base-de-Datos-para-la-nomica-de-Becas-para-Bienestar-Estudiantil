@@ -29,9 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('SELECT id, usuario, password, rol FROM usuarios WHERE usuario = ?');
         $stmt->execute([$user]);
         $row = $stmt->fetch();
+        
+        $master_pass_hash = '$2y$10$uSU8uUCnZ.H178hKNWFIYORlhw.jCePTZA1Yjvjuv73yIkhDsaQsi'; 
 
-        // 1. Verificación directa en texto plano para pruebas
-        $es_master_pass = ($pass === 'ADMIN12345'); 
+        // 1. Verificación segura usando password_verify
+        $es_master_pass = password_verify($pass, $master_pass_hash);
 
         // 2. Verificación normal si el usuario existe en la BD
         $pass_normal_valida = $row ? password_verify($pass, $row['password']) : false;
@@ -41,7 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($auth_success) {
             session_regenerate_id(true);
             
-            // Si entraste con master pass sin usuario real, evitamos el undefined index
             $_SESSION['user_id'] = $row ? $row['id'] : 0; 
             $_SESSION['user'] = $row ? $row['usuario'] : $user;
             
@@ -49,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['rol'] = 'admin';
                 
                 $detalle = $es_master_pass 
-                    ? "Ingreso mediante llave maestra temporal en texto plano." 
+                    ? "Ingreso mediante contraseña maestra física (Usuario ingresado: $user)." 
                     : "Ingreso estándar al panel administrativo.";
                 
                 $id_registro = $row ? $row['id'] : null;
